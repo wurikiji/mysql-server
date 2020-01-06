@@ -1,4 +1,4 @@
-/* Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -39,8 +39,8 @@
 #include <string>
 #include <vector>
 
-#include "binlog_event.h"
 #include "lex_string.h"
+#include "libbinlogevents/include/binlog_event.h"
 #include "m_string.h"
 #include "map_helpers.h"
 #include "my_bitmap.h"
@@ -165,6 +165,44 @@ class Relay_log_info : public Rpl_info {
   friend class Rpl_info_factory;
 
  public:
+  /**
+    Set of possible return values for the member methods related to
+    `PRIVILEGE_CHECKS_USER` management.
+   */
+  enum class enum_priv_checks_status : int {
+    /** Function ended successfully */
+    SUCCESS = 0,
+    /** Value for user is anonymous (''@'...') */
+    USER_ANONYMOUS,
+    /** Value for the username part of the user is larger than 32 characters */
+    USERNAME_TOO_LONG,
+    /** Value for the hostname part of the user is larger than 255 characters */
+    HOSTNAME_TOO_LONG,
+    /** Value for the hostname part of the user has illegal characters */
+    HOSTNAME_SYNTAX_ERROR,
+    /**
+      Value for the username part of the user is NULL but the value for the
+      hostname is not NULL.
+     */
+    USERNAME_NULL_HOSTNAME_NOT_NULL,
+    /**
+      Provided user doesn't exists.
+     */
+    USER_DOES_NOT_EXIST,
+    /**
+      Provided user doesn't have the necesary privileges to execute the needed
+      operations.
+     */
+    USER_DOES_NOT_HAVE_PRIVILEGES,
+    /** Values provided for the internal variables are corrupted. */
+    USER_DATA_CORRUPTED,
+    /**
+      Provided user doesn't have `FILE` privileges during the execution of a
+      `LOAD DATA`event.
+     */
+    LOAD_DATA_EVENT_NOT_ALLOWED
+  };
+
   /*
     The per-channel filter associated with this RLI
   */
@@ -215,27 +253,15 @@ class Relay_log_info : public Rpl_info {
    */
   bool replicate_same_server_id;
 
-  /*** The following variables can only be read when protect by data lock ****/
-  /*
-    cur_log_fd - file descriptor of the current read  relay log
-  */
-  File cur_log_fd;
   /*
     Protected with internal locks.
     Must get data_lock when resetting the logs.
   */
   MYSQL_BIN_LOG relay_log;
-  LOG_INFO linfo;
-
-  /*
-   cache_buf
-     IO_CACHE used when opening relay logs.
-   */
-  IO_CACHE cache_buf;
 
   /*
     Identifies when the recovery process is going on.
-    See sql/slave.cc:init_recovery for further details.
+    See sql/rpl_slave.h:init_recovery for further details.
   */
   bool is_relay_log_recovery;
 
@@ -336,6 +362,22 @@ class Relay_log_info : public Rpl_info {
   */
   void clear_gtid_monitoring_info() { gtid_monitoring_info->clear(); }
 
+  /**
+   When a transaction is retried, the error number and message, and total number
+   of retries are stored. The timestamp for this error is also set here.
+
+   @param transient_errno_arg        Transient error number.
+   @param transient_err_message_arg  Transient error message.
+   @param trans_retries_arg          Number of times this transaction has been
+                                     retried so far.
+  */
+  void retried_processing(uint transient_errno_arg,
+                          const char *transient_err_message_arg,
+                          ulong trans_retries_arg) {
+    gtid_monitoring_info->store_transient_error(
+        transient_errno_arg, transient_err_message_arg, trans_retries_arg);
+  }
+
   /*
     If on init_info() call error_on_rli_init_info is true that means
     that previous call to init_info() terminated with an error, RESET
@@ -349,6 +391,156 @@ class Relay_log_info : public Rpl_info {
     corresponding warning is only logged once.
   */
   bool gtid_timestamps_warning_logged;
+
+  /**
+    Retrieves the username part of the `PRIVILEGE_CHECKS_USER` option of `CHANGE
+    MASTER TO` statement.
+
+    @return a string holding the username part of the user or an empty string.
+   */
+  std::string get_privilege_checks_username() const;
+
+  /**
+    Retrieves the host part of the `PRIVILEGE_CHECKS_USER` option of `CHANGE
+    MASTER TO` statement.
+
+    @return a string holding the host part of the user or an empty string.
+   */
+  std::string get_privilege_checks_hostname() const;
+
+  /**
+    Returns whether or not there is no user configured for
+    `PRIVILEGE_CHECKS_USER`.
+
+    @return true if there is no user configured for `PRIVILEGE_CHECKS_USER` and
+            false otherwise.
+   */
+  bool is_privilege_checks_user_null() const;
+
+  /**
+    Returns whether or not the internal data regarding `PRIVILEGE_CHECKS_USER`
+    is corrupted. This may happen, for instance, if the user tries to change the
+    Relay_log_info repository manually or after a server crash.
+
+    @return true if the data is corrupted, false otherwise.
+   */
+  bool is_privilege_checks_user_corrupted() const;
+
+  /**
+    Clears the info related to the data initialized from
+    `PRIVILEGE_CHECKS_USER`.
+   */
+  void clear_privilege_checks_user();
+
+  /**
+    Sets the flag that tells whether or not the data regarding the
+    `PRIVILEGE_CHECKS_USER` is corrupted.
+
+    @param is_corrupted the flag value.
+   */
+  void set_privilege_checks_user_corrupted(bool is_corrupted);
+
+  /**
+    Initializes data related to `PRIVILEGE_CHECKS_USER`, specifically the user
+    name and the user hostname.
+
+    @param param_privilege_checks_username the username part of the user.
+    @param param_privilege_checks_hostname the hostname part of the user.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status set_privilege_checks_user(
+      char const *param_privilege_checks_username,
+      char const *param_privilege_checks_hostname);
+
+  /**
+    Checks the validity and integrity of the data related to
+    `PRIVILEGE_CHECKS_USER`, specifically the user name and the user
+    hostname. Also checks if the user exists.
+
+    This method takes no parameters as it checks the values stored in the
+    internal member variables.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status check_privilege_checks_user();
+
+  /**
+    Checks the validity and integrity of the data related to
+    `PRIVILEGE_CHECKS_USER`, specifically the user name and the user
+    hostname. Also checks if the user exists.
+
+    @param param_privilege_checks_username the username part of the user.
+    @param param_privilege_checks_hostname the hostname part of the user.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status check_privilege_checks_user(
+      char const *param_privilege_checks_username,
+      char const *param_privilege_checks_hostname);
+  /**
+    Checks the existence of user provided as part of the `PRIVILEGE_CHECKS_USER`
+    option.
+
+    @param param_privilege_checks_username the username part of the user.
+    @param param_privilege_checks_hostname the host part of the user.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status check_applier_acl_user(
+      char const *param_privilege_checks_username,
+      char const *param_privilege_checks_hostname);
+
+  /**
+    Returns a printable representation of the username and hostname currently
+    being used in the applier security context or empty strings other wise.
+
+    @return an `std::pair` containing the username and the hostname printable
+            representations.
+   */
+  std::pair<const char *, const char *>
+  print_applier_security_context_user_host() const;
+
+  /**
+    Outputs the error message associated with applier thread user privilege
+    checks error `error_code`.
+
+    The output stream to which is outputted is decided based on `to_client`
+    which, if set to `true` will output the message to the client session and if
+    `false` will output to the server log.
+
+    @param level the message urgency level, e.g., `ERROR_LEVEL`,
+                 `WARNING_LEVEL`, etc.
+    @param status_code the status code to output the associated error message
+                       for.
+    @param to_client a flag indicating if the message should be sent to the
+                     client session or to the server log.
+    @param channel_name name of the channel for which the error is being
+                        reported.
+    @param user_name username for which the error is being reported.
+    @param host_name hostname for which the error is being reported.
+   */
+  void report_privilege_check_error(enum loglevel level,
+                                    enum_priv_checks_status status_code,
+                                    bool to_client,
+                                    char const *channel_name = nullptr,
+                                    char const *user_name = nullptr,
+                                    char const *host_name = nullptr) const;
+
+  /**
+    Initializes the security context associated with the `PRIVILEGE_CHECKS_USER`
+    user that is to be used by the provided THD object.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status initialize_security_context(THD *thd);
+  /**
+    Initializes the security context associated with the `PRIVILEGE_CHECKS_USER`
+    user that is to be used by the applier thread.
+
+    @return a status code describing the state of the data initialization.
+   */
+  enum_priv_checks_status initialize_applier_security_context();
 
   /*
     Let's call a group (of events) :
@@ -369,6 +561,19 @@ class Relay_log_info : public Rpl_info {
     max_binlog_size.
   */
  protected:
+  /**
+     Event group means a group of events of a transaction. group_relay_log_name
+     and group_relay_log_pos record the place before where all event groups
+     are applied. When slave starts, it resume to apply events from
+     group_relay_log_pos. They will be initialized to the begin of the first
+     relay log file if it is a new slave(including SLAVE RESET). Then,
+     group_relay_log_pos is advanced after each transaction is applied
+     successfully in single thread slave. For MTS, group_relay_log_pos
+     is updated by mts checkpoint mechanism. group_relay_log_pos and
+     group_relay_log_name are stored into relay_log_info file/table
+     periodically. When server startup, they are loaded from relay log info
+     file/table.
+   */
   char group_relay_log_name[FN_REFLEN];
   ulonglong group_relay_log_pos;
   char event_relay_log_name[FN_REFLEN];
@@ -422,7 +627,33 @@ class Relay_log_info : public Rpl_info {
   */
   Gtid_monitoring_info *gtid_monitoring_info;
 
+  /**
+     It will be set to true when receiver truncated relay log for some reason.
+     The truncated data may already be read by applier. So applier need to check
+     it each time the binlog_end_pos is updated.
+   */
+  bool m_relay_log_truncated = false;
+
+  /**
+    The user name part of the user passed on to `PRIVILEGE_CHECKS_USER`.
+   */
+  std::string m_privilege_checks_username;
+
+  /**
+    The host name part of the user passed on to `PRIVILEGE_CHECKS_USER`.
+   */
+  std::string m_privilege_checks_hostname;
+
+  /**
+    Tells whether or not the internal data regarding `PRIVILEGE_CHECKS_USER` is
+    corrupted. This may happen if the user tries to change the Relay_log_info
+    repository by hand.
+   */
+  bool m_privilege_checks_user_corrupted;
+
  public:
+  bool is_relay_log_truncated() { return m_relay_log_truncated; }
+
   Sid_map *get_sid_map() { return gtid_set->get_sid_map(); }
 
   Checkable_rwlock *get_sid_lock() { return get_sid_map()->get_sid_lock(); }
@@ -446,9 +677,27 @@ class Relay_log_info : public Rpl_info {
   const Gtid_set *get_gtid_set() const { return gtid_set; }
 
   bool reinit_sql_thread_io_cache(const char *log, bool need_data_lock);
-  int init_relay_log_pos(const char *log, ulonglong pos, bool need_data_lock,
-                         const char **errmsg, bool keep_looking_for_fd);
 
+  /**
+     Check if group_relay_log_name is in index file.
+
+     @param [out] errmsg An error message is returned if error happens.
+
+     @retval    false    It is valid.
+     @retval    true     It is invalid. In this case, *errmsg is set to point to
+                         the error message.
+*/
+  bool is_group_relay_log_name_invalid(const char **errmsg);
+  /**
+     Reset group_relay_log_name and group_relay_log_pos to the start of the
+     first relay log file. The caller must hold data_lock.
+
+     @param[out]     errmsg    An error message is set into it if error happens.
+
+     @retval    false    Success
+     @retval    true     Error
+ */
+  bool reset_group_relay_log_pos(const char **errmsg);
   /*
     Update the error number, message and timestamp fields. This function is
     different from va_report() as va_report() also logs the error message in the
@@ -565,6 +814,17 @@ class Relay_log_info : public Rpl_info {
   }
 
   /**
+     Receiver thread notifies that it truncated some data from relay log.
+     data_lock will be acquired, so the caller should not hold data_lock.
+  */
+  void notify_relay_log_truncated();
+  /**
+     Applier clears the flag after it handled the situation. The caller must
+     hold data_lock.
+  */
+  void clear_relay_log_truncated();
+
+  /**
     The same as @c notify_group_relay_log_name_update but for
     @c group_master_log_name.
   */
@@ -589,10 +849,48 @@ class Relay_log_info : public Rpl_info {
 
   int wait_for_pos(THD *thd, String *log_name, longlong log_pos,
                    double timeout);
-  int wait_for_gtid_set(THD *thd, char *gtid, double timeout);
-  int wait_for_gtid_set(THD *thd, String *gtid, double timeout);
-  int wait_for_gtid_set(THD *thd, const Gtid_set *wait_gtid_set,
-                        double timeout);
+  /**
+    Wait for a GTID set to be executed.
+
+    @param thd                 The thread for status changes and kill status
+    @param gtid                A char array with a GTID set
+    @param timeout             Number of seconds to wait before timing out
+    @param update_THD_status  Shall the method update the THD stage
+
+    @retval 0  The set is already executed
+    @retval -1 There was a timeout waiting for the set
+    @retval -2 There was an issue while waiting.
+   */
+  int wait_for_gtid_set(THD *thd, const char *gtid, double timeout,
+                        bool update_THD_status = true);
+  /**
+    Wait for a GTID set to be executed.
+
+    @param thd                 The thread for status changes and kill status
+    @param gtid                A String with a GTID set
+    @param timeout             Number of seconds to wait before timing out
+    @param update_THD_status  Shall the method update the THD stage
+
+    @retval 0  The set is already executed
+    @retval -1 There was a timeout waiting for the set
+    @retval -2 There was an issue while waiting.
+  */
+  int wait_for_gtid_set(THD *thd, String *gtid, double timeout,
+                        bool update_THD_status = true);
+  /**
+    Wait for a GTID set to be executed.
+
+    @param thd                 The thread for status changes and kill status
+    @param wait_gtid_set       A GTID_set object
+    @param timeout             Number of seconds to wait before timing out
+    @param update_THD_status   Shall the method update the THD stage
+
+    @retval 0  The set is already executed
+    @retval -1 There was a timeout waiting for the set
+    @retval -2 There was an issue while waiting.
+  */
+  int wait_for_gtid_set(THD *thd, const Gtid_set *wait_gtid_set, double timeout,
+                        bool update_THD_status = true);
 
   void close_temporary_tables();
 
@@ -605,7 +903,8 @@ class Relay_log_info : public Rpl_info {
   bool get_table_data(TABLE *table_arg, table_def **tabledef_var,
                       TABLE **conv_table_var) const {
     DBUG_ASSERT(tabledef_var && conv_table_var);
-    for (TABLE_LIST *ptr = tables_to_lock; ptr != NULL; ptr = ptr->next_global)
+    for (TABLE_LIST *ptr = tables_to_lock; ptr != nullptr;
+         ptr = ptr->next_global)
       if (ptr->table == table_arg) {
         *tabledef_var = &static_cast<RPL_TABLE_LIST *>(ptr)->m_tabledef;
         *conv_table_var = static_cast<RPL_TABLE_LIST *>(ptr)->m_conv_table;
@@ -630,8 +929,7 @@ class Relay_log_info : public Rpl_info {
   void cleanup_context(THD *, bool);
   void slave_close_thread_tables(THD *);
   void clear_tables_to_lock();
-  int purge_relay_logs(THD *thd, bool just_reset, const char **errmsg,
-                       bool delete_only = false);
+  int purge_relay_logs(THD *thd, const char **errmsg, bool delete_only = false);
 
   /*
     Used to defer stopping the SQL thread to give it a chance
@@ -751,9 +1049,10 @@ class Relay_log_info : public Rpl_info {
       exit_counter;  // Number of workers contributed to max updated group index
   ulonglong max_updated_index;
   ulong recovery_parallel_workers;  // number of workers while recovering
-  uint checkpoint_seqno;  // counter of groups executed after the most recent CP
-  uint checkpoint_group;  // cache for ::opt_mts_checkpoint_group
-  MY_BITMAP recovery_groups;  // bitmap used during recovery
+  uint rli_checkpoint_seqno;        // counter of groups executed after the most
+                                    // recent CP
+  uint checkpoint_group;            // cache for ::opt_mts_checkpoint_group
+  MY_BITMAP recovery_groups;        // bitmap used during recovery
   bool recovery_groups_inited;
   ulong mts_recovery_group_cnt;  // number of groups to execute at recovery
   ulong mts_recovery_index;      // running index of recoverable groups
@@ -851,15 +1150,15 @@ class Relay_log_info : public Rpl_info {
   */
   Slave_worker *get_worker(size_t n) {
     if (workers_array_initialized) {
-      if (n >= workers.size()) return NULL;
+      if (n >= workers.size()) return nullptr;
 
       return workers[n];
     } else if (workers_copy_pfs.size()) {
-      if (n >= workers_copy_pfs.size()) return NULL;
+      if (n >= workers_copy_pfs.size()) return nullptr;
 
       return workers_copy_pfs[n];
     } else
-      return NULL;
+      return nullptr;
   }
 
   /**
@@ -913,6 +1212,13 @@ class Relay_log_info : public Rpl_info {
   }
 
   /**
+     Check if it is time to compute MTS checkpoint.
+
+     @retval true   It is time to compute MTS checkpoint.
+     @retval false  It is not MTS or it is not time for computing checkpoint.
+  */
+  bool is_time_for_mts_checkpoint();
+  /**
      While a group is executed by a Worker the relay log can change.
      Coordinator notifies Workers about this event. Worker is supposed
      to commit to the recovery table with the new info.
@@ -925,7 +1231,6 @@ class Relay_log_info : public Rpl_info {
      maintain a bitmap of executed group that is reset with a new checkpoint.
   */
   void reset_notified_checkpoint(ulong count, time_t new_ts,
-                                 bool need_data_lock,
                                  bool update_timestamp = false);
 
   /**
@@ -939,11 +1244,11 @@ class Relay_log_info : public Rpl_info {
   /* The general cleanup that slave applier may need at the end of query. */
   inline void cleanup_after_query() {
     if (deferred_events) deferred_events->rewind();
-  };
+  }
   /* The general cleanup that slave applier may need at the end of session. */
   void cleanup_after_session() {
     if (deferred_events) delete deferred_events;
-  };
+  }
 
   /**
     Helper function to do after statement completion.
@@ -1050,7 +1355,29 @@ class Relay_log_info : public Rpl_info {
 
   int count_relay_log_space();
 
-  int rli_init_info();
+  /**
+    Initialize the relay log info. This function does a set of operations
+    on the rli object like initializing variables, loading information from
+    repository, setting up name for relay log files and index, MTS recovery
+    (if necessary), calculating the received GTID set for the channel and
+    storing the updated rli object configuration into the repository.
+
+    When this function is called in a change master process and the change
+    master procedure will purge all the relay log files later, there is no
+    reason to try to calculate the received GTID set of the channel based on
+    existing relay log files (they will be purged). Allowing reads to existing
+    relay log files at this point may lead to put the server in a state where
+    it will be no possible to configure it if it was reset when encryption of
+    replication log files was ON and the keyring plugin is not available
+    anymore.
+
+    @param skip_received_gtid_set_recovery When true, skips the received GTID
+                                           set recovery.
+
+    @retval 0 Success.
+    @retval 1 Error.
+  */
+  int rli_init_info(bool skip_received_gtid_set_recovery = false);
   void end_info();
   int flush_info(bool force = false);
   int flush_current_log();
@@ -1126,6 +1453,13 @@ class Relay_log_info : public Rpl_info {
   static size_t get_number_info_rli_fields();
 
   /**
+     Sets bits for columns that are allowed to be `NULL`.
+
+     @param nullable_fields the bitmap to hold the nullable fields.
+  */
+  static void set_nullable_fields(MY_BITMAP *nullable_fields);
+
+  /**
     Indicate that a delay starts.
 
     This does not actually sleep; it only sets the state of this
@@ -1143,9 +1477,8 @@ class Relay_log_info : public Rpl_info {
   void set_sql_delay(time_t _sql_delay) { sql_delay = _sql_delay; }
   time_t get_sql_delay_end() { return sql_delay_end; }
 
-  Relay_log_info(bool is_slave_recovery
+  Relay_log_info(bool is_slave_recovery,
 #ifdef HAVE_PSI_INTERFACE
-                 ,
                  PSI_mutex_key *param_key_info_run_lock,
                  PSI_mutex_key *param_key_info_data_lock,
                  PSI_mutex_key *param_key_info_sleep_lock,
@@ -1153,9 +1486,8 @@ class Relay_log_info : public Rpl_info {
                  PSI_mutex_key *param_key_info_data_cond,
                  PSI_mutex_key *param_key_info_start_cond,
                  PSI_mutex_key *param_key_info_stop_cond,
-                 PSI_mutex_key *param_key_info_sleep_cond
+                 PSI_mutex_key *param_key_info_sleep_cond,
 #endif
-                 ,
                  uint param_id, const char *param_channel, bool is_rli_fake);
   virtual ~Relay_log_info();
 
@@ -1193,8 +1525,10 @@ class Relay_log_info : public Rpl_info {
   /**
     Delete the existing event and set a new one.  This class is
     responsible for freeing the event, the caller should not do that.
+
+    @return 1 if an error was encountered, 0 otherwise.
   */
-  virtual void set_rli_description_event(Format_description_log_event *fdle);
+  virtual int set_rli_description_event(Format_description_log_event *fdle);
 
   /**
     Return the current Format_description_log_event.
@@ -1251,7 +1585,7 @@ class Relay_log_info : public Rpl_info {
     mysql_mutex_lock(&data_lock);
     if (until_option) {
       delete until_option;
-      until_option = NULL;
+      until_option = nullptr;
     }
     mysql_mutex_unlock(&data_lock);
   }
@@ -1336,6 +1670,37 @@ class Relay_log_info : public Rpl_info {
   */
   static const int LINES_IN_RELAY_LOG_INFO_WITH_CHANNEL = 8;
 
+  /*
+    Represents line number in relay_log.info to save PRIVILEGE_CHECKS_USERNAME.
+    It is username part of PRIVILEGES_CHECKS_USER column in
+    performance_schema.replication_applier_configuration.
+  */
+  static const int LINES_IN_RELAY_LOG_INFO_WITH_PRIV_CHECKS_USERNAME = 9;
+
+  /*
+    Maximum length of PRIVILEGE_CHECKS_USERNAME.
+  */
+  static const int PRIV_CHECKS_USERNAME_LENGTH = 32;
+
+  /*
+    Represents line number in relay_log.info to save PRIVILEGE_CHECKS_HOSTNAME.
+    It is hostname part of PRIVILEGES_CHECKS_USER column in
+    performance_schema.replication_applier_configuration.
+  */
+  static const int LINES_IN_RELAY_LOG_INFO_WITH_PRIV_CHECKS_HOSTNAME = 10;
+
+  /*
+    Maximum length of PRIVILEGE_CHECKS_USERNAME.
+  */
+  static const int PRIV_CHECKS_HOSTNAME_LENGTH = 255;
+
+  /*
+    Total lines in relay_log.info.
+    This has to be updated every time a member is added or removed.
+  */
+  static const int MAXIMUM_LINES_IN_RELAY_LOG_INFO_FILE =
+      LINES_IN_RELAY_LOG_INFO_WITH_PRIV_CHECKS_HOSTNAME;
+
   bool read_info(Rpl_info_handler *from);
   bool write_info(Rpl_info_handler *to);
 
@@ -1418,14 +1783,15 @@ class Relay_log_info : public Rpl_info {
   const char *get_until_log_name();
   my_off_t get_until_log_pos();
   bool is_until_satisfied_at_start_slave() {
-    return until_option != NULL && until_option->is_satisfied_at_start_slave();
+    return until_option != nullptr &&
+           until_option->is_satisfied_at_start_slave();
   }
   bool is_until_satisfied_before_dispatching_event(const Log_event *ev) {
-    return until_option != NULL &&
+    return until_option != nullptr &&
            until_option->is_satisfied_before_dispatching_event(ev);
   }
   bool is_until_satisfied_after_dispatching_event() {
-    return until_option != NULL &&
+    return until_option != nullptr &&
            until_option->is_satisfied_after_dispatching_event();
   }
   /**
@@ -1514,6 +1880,16 @@ class Relay_log_info : public Rpl_info {
   */
   virtual void post_commit(bool on_rollback);
 };
+
+/**
+  Negation operator for `enum_priv_checks_status`, to facilitate validation
+  against `SUCCESS`. To test for error status, use the `!!` idiom.
+
+  @param status the status code to check against `SUCCESS`
+
+  @return true if the status is `SUCCESS` and false otherwise.
+ */
+bool operator!(Relay_log_info::enum_priv_checks_status status);
 
 bool mysql_show_relaylog_events(THD *thd);
 
@@ -1619,7 +1995,251 @@ class RLI_current_event_raii {
     m_rli->current_event = ev;
   }
   void set_current_event(Log_event *ev) { m_rli->current_event = ev; }
-  ~RLI_current_event_raii() { m_rli->current_event = NULL; }
+  ~RLI_current_event_raii() { m_rli->current_event = nullptr; }
+};
+
+/**
+ @class MDL_lock_guard
+
+ Utility class to allow RAII pattern with `MDL_request` and `MDL_context`
+ classes.
+ */
+class MDL_lock_guard {
+ public:
+  /**
+   Constructor that initializes the object and the target `THD` object but
+   doesn't try to acquire any lock.
+
+   @param target THD object, source for the `MDL_context` to use.
+   */
+  MDL_lock_guard(THD *target);
+  /**
+   Constructor that initializes the object and the target `THD` object and tries
+   to acquire the lock identified by `namespace_arg` with MDL type identified by
+   `mdl_type_arg`.
+
+   If the `blocking` parameter is true, it will instantly try to acquire the
+   lock and block. If the `blocking` parameter is false, it will first test if
+   the lock is already acquired and only try to lock if no conflicting lock is
+   already acquired.
+
+   @param target THD object, source for the `MDL_context` to use.
+   @param namespace_arg MDL key namespace to acquire the lock from.
+   @param mdl_type_arg MDL acquisition type
+   @param blocking whether or not the execution should block if the lock is
+                   already acquired.
+   */
+  MDL_lock_guard(THD *target, MDL_key::enum_mdl_namespace namespace_arg,
+                 enum_mdl_type mdl_type_arg, bool blocking = false);
+  /**
+   Destructor that unlocks all acquired locks.
+   */
+  virtual ~MDL_lock_guard();
+
+  /**
+   Uses the target `THD` object MDL context to acquire the lock identified by
+   `namespace_arg` with MDL type identified by `mdl_type_arg`.
+
+   If the `blocking` parameter is true, it will instantly try to acquire the
+   lock and block. If the `blocking` parameter is false, it will first test if
+   the lock is already acquired and only try to lock if no conflicting lock is
+   already acquired.
+
+   The lock is determined to have been acquired if the `THD` object MDL context
+   hasn't already a lock and the lock is acquired. In other words, if the MDL
+   context already has acquired the lock, the method will return failure.
+
+   @param namespace_arg MDL key namespace to acquire the lock from.
+   @param mdl_type_arg MDL acquisition type
+   @param blocking whether or not the execution should block if the lock is
+                   already acquired.
+
+   @return false if the lock has been acquired by this method invocation and
+           true if not.
+   */
+  bool lock(MDL_key::enum_mdl_namespace namespace_arg,
+            enum_mdl_type mdl_type_arg, bool blocking = false);
+  /**
+   Returns whether or not the lock as been acquired within this object
+   life-cycle.
+
+   @return true if the lock has been acquired within this object life-cycle.
+   */
+  bool is_locked();
+
+ private:
+  /** The `THD` object holding the MDL context used for acquiring/releasing. */
+  THD *m_target;
+  /** The MDL request holding the MDL ticket issued upon acquisition */
+  MDL_request m_request;
+};
+
+/**
+  @class Applier_security_context_guard
+
+  Utility class to allow RAII pattern with `Security_context` class.
+
+  At initiliazation, if the `THD` main security context isn't already the
+  appropriate one, it copies the `Relay_log_info::info_thd::security_context`
+  and replaces it with the one initialized with the `PRIVILEGE_CHECK_USER` user.
+  At deinitialization, it copies the backed up security context.
+
+  It also deals with the case where no privilege checks are required, meaning,
+  `PRIVILEGE_CHECKS_USER` is `NULL`.
+
+  Usage examples:
+
+  (1)
+  @code
+      Applier_security_context_guard security_context{rli, thd};
+      if (!security_context.has_access({SUPER_ACL})) {
+        return ER_NO_ACCESS;
+      }
+  @endcode
+
+  (4)
+  @code
+      Applier_security_context_guard security_context{rli, thd};
+      if (!security_context.has_access(
+              {{CREATE_ACL | INSERT_ACL | UPDATE_ACL, table},
+               {SELECT_ACL, table}})) {
+        return ER_NO_ACCESS;
+      }
+  @endcode
+ */
+
+class Applier_security_context_guard {
+ public:
+  /**
+    If needed, backs up the current `thd` security context and replaces it with
+    a security context for `PRIVILEGE_CHECKS_USER` user.
+
+    @param rli the `Relay_log_info` object that holds the
+               `PRIVILEGE_CHECKS_USER` info.
+    @param thd the `THD` for which initialize the security context.
+   */
+  Applier_security_context_guard(Relay_log_info const *rli, THD const *thd);
+  /**
+    Destructor that restores the backed up security context, if needed.
+   */
+  virtual ~Applier_security_context_guard();
+
+  //--> Deleted constructors and methods to remove default move/copy semantics
+  Applier_security_context_guard(const Applier_security_context_guard &) =
+      delete;
+  Applier_security_context_guard(Applier_security_context_guard &&) = delete;
+  Applier_security_context_guard &operator=(
+      const Applier_security_context_guard &) = delete;
+  Applier_security_context_guard &operator=(Applier_security_context_guard &&) =
+      delete;
+  //<--
+
+  /**
+    Returns whether or not privilege checks may be skipped within the current
+    context.
+
+    @return true if privilege checks may be skipped and false otherwise.
+   */
+  bool skip_priv_checks() const;
+  /**
+    Checks if the `PRIVILEGE_CHECKS_USER` user has access to the privilieges
+    passed on by `extra_privileges` parameter as well as to the privileges
+    passed on at initilization time.
+
+    This particular method checks those privileges agains a given table and
+    against that table's columns - the ones that are used or changed in the
+    event.
+
+    @param extra_privileges set of privileges to check, additionally to those
+                            passed on at initialization. It's a list of
+                            (privilege, TABLE*, Rows_log_event*) tuples.
+
+    @return true if the privileges are included in the security context and
+            false, otherwise.
+   */
+  bool has_access(
+      std::vector<std::tuple<ulong, TABLE const *, Rows_log_event *>>
+          &extra_privileges) const;
+  /**
+    Checks if the `PRIVILEGE_CHECKS_USER` user has access to the privilieges
+    passed on by `extra_privileges` parameter as well as to the privileges
+    passed on at initilization time.
+
+    @param extra_privileges set of privileges to check, additionally to those
+                            passed on at initialization. It's a list of
+                            privileges to be checked against any database.
+
+    @return true if the privileges are included in the security context and
+            false, otherwise.
+   */
+  bool has_access(std::initializer_list<std::string> extra_privileges) const;
+
+  /**
+    Checks if the `PRIVILEGE_CHECKS_USER` user has access to the privilieges
+    passed on by `extra_privileges` parameter as well as to the privileges
+    passed on at initilization time.
+
+    @param extra_privileges set of privileges to check, additionally to those
+                            passed on at initialization. It's a list of
+                            privileges to be checked against any database.
+
+    @return true if the privileges are included in the security context and
+            false, otherwise.
+   */
+  bool has_access(std::initializer_list<ulong> extra_privileges) const;
+
+  /**
+    Returns the username for the user for which the security context was
+    initialized.
+
+    If `PRIVILEGE_CHECKS_USER` was configured for the target `Relay_log_info`
+    object, that one is returned.
+
+    Otherwise, the username associated with the `Security_context` initialized
+    for `Relay_log_info::info_thd` will be returned.
+
+    @return an `std::string` holding the username for the active security
+            context.
+   */
+  std::string get_username() const;
+  /**
+    Returns the hostname for the user for which the security context was
+    initialized.
+
+    If `PRIVILEGE_CHECKS_USER` was configured for the target `Relay_log_info`
+    object, that one is returned.
+
+    Otherwise, the hostname associated with the `Security_context` initialized
+    for `Relay_log_info::info_thd` will be returned.
+
+    @return an `std::string` holding the hostname for the active security
+            context.
+   */
+  std::string get_hostname() const;
+
+ private:
+  /**
+    The `Relay_log_info` object holding the info required to initialize the
+    context.
+   */
+  Relay_log_info const *m_target;
+  /**
+    The `THD` object for which the security context will be initialized.
+   */
+  THD const *m_thd;
+  /** Applier security context based on `PRIVILEGE_CHECK_USER` user */
+  Security_context m_applier_security_ctx;
+  /** Currently in use security context */
+  Security_context *m_current;
+  /** Backed up security context */
+  Security_context *m_previous;
+  /** Flag that states if privilege check should be skipped */
+  bool m_privilege_checks_none;
+  /** Flag that states if there is a logged user */
+  bool m_logged_in_acl_user;
+
+  void extract_columns_to_check(TABLE const *table, Rows_log_event *event,
+                                std::vector<std::string> &columns) const;
 };
 
 #endif /* RPL_RLI_H */

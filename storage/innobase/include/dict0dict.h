@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2012, Facebook Inc.
 
 This program is free software; you can redistribute it and/or modify it under
@@ -98,9 +98,8 @@ ulint dict_table_get_highest_foreign_id(
 #endif                    /* !UNIV_HOTBACKUP */
 /** Return the end of table name where we have removed dbname and '/'.
  @return table name */
-const char *dict_remove_db_name(
-    const char *name) /*!< in: table name in the form
-                      dbname '/' tablename */
+const char *dict_remove_db_name(const char *name) /*!< in: table name in the
+                                                  form dbname '/' tablename */
     MY_ATTRIBUTE((warn_unused_result));
 
 /** Operation to perform when opening a table */
@@ -130,6 +129,9 @@ void dict_table_close_and_drop(
     dict_table_t *table); /*!< in/out: table */
 /** Inits the data dictionary module. */
 void dict_init(void);
+
+/** Closes the data dictionary module. */
+void dict_close(void);
 
 /** Inits the structure for persisting dynamic metadata */
 void dict_persist_init(void);
@@ -605,7 +607,7 @@ bool dict_table_has_atomic_blobs(const dict_table_t *table)
 @param[in]	use_data_dir	Table uses DATA DIRECTORY
 @param[in]	shared_space	Table uses a General Shared Tablespace */
 UNIV_INLINE
-void dict_tf_set(ulint *flags, rec_format_t format, ulint zip_ssize,
+void dict_tf_set(uint32_t *flags, rec_format_t format, ulint zip_ssize,
                  bool use_data_dir, bool shared_space);
 
 /** Initialize a dict_table_t::flags pointer.
@@ -615,8 +617,8 @@ void dict_tf_set(ulint *flags, rec_format_t format, ulint zip_ssize,
 @param[in]	data_dir	Table uses DATA DIRECTORY
 @param[in]	shared_space	Table uses a General Shared Tablespace */
 UNIV_INLINE
-ulint dict_tf_init(bool compact, ulint zip_ssize, bool atomic_blobs,
-                   bool data_dir, bool shared_space);
+uint32_t dict_tf_init(bool compact, ulint zip_ssize, bool atomic_blobs,
+                      bool data_dir, bool shared_space);
 
 /** Convert a 32 bit integer table flags to the 32 bit FSP Flags.
 Fsp Flags are written into the tablespace header at the offset
@@ -629,16 +631,14 @@ dict_table_t::flags |     0     |    1    |     1      |    1
 fil_space_t::flags  |     0     |    0    |     1      |    1
 ==================================================================
 @param[in]	table_flags	dict_table_t::flags
-@param[in]	is_encrypted	if it's an encrypted table
 @return tablespace flags (fil_space_t::flags) */
-ulint dict_tf_to_fsp_flags(ulint table_flags, bool is_encrypted = false)
-    MY_ATTRIBUTE((const));
+uint32_t dict_tf_to_fsp_flags(uint32_t table_flags) MY_ATTRIBUTE((const));
 
 /** Extract the page size from table flags.
 @param[in]	flags	flags
 @return compressed page size, or 0 if not compressed */
 UNIV_INLINE
-const page_size_t dict_tf_get_page_size(ulint flags) MY_ATTRIBUTE((const));
+const page_size_t dict_tf_get_page_size(uint32_t flags) MY_ATTRIBUTE((const));
 #endif /* !UNIV_HOTBACKUP */
 
 /** Determine the extent size (in pages) for the given table
@@ -791,7 +791,7 @@ include page no field.
 @param[in]	index	index
 @return number of fields */
 UNIV_INLINE
-ulint dict_index_get_n_unique_in_tree_nonleaf(const dict_index_t *index)
+uint16_t dict_index_get_n_unique_in_tree_nonleaf(const dict_index_t *index)
     MY_ATTRIBUTE((warn_unused_result));
 /** Gets the number of user-defined ordering fields in the index. In the
  internal representation we add the row id to the ordering fields to make all
@@ -871,16 +871,15 @@ inline bool dict_table_is_compressed_temporary(const dict_table_t *table);
 #endif /* UNIV_DEBUG */
 /** Builds a node pointer out of a physical record and a page number.
  @return own: node pointer */
-dtuple_t *dict_index_build_node_ptr(
-    const dict_index_t *index, /*!< in: index */
-    const rec_t *rec,          /*!< in: record for which to build node
-                               pointer */
-    page_no_t page_no,         /*!< in: page number to put in node
-                               pointer */
-    mem_heap_t *heap,          /*!< in: memory heap where pointer
-                               created */
-    ulint level)               /*!< in: level of rec in tree:
-                               0 means leaf level */
+dtuple_t *dict_index_build_node_ptr(const dict_index_t *index, /*!< in: index */
+                                    const rec_t *rec,  /*!< in: record for which
+                                                       to build node  pointer */
+                                    page_no_t page_no, /*!< in: page number to
+                                                       put in node pointer */
+                                    mem_heap_t *heap, /*!< in: memory heap where
+                                                      pointer created */
+                                    ulint level) /*!< in: level of rec in tree:
+                                                 0 means leaf level */
     MY_ATTRIBUTE((warn_unused_result));
 /** Copies an initial segment of a physical record, long enough to specify an
  index entry uniquely.
@@ -892,7 +891,7 @@ rec_t *dict_index_copy_rec_order_prefix(
     ulint *n_fields,           /*!< out: number of fields copied */
     byte **buf,                /*!< in/out: memory buffer for the
                                copied prefix, or NULL */
-    ulint *buf_size)           /*!< in/out: buffer size */
+    size_t *buf_size)          /*!< in/out: buffer size */
     MY_ATTRIBUTE((warn_unused_result));
 /** Builds a typed data tuple out of a physical record.
  @return own: data tuple */
@@ -991,11 +990,10 @@ void dict_table_stats_unlock(dict_table_t *table, ulint latch_mode);
 
 /** Checks if the database name in two table names is the same.
  @return true if same db name */
-ibool dict_tables_have_same_db(
-    const char *name1, /*!< in: table name in the form
-                       dbname '/' tablename */
-    const char *name2) /*!< in: table name in the form
-                       dbname '/' tablename */
+ibool dict_tables_have_same_db(const char *name1, /*!< in: table name in the
+                                                  form dbname '/' tablename */
+                               const char *name2) /*!< in: table name in the
+                                                  form dbname '/' tablename */
     MY_ATTRIBUTE((warn_unused_result));
 /** Get an index by name.
 @param[in]	table		the table where to look for the index
@@ -1163,7 +1161,8 @@ struct dict_sys_t {
   @param[in]	space	tablespace id to check
   @return true if a reserved tablespace id, otherwise false */
   static bool is_reserved(space_id_t space) {
-    return (space >= dict_sys_t::s_reserved_space_id);
+    return (space >= dict_sys_t::s_reserved_space_id ||
+            fsp_is_session_temporary(space));
   }
 
   /** Set of ids of DD tables */
@@ -1191,15 +1190,26 @@ struct dict_sys_t {
   /** The innodb_temporary tablespace ID. */
   static constexpr space_id_t s_temp_space_id = 0xFFFFFFFD;
 
+  /** The number of space IDs dedicated to each undo tablespace */
+  static constexpr space_id_t undo_space_id_range = 512;
+
   /** The lowest undo tablespace ID. */
   static constexpr space_id_t s_min_undo_space_id =
-      s_log_space_first_id - TRX_SYS_N_RSEGS;
+      s_log_space_first_id - (FSP_MAX_UNDO_TABLESPACES * undo_space_id_range);
 
   /** The highest undo  tablespace ID. */
   static constexpr space_id_t s_max_undo_space_id = s_log_space_first_id - 1;
 
   /** The first reserved tablespace ID */
   static constexpr space_id_t s_reserved_space_id = s_min_undo_space_id;
+
+  /** Leave 1K space_ids and start space_ids for temporary
+  general tablespaces (total 400K space_ids)*/
+  static constexpr space_id_t s_max_temp_space_id = s_reserved_space_id - 1000;
+
+  /** Lowest temporary general space id */
+  static constexpr space_id_t s_min_temp_space_id =
+      s_reserved_space_id - 1000 - 400000;
 
   /** The dd::Tablespace::id of the dictionary tablespace. */
   static constexpr dd::Object_id s_dd_space_id = 1;
@@ -1227,6 +1237,10 @@ struct dict_sys_t {
 
   /** The hard-coded tablespace name innodb_file_per_table. */
   static const char *s_file_per_table_name;
+
+  /** These two undo tablespaces cannot be dropped. */
+  static const char *s_default_undo_space_name_1;
+  static const char *s_default_undo_space_name_2;
 
   /** The table ID of mysql.innodb_dynamic_metadata */
   static constexpr table_id_t s_dynamic_meta_table_id = 2;
@@ -1287,9 +1301,6 @@ void dict_fs2utf8(const char *db_and_table, char *db_utf8, size_t db_utf8_size,
 
 /** Resize the hash tables besed on the current buffer pool size. */
 void dict_resize();
-
-/** Closes the data dictionary module. */
-void dict_close(void);
 
 /** Wrapper for the mysql.innodb_dynamic_metadata used to buffer the persistent
 dynamic metadata.
@@ -1468,7 +1479,7 @@ void dict_set_merge_threshold_all_debug(uint merge_threshold_all);
 @param[in]	flags	Table flags
 @return true if valid. */
 UNIV_INLINE
-bool dict_tf_is_valid(ulint flags);
+bool dict_tf_is_valid(uint32_t flags);
 
 /** Validate both table flags and table flags2 and make sure they
 are compatible.
@@ -1476,19 +1487,12 @@ are compatible.
 @param[in]	flags2	Table flags2
 @return true if valid. */
 UNIV_INLINE
-bool dict_tf2_is_valid(ulint flags, ulint flags2);
+bool dict_tf2_is_valid(uint32_t flags, uint32_t flags2);
 
 /** Check if the tablespace for the table has been discarded.
  @return true if the tablespace has been discarded. */
 UNIV_INLINE
 bool dict_table_is_discarded(
-    const dict_table_t *table) /*!< in: table to check */
-    MY_ATTRIBUTE((warn_unused_result));
-
-/** Check if it is a encrypted table.
- @return true if table encryption flag is set. */
-UNIV_INLINE
-bool dict_table_is_encrypted(
     const dict_table_t *table) /*!< in: table to check */
     MY_ATTRIBUTE((warn_unused_result));
 
@@ -1587,7 +1591,8 @@ ulint dict_table_encode_n_col(ulint n_col, ulint n_v_col);
 @param[in,out]	n_col	number of non-virtual column
 @param[in,out]	n_v_col	number of virtual column */
 UNIV_INLINE
-void dict_table_decode_n_col(ulint encoded, ulint *n_col, ulint *n_v_col);
+void dict_table_decode_n_col(uint32_t encoded, uint32_t *n_col,
+                             uint32_t *n_v_col);
 
 /** Free the virtual column template
 @param[in,out]	vc_templ	virtual column template */
@@ -1609,12 +1614,12 @@ UNIV_INLINE
 bool dict_table_have_virtual_index(dict_table_t *table);
 
 /** Retrieve in-memory index for SDI table.
-@param[in]	tablespace_id	innodb tablespace id
+@param[in]	tablespace_id	innodb tablespace ID
 @return dict_index_t structure or NULL*/
 dict_index_t *dict_sdi_get_index(space_id_t tablespace_id);
 
 /** Retrieve in-memory table object for SDI table.
-@param[in]	tablespace_id	innodb tablespace id
+@param[in]	tablespace_id	innodb tablespace ID
 @param[in]	dict_locked	true if dict_sys mutex is acquired
 @param[in]	is_create	true when creating SDI Index
 @return dict_table_t structure */
@@ -1622,7 +1627,7 @@ dict_table_t *dict_sdi_get_table(space_id_t tablespace_id, bool dict_locked,
                                  bool is_create);
 
 /** Remove the SDI table from table cache.
-@param[in]	space_id	InnoDB tablesapce_id
+@param[in]	space_id	InnoDB tablespace ID
 @param[in]	sdi_table	SDI table
 @param[in]	dict_locked	true if dict_sys mutex acquired */
 void dict_sdi_remove_from_cache(space_id_t space_id, dict_table_t *sdi_table,
@@ -1657,7 +1662,7 @@ Acquistion order of SDI MDL and SDI table has to be in same
 order:
 
 1. dd_sdi_acquire_exclusive_mdl
-2. row_drop_table_from_cache()/innobase_drop_tablespace()
+2. row_drop_table_from_cache()/innodb_drop_tablespace()
    ->dd_sdi_remove_from_cache()->dd_table_open_on_id()
 
 In purge:
@@ -1681,7 +1686,7 @@ Acquistion order of SDI MDL and SDI table has to be in same
 order:
 
 1. dd_sdi_acquire_exclusive_mdl
-2. row_drop_table_from_cache()/innobase_drop_tablespace()
+2. row_drop_table_from_cache()/innodb_drop_tablespace()
    ->dict_sdi_remove_from_cache()->dd_table_open_on_id()
 
 In purge:

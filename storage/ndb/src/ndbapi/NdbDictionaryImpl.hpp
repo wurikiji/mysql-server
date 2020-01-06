@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -39,6 +39,7 @@
 #include <Ndb.hpp>
 #include "DictCache.hpp"
 #include <signaldata/DictSignal.hpp>
+#include "my_byteorder.h"
 
 class ListTablesReq;
 
@@ -139,10 +140,45 @@ public:
   int getBlobVersion() const;
   void setBlobVersion(int blobVersion);
 
+  enum supported_column_changes {
+    COLUMN_NAME = 1
+  };
+  typedef ulonglong column_change_flags;
+  static bool
+  check_change_flag(column_change_flags change_flags,
+                    enum supported_column_changes supported_change)
+  {
+    return (change_flags & (1ULL << supported_change));
+  }
+  static void
+  remove_change_flag(column_change_flags& change_flags,
+                     enum supported_column_changes supported_change)
+  {
+    change_flags &= ~(1ULL << supported_change);
+  }
+  static void
+  add_change_flag(column_change_flags& change_flags,
+                  enum supported_column_changes supported_change)
+  {
+    change_flags |= 1ULL << supported_change;
+  }
+  /**
+   * Compare two columns with optional skipping
+   * of parts of the column properties. This is
+   * to support for changing various parts of columns
+   * as part of an inplace alter table.
+   **/
+  bool equal_skip(const NdbColumnImpl&, column_change_flags&) const;
+
   /**
    * Equality/assign
    */
   bool equal(const NdbColumnImpl&) const;
+
+  /**
+   * Online column alter support
+   */
+  bool alter_supported(const NdbColumnImpl&, column_change_flags&) const;
 
   static NdbColumnImpl & getImpl(NdbDictionary::Column & t);
   static const NdbColumnImpl & getImpl(const NdbDictionary::Column & t);
@@ -162,6 +198,9 @@ public:
   NdbTableImpl(NdbDictionary::Table &);
   ~NdbTableImpl();
   
+  static SimpleProperties::IndirectReader IndirectReader;
+  static SimpleProperties::IndirectWriter IndirectWriter;
+
   void init();
   int setName(const char * name);
   const char * getName() const;
@@ -236,11 +275,11 @@ public:
   Uint64 m_max_rows;
   Uint64 m_min_rows;
   Uint32 m_default_no_part_flag;
+  Uint32 m_row_checksum;
   bool m_linear_flag;
   bool m_logging;
   bool m_temporary;
   bool m_row_gci;
-  bool m_row_checksum;
   bool m_force_var_part;
   bool m_has_default_values; 
   bool m_read_backup;
@@ -453,7 +492,7 @@ public:
     ndbout_c("NdbEventImpl: id=%d, key=%d",
 	     m_eventId,
 	     m_eventKey);
-  };
+  }
 
   Uint32 m_eventId;
   Uint32 m_eventKey;

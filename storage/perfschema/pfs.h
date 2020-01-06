@@ -1,4 +1,4 @@
-/* Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2.0,
@@ -77,7 +77,6 @@ enum THR_PFS_key {
   THR_PFS_SBH,  // status_by_host
   THR_PFS_NUM_KEYS
 };
-extern thread_local PFS_table_context *THR_PFS_contexts[THR_PFS_NUM_KEYS];
 
 /* Only Innodb so far */
 #define COUNT_DATA_LOCK_ENGINES 1

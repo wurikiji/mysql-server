@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
@@ -147,6 +147,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
     simple_example_math_imp.cc are implementations used in example_component1,
     polish_greeting_service_imp.cc and example_math_wrapping_imp.cc are
     implementations for example_component2 and example_component3 respectively.
+  -# Make sure component is loaded/initialized before using its services.
+    Atomic variable is_intialized represents the state of the component.
+    Please check the details about the variable from validate_password_imp.cc
+    file.
   .
 
   @file include/mysql/components/component_implementation.h
@@ -195,10 +199,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
   @param service A Service name for which the Service Implementation will be
     added.
 */
-#define PROVIDES_SERVICE(component, service)                \
-  {                                                         \
-    #service "." #component,                                \
-        (void *)&SERVICE_IMPLEMENTATION(component, service) \
+#define PROVIDES_SERVICE(component, service)                            \
+  {                                                                     \
+#service "." #component,                                            \
+        const_cast < void *>                                            \
+            ((const void *)&SERVICE_IMPLEMENTATION(component, service)) \
   }
 
 /**
@@ -237,8 +242,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
   @param service A referenced Service name.
 */
-#define REQUIRES_SERVICE(service) \
-  { #service, (void **)&mysql_service_##service }
+#define REQUIRES_SERVICE(service)                                              \
+  {                                                                            \
+#service,                                                                  \
+        static_cast < void **>                                                 \
+            (static_cast <void *>(const_cast <mysql_service_##service##_t **>( \
+                &mysql_service_##service)))                                    \
+  }
 
 /**
   A macro to end the last declaration started with the BEGIN_COMPONENT_REQUIRES.

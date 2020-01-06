@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -24,8 +24,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 *****************************************************************************/
 
-#include "my_compiler.h"
-
 /** @file include/rem0rec.h
  Record manager
 
@@ -38,13 +36,14 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include <ostream>
 #include <sstream>
 
+#include "univ.i"
+
 #include "data0data.h"
 #include "mtr0types.h"
 #include "page0types.h"
 #include "rem/rec.h"
 #include "rem0types.h"
 #include "trx0types.h"
-#include "univ.i"
 
 /** The following function is used to get the pointer of the next chained record
  on the same page.
@@ -173,7 +172,7 @@ void rec_set_instant_flag_new(rec_t *rec, bool flag);
 /** The following function tells if a new-style record is a node pointer.
  @return true if node pointer */
 UNIV_INLINE
-ibool rec_get_node_ptr_flag(const rec_t *rec) /*!< in: physical record */
+bool rec_get_node_ptr_flag(const rec_t *rec) /*!< in: physical record */
     MY_ATTRIBUTE((warn_unused_result));
 
 /** The following function is used to get the order number of an old-style
@@ -264,11 +263,10 @@ ulint rec_get_n_extern_new(
 /** The following function is used to get the offset to the nth
  data field in an old-style record.
  @return offset to the field */
-ulint rec_get_nth_field_offs_old(
-    const rec_t *rec, /*!< in: record */
-    ulint n,          /*!< in: index of the field */
-    ulint *len);      /*!< out: length of the field; UNIV_SQL_NULL
-                      if SQL null */
+ulint rec_get_nth_field_offs_old(const rec_t *rec, /*!< in: record */
+                                 ulint n,     /*!< in: index of the field */
+                                 ulint *len); /*!< out: length of the field;
+                                              UNIV_SQL_NULL if SQL null */
 
 /** Gets the value of the specified field in the record in old style.
 This is only used for record from instant index, which is clustered
@@ -533,7 +531,8 @@ rec_t *rec_copy_prefix_to_buf(
     byte **buf,                /*!< in/out: memory buffer
                                for the copied prefix,
                                or NULL */
-    ulint *buf_size);          /*!< in/out: buffer size */
+    size_t *buf_size           /*!< in/out: buffer size */
+);
 /** Compute a hash value of a prefix of a leaf page record.
 @param[in]	rec		leaf page record
 @param[in]	offsets		rec_get_offsets(rec)
@@ -591,9 +590,9 @@ ulint rec_get_converted_size_comp(
  @return size */
 UNIV_INLINE
 ulint rec_get_converted_size(
-    dict_index_t *index,    /*!< in: record descriptor */
-    const dtuple_t *dtuple, /*!< in: data tuple */
-    ulint n_ext)            /*!< in: number of externally stored columns */
+    const dict_index_t *index, /*!< in: record descriptor */
+    const dtuple_t *dtuple,    /*!< in: data tuple */
+    ulint n_ext)               /*!< in: number of externally stored columns */
     MY_ATTRIBUTE((warn_unused_result));
 #ifndef UNIV_HOTBACKUP
 /** Copies the first n fields of a physical record to a data tuple.
@@ -611,7 +610,7 @@ void rec_copy_prefix_to_dtuple(
 @param[in]	n_fields	number of fields in the record
 @return	length of specified number of fields */
 UNIV_INLINE
-uint8_t rec_get_n_fields_length(uint16_t n_fields);
+uint8_t rec_get_n_fields_length(ulint n_fields);
 
 /** Set the number of fields for one new style leaf page record.
 This is only needed for table after instant ADD COLUMN.

@@ -780,11 +780,8 @@ INSERT INTO cc (
 SET @save_old_sql_mode= @@sql_mode;
 SET sql_mode="";
 
-# Warnings arrive in unpredictable order with NDB and cannot be sorted
-if ($testing_ndb)
-{
+# Warnings arrive in unpredictable order and cannot be sorted
 --disable_warnings
-}
 SELECT DISTINCT alias1.col_varchar_key AS field1
 FROM ( cc AS alias1 STRAIGHT_JOIN
       (( cc AS alias2 STRAIGHT_JOIN cc AS alias3 ON
@@ -797,10 +794,7 @@ ORDER BY field1, alias1.col_date_key, field1 ASC, field1 DESC,
         alias1.col_time_key ASC, field1;
 DROP TABLE cc;
 SET sql_mode=@save_old_sql_mode;
-if ($testing_ndb)
-{
 --enable_warnings
-}
 
 --echo #
 --echo # Bug#20797941: WL8149:ASSERTION !TABLE ||
@@ -907,14 +901,8 @@ ALTER TABLE t1 ADD COLUMN h INT AS (a) VIRTUAL, WITHOUT VALIDATION;
 --error 1845, 1846
 ALTER TABLE t1 CHANGE h i INT AS (a) VIRTUAL, WITH VALIDATION,
   ALGORITHM=INPLACE;
-if ($innodb_engine)
+if (!$testing_ndb)
 {
-ALTER TABLE t1 CHANGE h i INT AS (a) VIRTUAL, WITHOUT VALIDATION,
-  ALGORITHM=INPLACE;
-}
-if ($myisam_engine)
-{
---error 1845
 ALTER TABLE t1 CHANGE h i INT AS (a) VIRTUAL, WITHOUT VALIDATION,
   ALGORITHM=INPLACE;
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -37,14 +37,22 @@ class Test_MDL_context_owner : public MDL_context_owner {
 
   virtual int is_killed() const final { return 0; }
   virtual bool is_connected() { return true; }
-  virtual THD *get_thd() { return NULL; }
+  virtual THD *get_thd() {
+    /*
+      MDL_lock::object_lock_notify_conflicting_locks() checks THD of
+      conflicting lock on nullptr value and doesn't call the virtual
+      method MDL_context_owner::notify_shared_lock() in case condition
+      satisfied. To workaround it return the value 1 casted to THD*.
+    */
+    return (THD *)1;
+  }
 
   virtual bool notify_hton_pre_acquire_exclusive(const MDL_key *, bool *) {
     return false;
   }
   virtual void notify_hton_post_release_exclusive(const MDL_key *) {}
 
-  virtual uint get_rand_seed() { return 0; }
+  virtual uint get_rand_seed() const { return 0; }
 };
 
 #endif  // TEST_MDL_CONTEXT_OWNER_INCLUDED

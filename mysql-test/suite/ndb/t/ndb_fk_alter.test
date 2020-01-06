@@ -134,7 +134,7 @@ while ($i)
 	ALTER TABLE t1 DROP COLUMN col1;
 
 	--echo # Attempt to modify col1, should give error
-	--error 1833
+	--error ER_FK_INCOMPATIBLE_COLUMNS
 	ALTER TABLE t1 MODIFY COLUMN col1 bigint;
 
 	--echo # Drop the column t1.col3
@@ -195,6 +195,20 @@ SHOW CREATE TABLE t2;
 --enable_warnings
 ALTER TABLE t2 REMOVE PARTITIONING;
 --disable_warnings
+SHOW CREATE TABLE t2;
+--enable_warnings
+# Parent fk dependence
+--error ER_ALTER_OPERATION_NOT_SUPPORTED_REASON
+ALTER TABLE t1 RENAME COLUMN col3 TO col3_new;
+--error ER_ALTER_OPERATION_NOT_SUPPORTED_REASON
+ALTER TABLE t1 ALGORITHM=inplace, RENAME COLUMN col3 TO col3_new;
+# Child fk dependence
+--error ER_ALTER_OPERATION_NOT_SUPPORTED_REASON
+ALTER TABLE t2 RENAME COLUMN col3 TO col3_new;
+--error ER_ALTER_OPERATION_NOT_SUPPORTED_REASON
+ALTER TABLE t2 ALGORITHM=inplace, RENAME COLUMN col3 TO col3_new;
+--disable_warnings
+SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 --enable_warnings
 

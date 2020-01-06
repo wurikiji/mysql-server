@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -100,7 +100,7 @@ class TransporterCallbackKernelNonMT :
 public:
   TransporterCallbackKernelNonMT()
   : m_send_buffers(NULL), m_page_freelist(NULL), m_send_buffer_memory(NULL)
-  {};
+  {}
 
   ~TransporterCallbackKernelNonMT();
 
@@ -127,8 +127,11 @@ public:
    * These are the TransporterSendBufferHandle methods used by the
    * single-threaded ndbd.
    */
-  Uint32 *getWritePtr(NodeId node, Uint32 lenBytes, Uint32 prio,
-                      Uint32 max_use);
+  Uint32 *getWritePtr(NodeId node,
+                      Uint32 lenBytes,
+                      Uint32 prio,
+                      Uint32 max_use,
+                      SendStatus *error);
   Uint32 updateWritePtr(NodeId node, Uint32 lenBytes, Uint32 prio);
   void getSendBufferLevel(NodeId node, SB_LevelType &level);
   bool forceSend(NodeId node);
@@ -277,8 +280,10 @@ TransporterReceiveHandleKernel::deliver_signal(SignalHeader * const header,
   switch(secCount){
   case 3:
     ok &= import(SPC_CACHE_ARG secPtr[2], ptr[2].p, ptr[2].sz);
+    // Fall through
   case 2:
     ok &= import(SPC_CACHE_ARG secPtr[1], ptr[1].p, ptr[1].sz);
+    // Fall through
   case 1:
     ok &= import(SPC_CACHE_ARG secPtr[0], ptr[0].p, ptr[0].sz);
   }
@@ -676,9 +681,11 @@ TransporterCallbackKernelNonMT::discard_send_buffer(NodeId node)
  * single-threaded ndbd.
  */
 Uint32 *
-TransporterCallbackKernelNonMT::getWritePtr(
-                                 NodeId node, Uint32 lenBytes, Uint32 prio,
-                                 Uint32 max_use)
+TransporterCallbackKernelNonMT::getWritePtr(NodeId node,
+                                            Uint32 lenBytes,
+                                            Uint32 prio,
+                                            Uint32 max_use,
+                                            SendStatus* error)
 {
   SendBuffer *b = m_send_buffers + node;
 
@@ -689,13 +696,25 @@ TransporterCallbackKernelNonMT::getWritePtr(
     return (Uint32 *)(page->m_data + page->m_start + page->m_bytes);
   }
 
-  if (b->m_used_bytes + lenBytes > max_use)
+  if (unlikely(b->m_used_bytes + lenBytes > max_use))
+  {
+    *error = SEND_BUFFER_FULL;
     return NULL;
+  }
+
+  if (unlikely(lenBytes > SendBufferPage::max_data_bytes()))
+  {
+    *error = SEND_MESSAGE_TOO_BIG;
+    return NULL;
+  }
 
   /* Allocate a new page. */
   page = alloc_page();
-  if (page == NULL)
+  if (unlikely(page == NULL))
+  {
+    *error = SEND_BUFFER_FULL;
     return NULL;
+  }
   page->m_next = NULL;
   page->m_bytes = 0;
   page->m_start = 0;

@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2016, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2016, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -138,6 +138,10 @@ struct first_page_t : public basic_page_t {
   /** Free all the index pages.  The list of index pages can be accessed
   by traversing via the FIL_PAGE_NEXT field.*/
   void free_all_index_pages();
+
+  /** Free all the data pages. The data pages can be accessed through
+  index entry. */
+  void free_all_data_pages();
 
   /** Load the first page of LOB with s-latch.
   @param[in]   page_id    the page identifier of the first page.
@@ -383,7 +387,7 @@ struct first_page_t : public basic_page_t {
   of uncompressed LOB.
   @return Number of bytes available for LOB data. */
   static ulint max_space_available() {
-    const uint16_t index_array_size = node_count() * index_entry_t::SIZE;
+    const ulint index_array_size = node_count() * index_entry_t::SIZE;
 
     return (payload() - index_array_size);
   }
@@ -409,7 +413,7 @@ struct first_page_t : public basic_page_t {
   byte *data_begin() const {
     ut_ad(buf_block_get_page_zip(m_block) == NULL);
 
-    constexpr uint16_t index_array_size = node_count() * index_entry_t::SIZE;
+    constexpr ulint index_array_size = node_count() * index_entry_t::SIZE;
 
     return (frame() + LOB_PAGE_DATA + index_array_size);
   }
@@ -422,10 +426,11 @@ struct first_page_t : public basic_page_t {
   bool validate() const;
 #endif /* UNIV_DEBUG */
 
-  ulint get_page_type() { return (basic_page_t::get_page_type()); }
+  page_type_t get_page_type() { return (basic_page_t::get_page_type()); }
 
-  static ulint get_page_type(dict_index_t *index, const page_id_t &page_id,
-                             const page_size_t &page_size) {
+  static page_type_t get_page_type(dict_index_t *index,
+                                   const page_id_t &page_id,
+                                   const page_size_t &page_size) {
     mtr_t local_mtr;
     mtr_start(&local_mtr);
     first_page_t first(&local_mtr, index);
@@ -436,6 +441,6 @@ struct first_page_t : public basic_page_t {
   }
 };
 
-}; /* namespace lob */
+} /* namespace lob */
 
 #endif /* lob0first_h */

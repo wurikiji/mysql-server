@@ -80,6 +80,7 @@ Database: information_schema
 |                Tables                 |
 +---------------------------------------+
 | CHARACTER_SETS                        |
+| CHECK_CONSTRAINTS                     |
 | COLLATION_CHARACTER_SET_APPLICABILITY |
 | COLLATIONS                            |
 | COLUMN_PRIVILEGES                     |
@@ -111,6 +112,7 @@ Database: information_schema
 | INNODB_FT_INDEX_TABLE                 |
 | INNODB_INDEXES                        |
 | INNODB_METRICS                        |
+| INNODB_SESSION_TEMP_TABLESPACES       |
 | INNODB_TABLES                         |
 | INNODB_TABLESPACES                    |
 | INNODB_TABLESPACES_BRIEF              |
@@ -133,6 +135,7 @@ Database: information_schema
 | SCHEMATA                              |
 | ST_GEOMETRY_COLUMNS                   |
 | ST_SPATIAL_REFERENCE_SYSTEMS          |
+| ST_UNITS_OF_MEASURE                   |
 | STATISTICS                            |
 | TABLE_CONSTRAINTS                     |
 | TABLE_PRIVILEGES                      |
@@ -140,6 +143,8 @@ Database: information_schema
 | TABLESPACES                           |
 | TRIGGERS                              |
 | USER_PRIVILEGES                       |
+| VIEW_ROUTINE_USAGE                    |
+| VIEW_TABLE_USAGE                      |
 | VIEWS                                 |
 +---------------------------------------+
 Database: INFORMATION_SCHEMA
@@ -147,6 +152,7 @@ Database: INFORMATION_SCHEMA
 |                Tables                 |
 +---------------------------------------+
 | CHARACTER_SETS                        |
+| CHECK_CONSTRAINTS                     |
 | COLLATION_CHARACTER_SET_APPLICABILITY |
 | COLLATIONS                            |
 | COLUMN_PRIVILEGES                     |
@@ -178,6 +184,7 @@ Database: INFORMATION_SCHEMA
 | INNODB_FT_INDEX_TABLE                 |
 | INNODB_INDEXES                        |
 | INNODB_METRICS                        |
+| INNODB_SESSION_TEMP_TABLESPACES       |
 | INNODB_TABLES                         |
 | INNODB_TABLESPACES                    |
 | INNODB_TABLESPACES_BRIEF              |
@@ -200,6 +207,7 @@ Database: INFORMATION_SCHEMA
 | SCHEMATA                              |
 | ST_GEOMETRY_COLUMNS                   |
 | ST_SPATIAL_REFERENCE_SYSTEMS          |
+| ST_UNITS_OF_MEASURE                   |
 | STATISTICS                            |
 | TABLE_CONSTRAINTS                     |
 | TABLE_PRIVILEGES                      |
@@ -207,6 +215,8 @@ Database: INFORMATION_SCHEMA
 | TABLESPACES                           |
 | TRIGGERS                              |
 | USER_PRIVILEGES                       |
+| VIEW_ROUTINE_USAGE                    |
+| VIEW_TABLE_USAGE                      |
 | VIEWS                                 |
 +---------------------------------------+
 Wildcard: inf_rmation_schema

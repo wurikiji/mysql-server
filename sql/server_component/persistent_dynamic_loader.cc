@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 #include "my_macros.h"
 #include "my_sys.h"
 #include "mysql/components/service_implementation.h"
+#include "mysql/components/services/log_builtins.h"
 #include "mysql/components/services/mysql_mutex_bits.h"
 #include "mysql/components/services/psi_mutex_bits.h"
 #include "mysql/psi/mysql_mutex.h"
@@ -81,26 +82,49 @@ enum enum_component_table_field {
 };
 
 static const TABLE_FIELD_TYPE component_table_fields[CT_FIELD_COUNT] = {
-    {{C_STRING_WITH_LEN("component_id")},
-     {C_STRING_WITH_LEN("int(10)")},
+    {{STRING_WITH_LEN("component_id")},
+     {STRING_WITH_LEN("int(10)")},
      {NULL, 0}},
-    {{C_STRING_WITH_LEN("component_group_id")},
-     {C_STRING_WITH_LEN("int(10)")},
+    {{STRING_WITH_LEN("component_group_id")},
+     {STRING_WITH_LEN("int(10)")},
      {NULL, 0}},
-    {{C_STRING_WITH_LEN("component_urn")},
-     {C_STRING_WITH_LEN("text")},
-     {C_STRING_WITH_LEN("utf8")}}};
+    {{STRING_WITH_LEN("component_urn")},
+     {STRING_WITH_LEN("text")},
+     {STRING_WITH_LEN("utf8")}}};
 
 static const TABLE_FIELD_DEF component_table_def = {CT_FIELD_COUNT,
                                                     component_table_fields};
 
 class Component_db_intact : public Table_check_intact {
  protected:
-  void report_error(uint, const char *fmt, ...)
+  void report_error(uint ecode, const char *fmt, ...)
       MY_ATTRIBUTE((format(printf, 3, 4))) {
+    longlong log_ecode = 0;
+    switch (ecode) {
+      case 0:
+        log_ecode = ER_SERVER_TABLE_CHECK_FAILED;
+        break;
+      case ER_CANNOT_LOAD_FROM_TABLE_V2:
+        log_ecode = ER_SERVER_CANNOT_LOAD_FROM_TABLE_V2;
+        break;
+      case ER_COL_COUNT_DOESNT_MATCH_PLEASE_UPDATE_V2:
+        log_ecode = ER_SERVER_COL_COUNT_DOESNT_MATCH_PLEASE_UPDATE_V2;
+        break;
+      case ER_COL_COUNT_DOESNT_MATCH_CORRUPTED_V2:
+        log_ecode = ER_SERVER_COL_COUNT_DOESNT_MATCH_CORRUPTED_V2;
+        break;
+      default:
+        DBUG_ASSERT(false);
+        return;
+    }
+
     va_list args;
     va_start(args, fmt);
-    error_log_printf(ERROR_LEVEL, fmt, args);
+    LogEvent()
+        .type(LOG_TYPE_ERROR)
+        .prio(ERROR_LEVEL)
+        .errcode(log_ecode)
+        .messagev(fmt, args);
     va_end(args);
   }
 };
@@ -126,9 +150,7 @@ static Component_db_intact table_intact;
 */
 static bool open_component_table(THD *thd, enum thr_lock_type lock_type,
                                  TABLE **table, ulong acl_to_check) {
-  TABLE_LIST tables;
-
-  tables.init_one_table("mysql", 5, "component", 9, "component", lock_type);
+  TABLE_LIST tables("mysql", "component", lock_type);
 
   if (mysql_persistent_dynamic_loader_imp::initialized() && !opt_noacl &&
       check_one_table_access(thd, acl_to_check, &tables))
@@ -187,7 +209,6 @@ bool mysql_persistent_dynamic_loader_imp::init(void *thdp) {
                      MY_MUTEX_INIT_SLOW);
 
     TABLE *component_table;
-    READ_RECORD read_record_info;
     int res;
 
     mysql_persistent_dynamic_loader_imp::group_id = 0;
@@ -203,8 +224,10 @@ bool mysql_persistent_dynamic_loader_imp::init(void *thdp) {
     auto guard =
         create_scope_guard([&thd]() { commit_and_close_mysql_tables(thd); });
 
-    if (init_read_record(&read_record_info, thd, component_table, NULL, 1,
-                         false)) {
+    unique_ptr_destroy_only<RowIterator> iterator =
+        init_table_iterator(thd, component_table, NULL, false,
+                            /*ignore_not_found_rows=*/false);
+    if (iterator == nullptr) {
       push_warning(thd, Sql_condition::SL_WARNING, ER_COMPONENT_TABLE_INCORRECT,
                    ER_THD(thd, ER_COMPONENT_TABLE_INCORRECT));
       return false;
@@ -220,7 +243,7 @@ bool mysql_persistent_dynamic_loader_imp::init(void *thdp) {
     std::map<uint64, std::vector<std::string>> component_groups;
 
     for (;;) {
-      res = read_record_info.read_record(&read_record_info);
+      res = iterator->Read();
       if (res != 0) {
         break;
       }
@@ -248,7 +271,7 @@ bool mysql_persistent_dynamic_loader_imp::init(void *thdp) {
       }
     }
 
-    end_read_record(&read_record_info);
+    iterator.reset();
 
     /* res is guaranteed to be != 0, -1 means end of records encountered, which
       is interpreted as a success. */

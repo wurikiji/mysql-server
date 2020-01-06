@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -46,6 +46,12 @@ const Table_partitions &Table_partitions::instance() {
 
 ///////////////////////////////////////////////////////////////////////////
 
+const CHARSET_INFO *Table_partitions::name_collation() {
+  return &my_charset_utf8_tolower_ci;
+}
+
+///////////////////////////////////////////////////////////////////////////
+
 Table_partitions::Table_partitions() {
   m_target_def.set_table_name("table_partitions");
 
@@ -58,7 +64,8 @@ Table_partitions::Table_partitions() {
   m_target_def.add_field(FIELD_NUMBER, "FIELD_NUMBER",
                          "number SMALLINT UNSIGNED NOT NULL");
   m_target_def.add_field(FIELD_NAME, "FIELD_NAME",
-                         "name VARCHAR(64) NOT NULL COLLATE utf8_tolower_ci");
+                         "name VARCHAR(64) NOT NULL COLLATE " +
+                             String_type(name_collation()->name));
   m_target_def.add_field(FIELD_ENGINE, "FIELD_ENGINE",
                          "engine VARCHAR(64) NOT NULL COLLATE utf8_general_ci");
   m_target_def.add_field(FIELD_DESCRIPTION_UTF8, "FIELD_DESCRIPTION_UTF8",
@@ -141,7 +148,7 @@ bool Table_partitions::get_partition_table_id(THD *thd,
                                               const String_type &engine,
                                               ulonglong se_private_id,
                                               Object_id *oid) {
-  DBUG_ENTER("Table_partitions::get_partition_table_id");
+  DBUG_TRACE;
 
   DBUG_ASSERT(oid);
   *oid = INVALID_OBJECT_ID;
@@ -159,12 +166,12 @@ bool Table_partitions::get_partition_table_id(THD *thd,
   // Find record by the object-key.
   std::unique_ptr<Raw_record> r;
   if (t->find_record(*k, r)) {
-    DBUG_RETURN(true);
+    return true;
   }
 
   if (r.get()) *oid = read_table_id(*r.get());
 
-  DBUG_RETURN(false);
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////

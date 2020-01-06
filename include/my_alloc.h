@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -155,6 +155,34 @@ struct MEM_ROOT {
   }
 
   /**
+    Allocate “num” objects of type T, and default-construct them.
+    If the constructor throws an exception, behavior is undefined.
+
+    We don't use new[], as it can put extra data in front of the array.
+   */
+  template <class T>
+  T *ArrayAlloc(size_t num) {
+    static_assert(alignof(T) <= 8, "MEM_ROOT only returns 8-aligned memory.");
+    if (num * sizeof(T) < num) {
+      // Overflow.
+      return nullptr;
+    }
+    T *ret = static_cast<T *>(Alloc(num * sizeof(T)));
+    if (ret == nullptr) {
+      // Out of memory.
+      return nullptr;
+    }
+
+    // Default-construct all elements. For primitive types like int,
+    // the entire loop will be optimized away.
+    for (size_t i = 0; i < num; ++i) {
+      new (&ret[i]) T;
+    }
+
+    return ret;
+  }
+
+  /**
    * Claim all the allocated memory for the current thread in the performance
    * schema. Use when transferring responsibility for a MEM_ROOT from one thread
    * to another.
@@ -202,6 +230,11 @@ struct MEM_ROOT {
   void set_max_capacity(size_t max_capacity) { m_max_capacity = max_capacity; }
 
   /**
+   * Return maximum capacity for this MEM_ROOT.
+   */
+  size_t get_max_capacity() const { return m_max_capacity; }
+
+  /**
    * Enable/disable error reporting for exceeding the maximum capacity.
    * If error reporting is enabled, an error is flagged to indicate that the
    * capacity is exceeded. However, allocation will still happen for the
@@ -211,6 +244,14 @@ struct MEM_ROOT {
    */
   void set_error_for_capacity_exceeded(bool report_error) {
     m_error_for_capacity_exceeded = report_error;
+  }
+
+  /**
+   * Return whether error is to be reported when
+   * maximum capacity exceeds for MEM_ROOT.
+   */
+  bool get_error_for_capacity_exceeded() const {
+    return m_error_for_capacity_exceeded;
   }
 
   /**
@@ -298,27 +339,7 @@ static inline void init_alloc_root(PSI_memory_key key, MEM_ROOT *root,
   ::new (root) MEM_ROOT(key, block_size);
 }
 
-static inline void *alloc_root(MEM_ROOT *root, size_t length) {
-  return root->Alloc(length);
-}
-
 void free_root(MEM_ROOT *root, myf flags);
-
-static inline void claim_root(MEM_ROOT *root) { root->Claim(); }
-
-static inline void set_memroot_max_capacity(MEM_ROOT *root, size_t max_value) {
-  root->set_max_capacity(max_value);
-}
-
-static inline void set_memroot_error_reporting(MEM_ROOT *root,
-                                               bool report_error) {
-  root->set_error_for_capacity_exceeded(report_error);
-}
-
-static inline void reset_root_defaults(MEM_ROOT *root, size_t block_size,
-                                       size_t) {
-  root->set_block_size(block_size);
-}
 
 /**
  * Allocate an object of the given type. Use like this:

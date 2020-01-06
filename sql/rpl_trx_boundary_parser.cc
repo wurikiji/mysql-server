@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "binlog_event.h"
+#include "libbinlogevents/include/binlog_event.h"
 #include "m_string.h"
 #include "my_byteorder.h"
 #include "my_dbug.h"
@@ -53,14 +53,13 @@ static const char *event_parser_state_names[] = {"None", "GTID", "DDL", "DML",
    This method initialize the boundary parser state.
 */
 void Transaction_boundary_parser::reset() {
-  DBUG_ENTER("Transaction_boundary_parser::reset");
+  DBUG_TRACE;
   DBUG_PRINT("info", ("transaction boundary parser is changing state "
                       "from '%s' to '%s'",
                       event_parser_state_names[current_parser_state],
                       event_parser_state_names[EVENT_PARSER_NONE]));
   current_parser_state = EVENT_PARSER_NONE;
   last_parser_state = EVENT_PARSER_NONE;
-  DBUG_VOID_RETURN;
 }
 
 /**
@@ -82,12 +81,12 @@ void Transaction_boundary_parser::reset() {
             true if the transaction boundary parser didn't accepted the event.
 */
 bool Transaction_boundary_parser::feed_event(
-    const char *buf, size_t length,
-    const Format_description_log_event *fd_event, bool throw_warnings) {
-  DBUG_ENTER("Transaction_boundary_parser::feed_event");
+    const char *buf, size_t length, const Format_description_event *fd_event,
+    bool throw_warnings) {
+  DBUG_TRACE;
   enum_event_boundary_type event_boundary_type =
       get_event_boundary_type(buf, length, fd_event, throw_warnings);
-  DBUG_RETURN(update_state(event_boundary_type, throw_warnings));
+  return update_state(event_boundary_type, throw_warnings);
 }
 
 /**
@@ -106,9 +105,9 @@ bool Transaction_boundary_parser::feed_event(
 */
 Transaction_boundary_parser::enum_event_boundary_type
 Transaction_boundary_parser::get_event_boundary_type(
-    const char *buf, size_t length,
-    const Format_description_log_event *fd_event, bool throw_warnings) {
-  DBUG_ENTER("Transaction_boundary_parser::get_event_boundary_type");
+    const char *buf, size_t length, const Format_description_event *fd_event,
+    bool throw_warnings) {
+  DBUG_TRACE;
 
   Log_event_type event_type;
   enum_event_boundary_type boundary_type = EVENT_BOUNDARY_TYPE_ERROR;
@@ -132,12 +131,12 @@ Transaction_boundary_parser::get_event_boundary_type(
       ROLLBACK and the rest.
     */
     case binary_log::QUERY_EVENT: {
-      char *query = NULL;
+      const char *query = nullptr;
       size_t qlen = 0;
       /* Get the query to let us check for BEGIN/COMMIT/ROLLBACK */
       qlen = Query_log_event::get_query(buf, length, fd_event, &query);
       if (qlen == 0) {
-        DBUG_ASSERT(query == NULL);
+        DBUG_ASSERT(query == nullptr);
         boundary_type = EVENT_BOUNDARY_TYPE_ERROR;
         break;
       }
@@ -252,7 +251,7 @@ Transaction_boundary_parser::get_event_boundary_type(
   } /* End of switch(event_type) */
 
 end:
-  DBUG_RETURN(boundary_type);
+  return boundary_type;
 }
 
 /**
@@ -269,7 +268,7 @@ end:
 */
 bool Transaction_boundary_parser::update_state(
     enum_event_boundary_type event_boundary_type, bool throw_warnings) {
-  DBUG_ENTER("Transaction_boundary_parser::update_state");
+  DBUG_TRACE;
 
   enum_event_parser_state new_parser_state = EVENT_PARSER_NONE;
 
@@ -454,5 +453,5 @@ bool Transaction_boundary_parser::update_state(
   last_parser_state = current_parser_state;
   current_parser_state = new_parser_state;
 
-  DBUG_RETURN(error);
+  return error;
 }

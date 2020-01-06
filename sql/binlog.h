@@ -1,5 +1,5 @@
 #ifndef BINLOG_H_INCLUDED
-/* Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -29,8 +29,8 @@
 #include <atomic>
 #include <utility>
 
-#include "binlog_event.h"  // enum_binlog_checksum_alg
-#include "m_string.h"      // llstr
+#include "libbinlogevents/include/binlog_event.h"  // enum_binlog_checksum_alg
+#include "m_string.h"                              // llstr
 #include "my_dbug.h"
 #include "my_inttypes.h"
 #include "my_io.h"
@@ -46,7 +46,8 @@
 #include "mysql/udf_registration_types.h"
 #include "mysql_com.h"  // Item_result
 #include "sql/rpl_trx_tracking.h"
-#include "sql/tc_log.h"  // TC_LOG
+#include "sql/tc_log.h"            // TC_LOG
+#include "sql/transaction_info.h"  // Transaction_ctx
 #include "thr_mutex.h"
 
 class Format_description_log_event;
@@ -63,6 +64,8 @@ class THD;
 class Transaction_boundary_parser;
 class binlog_cache_data;
 class user_var_entry;
+class Binlog_cache_storage;
+
 struct Gtid;
 
 typedef int64 query_id_t;
@@ -73,6 +76,12 @@ typedef int64 query_id_t;
         overflow/truncate.
  */
 #define MAX_LOG_UNIQUE_FN_EXT 0x7FFFFFFF
+
+/*
+  Maximum allowed unique log filename extension for
+  RESET MASTER TO command - 2 Billion
+ */
+#define MAX_ALLOWED_FN_EXT_RESET_MASTER 2000000000
 
 struct Binlog_user_var_event {
   user_var_entry *user_var_event;
@@ -92,7 +101,7 @@ class Stage_manager {
     friend class Stage_manager;
 
    public:
-    Mutex_queue() : m_first(NULL), m_last(&m_first), m_size(0) {}
+    Mutex_queue() : m_first(nullptr), m_last(&m_first), m_size(0) {}
 
     void init(PSI_mutex_key key_LOCK_queue) {
       mysql_mutex_init(key_LOCK_queue, &m_lock, MY_MUTEX_INIT_FAST);
@@ -100,7 +109,7 @@ class Stage_manager {
 
     void deinit() { mysql_mutex_destroy(&m_lock); }
 
-    bool is_empty() const { return m_first == NULL; }
+    bool is_empty() const { return m_first == nullptr; }
 
     /**
       Append a linked list of threads to the queue.
@@ -143,12 +152,7 @@ class Stage_manager {
 
     /** Lock for protecting the queue. */
     mysql_mutex_t m_lock;
-
-    /*
-      This attribute did not have the desired effect, at least not according
-      to -fsanitize=undefined with gcc 5.2.1
-     */
-  };  // MY_ATTRIBUTE((aligned(CPU_LEVEL1_DCACHE_LINESIZE)));
+  };
 
  public:
   Stage_manager() {}
@@ -179,6 +183,9 @@ class Stage_manager {
   void deinit() {
     for (size_t i = 0; i < STAGE_COUNTER; ++i) m_queue[i].deinit();
     mysql_cond_destroy(&m_cond_done);
+#ifndef DBUG_OFF
+    mysql_cond_destroy(&m_cond_preempt);
+#endif
     mysql_mutex_destroy(&m_lock_done);
   }
 
@@ -245,7 +252,7 @@ class Stage_manager {
                     session is waiting on
     @param stage    which stage queue size to compare count against.
    */
-  void wait_count_or_timeout(ulong count, ulong usec, StageID stage);
+  void wait_count_or_timeout(ulong count, long usec, StageID stage);
 
   void signal_done(THD *queue);
 
@@ -294,17 +301,19 @@ class Stage_manager {
   until we have reset thd->current_linfo to NULL;
  */
 struct LOG_INFO {
-  char log_file_name[FN_REFLEN];
+  char log_file_name[FN_REFLEN] = {0};
   my_off_t index_file_offset, index_file_start_offset;
   my_off_t pos;
   bool fatal;       // if the purge happens to give us a negative offset
   int entry_index;  // used in purge_logs(), calculatd in find_log_pos().
+  int encrypted_header_size;
   LOG_INFO()
       : index_file_offset(0),
         index_file_start_offset(0),
         pos(0),
         fatal(0),
-        entry_index(0) {
+        entry_index(0),
+        encrypted_header_size(0) {
     memset(log_file_name, 0, FN_REFLEN);
   }
 };
@@ -313,8 +322,11 @@ struct LOG_INFO {
   TODO use mmap instead of IO_CACHE for binlog
   (mmap+fsync is two times faster than write+fsync)
 */
-
 class MYSQL_BIN_LOG : public TC_LOG {
+ public:
+  class Binlog_ofile;
+
+ private:
   enum enum_log_state { LOG_OPENED, LOG_CLOSED, LOG_TO_BE_OPENED };
 
   /* LOCK_log is inited by init_pthread_objects() */
@@ -323,8 +335,7 @@ class MYSQL_BIN_LOG : public TC_LOG {
   char log_file_name[FN_REFLEN];
   char db[NAME_LEN + 1];
   bool write_error, inited;
-  IO_CACHE log_file;
-  const enum cache_type io_cache_type;
+  Binlog_ofile *m_binlog_file;
 
   /** Instrumentation key to use for file io in @c log_file */
   PSI_file_key m_log_file_key;
@@ -400,7 +411,6 @@ class MYSQL_BIN_LOG : public TC_LOG {
 
   // current file sequence number for load data infile binary logging
   uint file_id;
-  uint open_count;  // For replication
 
   /* pointer to the sync period variable, for binlog this will be
      sync_binlog_period, for relay log this will be
@@ -458,7 +468,7 @@ class MYSQL_BIN_LOG : public TC_LOG {
 
   /* This is relay log */
   bool is_relay_log;
-  ulong signal_cnt;          // update of the counter is checked by heartbeat
+
   uint8 checksum_alg_reset;  // to contain a new value when binlog is rotated
   /*
     Holds the last seen in Relay-Log FD's checksum alg value.
@@ -495,12 +505,8 @@ class MYSQL_BIN_LOG : public TC_LOG {
   */
   binary_log::enum_binlog_checksum_alg relay_log_checksum_alg;
 
-  MYSQL_BIN_LOG(uint *sync_period, enum cache_type io_cache_type_arg);
-  /*
-    note that there's no destructor ~MYSQL_BIN_LOG() !
-    The reason is that we don't want it to be automatically called
-    on exit() - but only during the correct shutdown process
-  */
+  MYSQL_BIN_LOG(uint *sync_period);
+  ~MYSQL_BIN_LOG();
 
   void set_psi_keys(
       PSI_mutex_key key_LOCK_index, PSI_mutex_key key_LOCK_commit,
@@ -624,6 +630,17 @@ class MYSQL_BIN_LOG : public TC_LOG {
     @retval nonzero Error
   */
   int gtid_end_transaction(THD *thd);
+  /**
+    Re-encrypt previous existent binary/relay logs as below.
+      Starting from the next to last entry on the index file, iterating
+      down to the first one:
+        - If the file is encrypted, re-encrypt it. Otherwise, skip it.
+        - If failed to open the file, report an error.
+
+    @retval False Success
+    @retval True  Error
+  */
+  bool reencrypt_logs();
 
  private:
   std::atomic<enum_log_state> atomic_log_state{LOG_CLOSED};
@@ -644,6 +661,9 @@ class MYSQL_BIN_LOG : public TC_LOG {
                                 THD **out_queue_var);
   int ordered_commit(THD *thd, bool all, bool skip_commit = false);
   void handle_binlog_flush_or_sync_error(THD *thd, bool need_lock_log);
+  bool do_write_cache(Binlog_cache_storage *cache,
+                      class Binlog_event_writer *writer);
+  void report_binlog_write_error();
 
  public:
   int open_binlog(const char *opt_name);
@@ -652,8 +672,6 @@ class MYSQL_BIN_LOG : public TC_LOG {
   int rollback(THD *thd, bool all);
   bool truncate_relaylog_file(Master_info *mi, my_off_t valid_pos);
   int prepare(THD *thd, bool all);
-  int recover(IO_CACHE *log, Format_description_log_event *fdle,
-              my_off_t *valid_pos);
 #if defined(MYSQL_SERVER)
 
   void update_thd_next_event_pos(THD *thd);
@@ -663,44 +681,18 @@ class MYSQL_BIN_LOG : public TC_LOG {
 #endif /* defined(MYSQL_SERVER) */
   void add_bytes_written(ulonglong inc) { bytes_written += inc; }
   void reset_bytes_written() { bytes_written = 0; }
-  void harvest_bytes_written(ulonglong *counter) {
-#ifndef DBUG_OFF
-    char buf1[22], buf2[22];
-#endif
-    DBUG_ENTER("harvest_bytes_written");
-    (*counter) += bytes_written;
-    DBUG_PRINT("info", ("counter: %s  bytes_written: %s", llstr(*counter, buf1),
-                        llstr(bytes_written, buf2)));
-    bytes_written = 0;
-    DBUG_VOID_RETURN;
-  }
+  void harvest_bytes_written(Relay_log_info *rli, bool need_log_space_lock);
   void set_max_size(ulong max_size_arg);
   void signal_update() {
-    DBUG_ENTER("MYSQL_BIN_LOG::signal_update");
-    signal_cnt++;
+    DBUG_TRACE;
     mysql_cond_broadcast(&update_cond);
-    DBUG_VOID_RETURN;
+    return;
   }
 
-  void update_binlog_end_pos(bool need_lock = true) {
-    if (need_lock)
-      lock_binlog_end_pos();
-    else
-      mysql_mutex_assert_owner(&LOCK_binlog_end_pos);
-    atomic_binlog_end_pos = my_b_tell(&log_file);
-    signal_update();
-    if (need_lock) unlock_binlog_end_pos();
-  }
-
-  void update_binlog_end_pos(my_off_t pos) {
-    lock_binlog_end_pos();
-    if (pos > atomic_binlog_end_pos) atomic_binlog_end_pos = pos;
-    signal_update();
-    unlock_binlog_end_pos();
-  }
+  void update_binlog_end_pos(bool need_lock = true);
+  void update_binlog_end_pos(const char *file, my_off_t pos);
 
   int wait_for_update(const struct timespec *timeout);
-  bool do_write_cache(IO_CACHE *cache, class Binlog_event_writer *writer);
 
  public:
   void init_pthread_objects();
@@ -766,13 +758,15 @@ class MYSQL_BIN_LOG : public TC_LOG {
   */
   bool write_dml_directly(THD *thd, const char *stmt, size_t stmt_len);
 
-  void set_write_error(THD *thd, bool is_transactional);
-  bool check_write_error(THD *thd);
+  void report_cache_write_error(THD *thd, bool is_transactional);
+  bool check_write_error(const THD *thd);
   bool write_incident(THD *thd, bool need_lock_log, const char *err_msg,
                       bool do_flush_and_sync = true);
   bool write_incident(Incident_log_event *ev, THD *thd, bool need_lock_log,
                       const char *err_msg, bool do_flush_and_sync = true);
-
+  bool write_event_to_binlog(Log_event *ev);
+  bool write_event_to_binlog_and_flush(Log_event *ev);
+  bool write_event_to_binlog_and_sync(Log_event *ev);
   void start_union_events(THD *thd, query_id_t query_id_param);
   void stop_union_events(THD *thd);
   bool is_query_in_union(THD *thd, query_id_t query_id_param);
@@ -790,6 +784,8 @@ class MYSQL_BIN_LOG : public TC_LOG {
   int rotate(bool force_rotate, bool *check_purge);
   void purge();
   int rotate_and_purge(THD *thd, bool force_rotate);
+
+  bool flush();
   /**
      Flush binlog cache and synchronize to disk.
 
@@ -809,7 +805,6 @@ class MYSQL_BIN_LOG : public TC_LOG {
                  bool need_update_threads, ulonglong *decrease_log_space,
                  bool auto_purge);
   int purge_logs_before_date(time_t purge_time, bool auto_purge);
-  int purge_first_log(Relay_log_info *rli, bool included);
   int set_crash_safe_index_file_name(const char *base_file_name);
   int open_crash_safe_index_file();
   int close_crash_safe_index_file();
@@ -835,18 +830,30 @@ class MYSQL_BIN_LOG : public TC_LOG {
   int get_current_log(LOG_INFO *linfo, bool need_lock_log = true);
   int raw_get_current_log(LOG_INFO *linfo);
   uint next_file_id();
+  /**
+    Retrieves the contents of the index file associated with this log object
+    into an `std::list<std::string>` object. The order held by the index file is
+    kept.
+
+    @param need_lock_index whether or not the lock over the index file should be
+                           acquired inside the function.
+
+    @return a pair: a function status code; a list of `std::string` objects with
+            the content of the log index file.
+  */
+  std::pair<int, std::list<std::string>> get_log_index(
+      bool need_lock_index = true);
   inline char *get_index_fname() { return index_file_name; }
   inline char *get_log_fname() { return log_file_name; }
-  inline char *get_name() { return name; }
+  const char *get_name() const { return name; }
   inline mysql_mutex_t *get_log_lock() { return &LOCK_log; }
   inline mysql_cond_t *get_log_cond() { return &update_cond; }
-  inline IO_CACHE *get_log_file() { return &log_file; }
+  inline Binlog_ofile *get_binlog_file() { return m_binlog_file; }
 
   inline void lock_index() { mysql_mutex_lock(&LOCK_index); }
   inline void unlock_index() { mysql_mutex_unlock(&LOCK_index); }
   inline IO_CACHE *get_index_file() { return &index_file; }
-  inline uint32 get_open_count() { return open_count; }
-
+  static const int MAX_RETRIES_FOR_DELETE_RENAME_FAILURE = 5;
   /*
     It is called by the threads (e.g. dump thread, applier thread) which want
     to read hot log without LOCK_log protection.
@@ -879,7 +886,6 @@ class MYSQL_BIN_LOG : public TC_LOG {
     True while rotating binlog, which is caused by logging Incident_log_event.
   */
   bool is_rotating_caused_by_incident;
-  static const int MAX_RETRIES_BY_OOM = 10;
 };
 
 struct LOAD_FILE_INFO {
@@ -889,6 +895,26 @@ struct LOAD_FILE_INFO {
 };
 
 extern MYSQL_PLUGIN_IMPORT MYSQL_BIN_LOG mysql_bin_log;
+
+/**
+  Check if the the transaction is empty.
+
+  @param thd The client thread that executed the current statement.
+
+  @retval true No changes found in any storage engine
+  @retval false Otherwise.
+
+**/
+bool is_transaction_empty(THD *thd);
+/**
+  Check if the transaction has no rw flag set for any of the storage engines.
+
+  @param thd The client thread that executed the current statement.
+  @param trx_scope The transaction scope to look into.
+
+  @retval the number of engines which have actual changes.
+ */
+int check_trx_rw_engines(THD *thd, Transaction_ctx::enum_trx_scope trx_scope);
 
 /**
   Check if at least one of transacaction and statement binlog caches contains
@@ -912,12 +938,6 @@ bool stmt_cannot_safely_rollback(const THD *thd);
 
 int log_loaded_block(IO_CACHE *file);
 
-/**
-  Open a single binary log file for reading.
-*/
-File open_binlog_file(IO_CACHE *log, const char *log_file_name,
-                      const char **errmsg);
-int check_binlog_magic(IO_CACHE *log, const char **errmsg);
 bool purge_master_logs(THD *thd, const char *to_log);
 bool purge_master_logs_before_date(THD *thd, time_t purge_time);
 bool show_binlog_events(THD *thd, MYSQL_BIN_LOG *binary_log);
@@ -926,7 +946,7 @@ void check_binlog_cache_size(THD *thd);
 void check_binlog_stmt_cache_size(THD *thd);
 bool binlog_enabled();
 void register_binlog_handler(THD *thd, bool trx);
-int query_error_code(THD *thd, bool not_killed);
+int query_error_code(const THD *thd, bool not_killed);
 
 extern const char *log_bin_index;
 extern const char *log_bin_basename;

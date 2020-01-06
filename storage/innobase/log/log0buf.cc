@@ -1,18 +1,26 @@
 /*****************************************************************************
 
-Copyright (c) 1995, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1995, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; version 2 of the License.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License, version 2.0,
+as published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is also distributed with certain software (including
+but not limited to OpenSSL) that is licensed under separate terms,
+as designated in a particular file or component or in included license
+documentation.  The authors of MySQL hereby grant you an additional
+permission to link the program and your derivative works with the
+separately licensed software that they have included with MySQL.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License, version 2.0, for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 *****************************************************************************/
 
@@ -35,7 +43,8 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "arch0arch.h"
 #include "log0log.h"
-#include "log0recv.h"  /* recv_recovery_is_on() */
+#include "log0recv.h" /* recv_recovery_is_on() */
+#include "log0test.h"
 #include "srv0start.h" /* SRV_SHUTDOWN_FLUSH_PHASE */
 
 /**************************************************/ /**
@@ -450,7 +459,7 @@ There is a special case - if it turned out, that log buffer is too small for
 the reserved range of lsn values, it resizes the log buffer.
 
 It's used during reservation of lsn values, when the reserved handle.end_sn is
-greater than log.sn_limit_for_end.
+greater than log.buf_limit_sn.
 
 @param[in,out]	log		redo log
 @param[in]	handle		handle for the reservation */
@@ -614,18 +623,18 @@ static void log_wait_for_space_after_reserving(log_t &log,
   log_wait_for_space_in_log_buf(log, end_sn);
 }
 
-void log_wait_for_space_in_log_file(log_t &log, sn_t end_sn) {
-  auto stop_condition = [&log, end_sn](bool) {
+void log_update_buf_limit(log_t &log) {
+  log_update_buf_limit(log, log.write_lsn.load());
+}
 
-    const sn_t chkp_sn =
-        log_translate_lsn_to_sn(log.last_checkpoint_lsn.load());
+void log_update_buf_limit(log_t &log, lsn_t write_lsn) {
+  ut_ad(write_lsn <= log.write_lsn.load());
 
-    return (end_sn <= chkp_sn + log.sn_capacity);
-  };
+  const sn_t limit_for_end = log_translate_lsn_to_sn(write_lsn) +
+                             log.buf_size_sn.load() -
+                             2 * OS_FILE_LOG_BLOCK_SIZE;
 
-  const auto wait_stats = ut_wait_for(0, 100, stop_condition);
-
-  MONITOR_INC_WAIT_STATS(MONITOR_LOG_ON_FILE_SPACE_, wait_stats);
+  log.buf_limit_sn.store(limit_for_end);
 }
 
 void log_wait_for_space_in_log_buf(log_t &log, sn_t end_sn) {
@@ -670,7 +679,9 @@ Log_handle log_buffer_reserve(log_t &log, size_t len) {
   to reflect mtr commit rate. */
   srv_stats.log_write_requests.inc();
 
-  ut_a(srv_shutdown_state <= SRV_SHUTDOWN_FLUSH_PHASE);
+  ut_ad(srv_shutdown_state.load() <= SRV_SHUTDOWN_FLUSH_PHASE ||
+        srv_shutdown_state.load() == SRV_SHUTDOWN_EXIT_THREADS);
+
   ut_a(len > 0);
 
   /* Reserve space in sequence of data bytes: */
@@ -690,13 +701,13 @@ Log_handle log_buffer_reserve(log_t &log, size_t len) {
   /* Headers in redo blocks are not calculated to sn values: */
   const sn_t end_sn = start_sn + len;
 
-  LOG_SYNC_POINT("log_buffer_reserve_before_sn_limit_for_end");
+  LOG_SYNC_POINT("log_buffer_reserve_before_buf_limit_sn");
 
   /* Translate sn to lsn (which includes also headers in redo blocks): */
   handle.start_lsn = log_translate_sn_to_lsn(start_sn);
   handle.end_lsn = log_translate_sn_to_lsn(end_sn);
 
-  if (unlikely(end_sn > log.sn_limit_for_end.load())) {
+  if (unlikely(end_sn > log.buf_limit_sn.load())) {
     log_wait_for_space_after_reserving(log, handle);
   }
 
@@ -874,6 +885,7 @@ void log_buffer_write_completed(log_t &log, const Log_handle &handle,
   uint64_t wait_loops = 0;
 
   while (!log.recent_written.has_space(start_lsn)) {
+    os_event_set(log.writer_event);
     ++wait_loops;
     os_thread_sleep(20);
   }
@@ -903,7 +915,7 @@ void log_buffer_write_completed(log_t &log, const Log_handle &handle,
   log.recent_written.add_link(start_lsn, end_lsn);
 }
 
-void log_wait_for_space_in_log_recent_closed(const log_t &log, lsn_t lsn) {
+void log_wait_for_space_in_log_recent_closed(log_t &log, lsn_t lsn) {
   ut_a(log_lsn_validate(lsn));
 
   ut_ad(lsn >= log_buffer_dirty_pages_added_up_to_lsn(log));
@@ -911,6 +923,7 @@ void log_wait_for_space_in_log_recent_closed(const log_t &log, lsn_t lsn) {
   uint64_t wait_loops = 0;
 
   while (!log.recent_closed.has_space(lsn)) {
+    os_event_set(log.closer_event);
     ++wait_loops;
     os_thread_sleep(20);
   }
@@ -985,6 +998,8 @@ void log_buffer_flush_to_disk(log_t &log, bool sync) {
 
 void log_buffer_get_last_block(log_t &log, lsn_t &last_lsn, byte *last_block,
                                uint32_t &block_len) {
+  ut_ad(last_block != nullptr);
+
   /* We acquire x-lock for the log buffer to prevent:
           a) resize of the log buffer
           b) overwrite of the fragment which we are copying */
@@ -996,12 +1011,6 @@ void log_buffer_get_last_block(log_t &log, lsn_t &last_lsn, byte *last_block,
   have finished writing to the log buffer. */
 
   last_lsn = log_get_lsn(log);
-
-  if (last_block == nullptr) {
-    block_len = 0;
-    log_buffer_x_lock_exit(log);
-    return;
-  }
 
   byte *buf = log.buf;
 
@@ -1018,13 +1027,9 @@ void log_buffer_get_last_block(log_t &log, lsn_t &last_lsn, byte *last_block,
 
   ut_ad(data_len >= LOG_BLOCK_HDR_SIZE);
 
-  if (data_len <= LOG_BLOCK_HDR_SIZE) {
-    block_len = 0;
-    log_buffer_x_lock_exit(log);
-    return;
-  }
-
-  /* The next_checkpoint_no is protected by the x-lock too. */
+  /* The next_checkpoint_no might become increased just afterwards,
+  but it would correspond to the same state of the copied block,
+  just a different checkpoint_lsn within the block. */
 
   const auto checkpoint_no = log.next_checkpoint_no.load();
 
@@ -1075,7 +1080,6 @@ bool log_advance_ready_for_write_lsn(log_t &log) {
   ut_a(write_max_size > 0);
 
   auto stop_condition = [&](lsn_t prev_lsn, lsn_t next_lsn) {
-
     ut_a(log_lsn_validate(prev_lsn));
     ut_a(log_lsn_validate(next_lsn));
 
@@ -1084,7 +1088,7 @@ bool log_advance_ready_for_write_lsn(log_t &log) {
 
     LOG_SYNC_POINT("log_advance_ready_for_write_before_reclaim");
 
-    return (next_lsn - write_lsn >= write_max_size);
+    return (prev_lsn - write_lsn >= write_max_size);
   };
 
   const lsn_t previous_lsn = log_buffer_ready_for_write_lsn(log);
@@ -1130,7 +1134,6 @@ bool log_advance_dirty_pages_added_up_to_lsn(log_t &log) {
   ut_d(log_closer_thread_active_validate(log));
 
   auto stop_condition = [&](lsn_t prev_lsn, lsn_t next_lsn) {
-
     ut_a(log_lsn_validate(prev_lsn));
     ut_a(log_lsn_validate(next_lsn));
 
@@ -1167,6 +1170,6 @@ bool log_advance_dirty_pages_added_up_to_lsn(log_t &log) {
   }
 }
 
-  /* @} */
+/* @} */
 
 #endif /* !UNIV_HOTBACKUP */

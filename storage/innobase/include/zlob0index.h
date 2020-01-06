@@ -419,7 +419,7 @@ struct z_index_entry_t {
   }
 
   /** Get the LOB version. */
-  ulint get_lob_version() const {
+  uint32_t get_lob_version() const {
     return (mach_read_from_4(m_node + OFFSET_LOB_VERSION));
   }
 
@@ -526,6 +526,6 @@ inline std::ostream &operator<<(std::ostream &out, const z_index_entry_t &obj) {
   return (obj.print(out));
 }
 
-}; /* namespace lob */
+} /* namespace lob */
 
 #endif /* zlob0index_h */

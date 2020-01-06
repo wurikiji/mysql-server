@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <cmath>
 
+#include "my_byteorder.h"
 #include "my_compiler.h"
 #include "my_dbug.h"
 #include "my_inttypes.h"
@@ -46,14 +47,14 @@ uint sp_make_key(MI_INFO *info, uint keynr, uchar *key, const uchar *record,
   HA_KEYSEG *keyseg;
   MI_KEYDEF *keyinfo = &info->s->keyinfo[keynr];
   uint len = 0;
-  uchar *pos;
+  const uchar *pos;
   uint dlen;
   uchar *dptr;
   double mbr[SPDIMS * 2];
   uint i;
 
   keyseg = &keyinfo->seg[-1];
-  pos = (uchar *)record + keyseg->start;
+  pos = record + keyseg->start;
 
   dlen = _mi_calc_blob_length(keyseg->bit_start, pos);
   memcpy(&dptr, pos + keyseg->bit_start, sizeof(char *));

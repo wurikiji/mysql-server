@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -35,8 +35,8 @@ namespace copy_info_unittest {
 using my_testing::Mock_error_handler;
 using my_testing::Server_initializer;
 
-using ::testing::StrictMock;
 using ::testing::_;
+using ::testing::StrictMock;
 
 /*
   Tests for the functionality of the COPY_INFO class. We test all public
@@ -249,11 +249,6 @@ TEST_F(CopyInfoTest, getFunctionDefaultColumns) {
 }
 
 /*
-  HAVE_UBSAN: undefined behaviour in gmock.
-  runtime error: member call on null pointer of type 'const struct ResultHolder'
- */
-#if !defined(HAVE_UBSAN)
-/*
   Here we test that calling COPY_INFO::set_function_defaults() indeed causes
   store_timestamp to be called on the columns that are not on the list of
   assigned_columns. We seize the opportunity to test
@@ -265,9 +260,9 @@ TEST_F(CopyInfoTest, setFunctionDefaults) {
   StrictMock<Mock_field> b(Field::DEFAULT_NOW | Field::ON_UPDATE_NOW);
   StrictMock<Mock_field> c(Field::DEFAULT_NOW | Field::ON_UPDATE_NOW);
 
-  EXPECT_TRUE(a.has_update_default_function());
-  EXPECT_TRUE(b.has_update_default_function());
-  EXPECT_TRUE(c.has_update_default_function());
+  EXPECT_TRUE(a.has_update_default_datetime_value_expression());
+  EXPECT_TRUE(b.has_update_default_datetime_value_expression());
+  EXPECT_TRUE(c.has_update_default_datetime_value_expression());
 
   Fake_TABLE table(&a, &b, &c);
 
@@ -293,6 +288,5 @@ TEST_F(CopyInfoTest, setFunctionDefaults) {
   EXPECT_CALL(c, store_timestamp(_)).Times(0);
   insert.set_function_defaults(&table);
 }
-#endif  // HAVE_UBSAN
 
 }  // namespace copy_info_unittest

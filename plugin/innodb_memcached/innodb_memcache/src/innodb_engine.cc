@@ -1,6 +1,6 @@
 /***********************************************************************
 
-Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
@@ -52,6 +52,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 #include "innodb_cb_api.h"
 #include "innodb_engine.h"
 #include "innodb_engine_private.h"
+#include "my_compiler.h"
 #include "my_thread.h"
 
 /** Define also present in daemon/memcached.h */
@@ -85,7 +86,7 @@ static bool bk_thd_exited = true;
 /** The SDI buffer length for storing list of SDI keys. Example output
 looks like "1:2|2:2|3:4|..". So SDI list of key retrieval has this limit of
 characters from memcached plugin. This is sufficent for testing. */
-const uint32_t SDI_LIST_BUF_MAX_LEN = 10000;
+const uint32_t SDI_LIST_BUF_MAX_LEN MY_ATTRIBUTE((unused)) = 10000;
 
 /** Tells whether all connections need to release MDL locks */
 bool release_mdl_lock = false;
@@ -505,6 +506,11 @@ static ENGINE_ERROR_CODE innodb_initialize(
                             engine */
     const char *config_str) /*!< in: configure string */
 {
+  /* In case you want to make sure that your MTR is robust in case
+  of longer plugin initialization, consider adding
+     sleep(10);
+  here - I've found lots of errors this way, hopefuly all are fixed.*/
+
   ENGINE_ERROR_CODE return_status = ENGINE_SUCCESS;
   struct innodb_engine *innodb_eng = innodb_handle(handle);
   struct default_engine *def_eng = default_handle(innodb_eng);
@@ -625,7 +631,7 @@ static void innodb_conn_clean_data(
   }
 
   if (conn_data->crsr_trx) {
-    ib_err_t err;
+    ib_err_t err MY_ATTRIBUTE((unused));
     innodb_cb_trx_commit(conn_data->crsr_trx);
     err = ib_cb_trx_release(conn_data->crsr_trx);
     assert(err == DB_SUCCESS);
@@ -2024,7 +2030,7 @@ search_done:
   if (result->extra_col_value) {
     int i;
     char *c_value;
-    char *value_end;
+    char *value_end MY_ATTRIBUTE((unused));
     unsigned int total_len = 0;
     char int_buf[MAX_INT_CHAR_LEN];
     ib_ulint_t new_len;
@@ -2618,7 +2624,7 @@ static bool innodb_sdi_remove(struct innodb_engine *innodb_eng,
             table_name);
     err = DB_ERROR;
   } else {
-    err = ib_cb_sdi_delete(crsr, (const char *)key, trx);
+    err = ib_cb_memc_sdi_delete(crsr, (const char *)key);
   }
 
   ib_cb_cursor_close(crsr);
@@ -2684,7 +2690,7 @@ static bool innodb_sdi_get(innodb_conn_data_t *conn_data,
   uint64_t ret_len;
   if (check_key_name_for_sdi(key, nkey, SDI_CREATE_PREFIX)) {
     /* Create SDI Index in the tablespace */
-    err = ib_cb_sdi_create(crsr);
+    err = ib_cb_memc_sdi_create(crsr);
     ib_cb_cursor_close(crsr);
     *err_ret = ENGINE_KEY_ENOENT;
     return (true);
@@ -2692,7 +2698,7 @@ static bool innodb_sdi_get(innodb_conn_data_t *conn_data,
 
   if (check_key_name_for_sdi(key, nkey, SDI_DROP_PREFIX)) {
     /* Create SDI Index in the tablespace */
-    err = ib_cb_sdi_drop(crsr);
+    err = ib_cb_memc_sdi_drop(crsr);
     ib_cb_cursor_close(crsr);
     *err_ret = ENGINE_KEY_ENOENT;
     return (true);
@@ -2704,8 +2710,9 @@ static bool innodb_sdi_get(innodb_conn_data_t *conn_data,
     }
     conn_data->sdi_buf = malloc(SDI_LIST_BUF_MAX_LEN);
 
-    err = ib_cb_sdi_get_keys(crsr, (const char *)key,
-                             (char *)conn_data->sdi_buf, SDI_LIST_BUF_MAX_LEN);
+    err = ib_cb_memc_sdi_get_keys(crsr, (const char *)key,
+                                  (char *)conn_data->sdi_buf,
+                                  SDI_LIST_BUF_MAX_LEN);
     ret_len = strlen((char *)conn_data->sdi_buf);
   } else {
     /* Allocate memory of 64 KB, assuming SDI will fit into
@@ -2724,8 +2731,8 @@ static bool innodb_sdi_get(innodb_conn_data_t *conn_data,
 
     conn_data->sdi_buf = new_mem;
     ret_len = mem_size;
-    err = ib_cb_sdi_get(crsr, (const char *)key, conn_data->sdi_buf, &ret_len,
-                        trx);
+    err = ib_cb_memc_sdi_get(crsr, (const char *)key, conn_data->sdi_buf,
+                             &ret_len);
 
     if (err == DB_SUCCESS) {
       assert(ret_len < mem_size);
@@ -2742,8 +2749,8 @@ static bool innodb_sdi_get(innodb_conn_data_t *conn_data,
       }
 
       conn_data->sdi_buf = new_mem;
-      err = ib_cb_sdi_get(crsr, (const char *)key, conn_data->sdi_buf, &ret_len,
-                          trx);
+      err = ib_cb_memc_sdi_get(crsr, (const char *)key, conn_data->sdi_buf,
+                               &ret_len);
     }
   }
 
@@ -2819,7 +2826,7 @@ static bool innodb_sdi_store(struct innodb_engine *innodb_eng,
     assert(nkey < 100);
     strncpy(key, value, nkey);
     key[nkey] = 0;
-    err = ib_cb_sdi_set(crsr, key, sdi, &sdi_len, trx);
+    err = ib_cb_memc_sdi_set(crsr, key, sdi, &sdi_len);
   }
 
   ib_cb_cursor_close(crsr);

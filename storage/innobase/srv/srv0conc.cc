@@ -50,7 +50,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "dict0dict.h"
 #include "ha_prototypes.h"
-#include "my_inttypes.h"
 #include "row0mysql.h"
 #include "srv0srv.h"
 #include "trx0trx.h"
@@ -227,9 +226,8 @@ void srv_conc_enter_innodb(row_prebuilt_t *prebuilt) {
 
 /** This lets a thread enter InnoDB regardless of the number of threads inside
  InnoDB. This must be called when a thread ends a lock wait. */
-void srv_conc_force_enter_innodb(
-    trx_t *trx) /*!< in: transaction object associated with the
-                thread */
+void srv_conc_force_enter_innodb(trx_t *trx) /*!< in: transaction object
+                                             associated with the thread */
 {
 #ifdef UNIV_DEBUG
   {
@@ -253,9 +251,8 @@ void srv_conc_force_enter_innodb(
 
 /** This must be called when a thread exits InnoDB in a lock wait or at the
  end of an SQL statement. */
-void srv_conc_force_exit_innodb(
-    trx_t *trx) /*!< in: transaction object associated with the
-                thread */
+void srv_conc_force_exit_innodb(trx_t *trx) /*!< in: transaction object
+                                            associated with the thread */
 {
   if ((trx->mysql_thd != NULL &&
        thd_is_replication_slave_thread(trx->mysql_thd)) ||

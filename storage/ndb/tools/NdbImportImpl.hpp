@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -140,6 +140,7 @@ public:
                 const char* table,
                 uint& tabid,
                 Error& error);
+  int remove_table(uint table_id);
 
   // files
 
@@ -271,6 +272,7 @@ public:
     // add and set table
     int add_table(const char* database, const char* table, uint& tabid);
     void set_table(uint tabid);
+    int remove_table(uint table_id);
     // start teams and run the job until done
     void do_start();
     void start_diag_team();
@@ -303,8 +305,15 @@ public:
     RowList* m_rows_exec[g_max_ndb_nodes];
     RowList* m_rows_reject;
     RowMap m_rowmap_in;         // old rowmap on resume
-    Range m_range_in;           // first range on resume
     RowMap m_rowmap_out;
+    // total from previous runs (if --resume)
+    uint64 m_old_rows;
+    uint64 m_old_reject;
+    uint64 m_old_runtime;
+    // counts from this run only
+    uint64 m_new_rows;
+    uint64 m_new_reject;
+    uint64 m_new_runtime;
     mutable Timer m_timer;
     Error m_error;
     bool has_error() const {

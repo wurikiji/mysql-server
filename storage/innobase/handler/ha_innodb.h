@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2000, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2000, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -30,11 +30,9 @@ this program; if not, write to the Free Software Foundation, Inc.,
 /* The InnoDB handler: the interface between MySQL and InnoDB. */
 
 #include <sys/types.h>
-
 #include "handler.h"
-#include "my_compiler.h"
 #include "my_dbug.h"
-#include "my_inttypes.h"
+#include "row0pread-adapter.h"
 #include "trx0trx.h"
 
 /** "GEN_CLUST_INDEX" is the name reserved for InnoDB default
@@ -80,18 +78,18 @@ class Dictionary_client;
 class ha_innobase : public handler {
  public:
   ha_innobase(handlerton *hton, TABLE_SHARE *table_arg);
-  ~ha_innobase();
+  ~ha_innobase() override;
 
-  row_type get_real_row_type(const HA_CREATE_INFO *create_info) const;
+  row_type get_real_row_type(const HA_CREATE_INFO *create_info) const override;
 
-  const char *table_type() const;
+  const char *table_type() const override;
 
-  enum ha_key_alg get_default_index_algorithm() const {
+  enum ha_key_alg get_default_index_algorithm() const override {
     return HA_KEY_ALG_BTREE;
   }
 
   /** Check if SE supports specific key algorithm. */
-  bool is_index_algorithm_supported(enum ha_key_alg key_alg) const {
+  bool is_index_algorithm_supported(enum ha_key_alg key_alg) const override {
     /* This method is never used for FULLTEXT or SPATIAL keys.
     We rely on handler::ha_table_flags() to check if such keys
     are supported. */
@@ -99,17 +97,19 @@ class ha_innobase : public handler {
     return key_alg == HA_KEY_ALG_BTREE;
   }
 
-  Table_flags table_flags() const;
+  Table_flags table_flags() const override;
 
-  ulong index_flags(uint idx, uint part, bool all_parts) const;
+  ulong index_flags(uint idx, uint part, bool all_parts) const override;
 
-  uint max_supported_keys() const;
+  uint max_supported_keys() const override;
 
-  uint max_supported_key_length() const;
+  uint max_supported_key_length() const override;
 
-  uint max_supported_key_part_length(HA_CREATE_INFO *create_info) const;
+  uint max_supported_key_part_length(
+      HA_CREATE_INFO *create_info) const override;
 
-  int open(const char *name, int, uint open_flags, const dd::Table *table_def);
+  int open(const char *name, int, uint open_flags,
+           const dd::Table *table_def) override;
 
   /** Opens dictionary table object using table name. For partition, we need to
   try alternative lower/upper case names to support moving data files across
@@ -123,89 +123,95 @@ class ha_innobase : public handler {
                                        const char *norm_name, bool is_partition,
                                        dict_err_ignore_t ignore_err);
 
-  handler *clone(const char *name, MEM_ROOT *mem_root);
+  handler *clone(const char *name, MEM_ROOT *mem_root) override;
 
-  int close(void);
+  int close(void) override;
 
-  double scan_time();
+  double scan_time() override;
 
-  double read_time(uint index, uint ranges, ha_rows rows);
+  double read_time(uint index, uint ranges, ha_rows rows) override;
 
-  longlong get_memory_buffer_size() const;
+  longlong get_memory_buffer_size() const override;
 
-  int write_row(uchar *buf);
+  int write_row(uchar *buf) override;
 
-  int update_row(const uchar *old_data, uchar *new_data);
+  int update_row(const uchar *old_data, uchar *new_data) override;
 
-  int delete_row(const uchar *buf);
+  int delete_row(const uchar *buf) override;
 
   /** Delete all rows from the table.
   @retval HA_ERR_WRONG_COMMAND if the table is transactional
   @retval 0 on success */
-  int delete_all_rows();
+  int delete_all_rows() override;
 
-  bool was_semi_consistent_read();
+  bool was_semi_consistent_read() override;
 
-  void try_semi_consistent_read(bool yes);
+  void try_semi_consistent_read(bool yes) override;
 
-  void unlock_row();
+  void unlock_row() override;
 
-  int index_init(uint index, bool sorted);
+  int index_init(uint index, bool sorted) override;
 
-  int index_end();
+  int index_end() override;
 
   int index_read(uchar *buf, const uchar *key, uint key_len,
-                 ha_rkey_function find_flag);
+                 ha_rkey_function find_flag) override;
 
-  int index_read_last(uchar *buf, const uchar *key, uint key_len);
+  int index_read_last(uchar *buf, const uchar *key, uint key_len) override;
 
-  int index_next(uchar *buf);
+  int index_next(uchar *buf) override;
 
-  int index_next_same(uchar *buf, const uchar *key, uint keylen);
+  int index_next_same(uchar *buf, const uchar *key, uint keylen) override;
 
-  int index_prev(uchar *buf);
+  int index_prev(uchar *buf) override;
 
-  int index_first(uchar *buf);
+  int index_first(uchar *buf) override;
 
-  int index_last(uchar *buf);
+  int index_last(uchar *buf) override;
 
-  int rnd_init(bool scan);
+  int read_range_first(const key_range *start_key, const key_range *end_key,
+                       bool eq_range_arg, bool sorted) override;
 
-  int rnd_end();
+  int read_range_next() override;
 
-  int rnd_next(uchar *buf);
+  int rnd_init(bool scan) override;
 
-  int rnd_pos(uchar *buf, uchar *pos);
+  int rnd_end() override;
 
-  int ft_init();
+  int rnd_next(uchar *buf) override;
+
+  int rnd_pos(uchar *buf, uchar *pos) override;
+
+  int ft_init() override;
 
   void ft_end();
 
-  FT_INFO *ft_init_ext(uint flags, uint inx, String *key);
+  FT_INFO *ft_init_ext(uint flags, uint inx, String *key) override;
 
-  FT_INFO *ft_init_ext_with_hints(uint inx, String *key, Ft_hints *hints);
+  FT_INFO *ft_init_ext_with_hints(uint inx, String *key,
+                                  Ft_hints *hints) override;
 
-  int ft_read(uchar *buf);
+  int ft_read(uchar *buf) override;
 
-  void position(const uchar *record);
+  void position(const uchar *record) override;
 
-  int info(uint);
+  int info(uint) override;
 
-  int enable_indexes(uint mode);
+  int enable_indexes(uint mode) override;
 
-  int disable_indexes(uint mode);
+  int disable_indexes(uint mode) override;
 
-  int analyze(THD *thd, HA_CHECK_OPT *check_opt);
+  int analyze(THD *thd, HA_CHECK_OPT *check_opt) override;
 
-  int optimize(THD *thd, HA_CHECK_OPT *check_opt);
+  int optimize(THD *thd, HA_CHECK_OPT *check_opt) override;
 
-  int discard_or_import_tablespace(bool discard, dd::Table *table_def);
+  int discard_or_import_tablespace(bool discard, dd::Table *table_def) override;
 
-  int extra(ha_extra_function operation);
+  int extra(ha_extra_function operation) override;
 
-  int reset();
+  int reset() override;
 
-  int external_lock(THD *thd, int lock_type);
+  int external_lock(THD *thd, int lock_type) override;
 
   /** MySQL calls this function at the start of each SQL statement
   inside LOCK TABLES. Inside LOCK TABLES the "::external_lock" method
@@ -220,24 +226,30 @@ class ha_innobase : public handler {
   @param[in]	thd		handle to the user thread
   @param[in]	lock_type	lock type
   @return 0 or error code */
-  int start_stmt(THD *thd, thr_lock_type lock_type);
+  int start_stmt(THD *thd, thr_lock_type lock_type) override;
 
   void position(uchar *record);
 
-  virtual int records(ha_rows *num_rows);
+  int records(ha_rows *num_rows) override;
 
-  ha_rows records_in_range(uint inx, key_range *min_key, key_range *max_key);
+  int records_from_index(ha_rows *num_rows, uint) override {
+    /* Force use of cluster index until we implement sec index parallel scan. */
+    return ha_innobase::records(num_rows);
+  }
 
-  ha_rows estimate_rows_upper_bound();
+  ha_rows records_in_range(uint inx, key_range *min_key,
+                           key_range *max_key) override;
 
-  void update_create_info(HA_CREATE_INFO *create_info);
+  ha_rows estimate_rows_upper_bound() override;
+
+  void update_create_info(HA_CREATE_INFO *create_info) override;
 
   /** Get storage-engine private data for a data dictionary table.
   @param[in,out]	dd_table	data dictionary table definition
   @param		reset		reset counters
   @retval		true		an error occurred
   @retval		false		success */
-  bool get_se_private_data(dd::Table *dd_table, bool reset);
+  bool get_se_private_data(dd::Table *dd_table, bool reset) override;
 
   /** Add hidden columns and indexes to an InnoDB table definition.
   @param[in,out]	dd_table	data dictionary cache object
@@ -245,7 +257,7 @@ class ha_innobase : public handler {
   @retval	0 on success */
   int get_extra_columns_and_keys(const HA_CREATE_INFO *,
                                  const List<Create_field> *, const KEY *, uint,
-                                 dd::Table *dd_table);
+                                 dd::Table *dd_table) override;
 
   /** Set Engine specific data to dd::Table object for upgrade.
   @param[in,out]  thd		thread handle
@@ -254,7 +266,7 @@ class ha_innobase : public handler {
   @param[in,out]	dd_table	data dictionary cache object
   @return 0 on success, non-zero on failure */
   bool upgrade_table(THD *thd, const char *db_name, const char *table_name,
-                     dd::Table *dd_table);
+                     dd::Table *dd_table) override;
 
   /** Create an InnoDB table.
   @param[in]	name		table name in filename-safe encoding
@@ -266,7 +278,7 @@ class ha_innobase : public handler {
   @return error number
   @retval 0 on success */
   int create(const char *name, TABLE *form, HA_CREATE_INFO *create_info,
-             dd::Table *table_def);
+             dd::Table *table_def) override;
 
   /** Drop a table.
   @param[in]	name		table name
@@ -274,7 +286,7 @@ class ha_innobase : public handler {
   be dropped
   @return	error number
   @retval 0 on success */
-  int delete_table(const char *name, const dd::Table *table_def);
+  int delete_table(const char *name, const dd::Table *table_def) override;
 
  protected:
   /** Drop a table.
@@ -289,44 +301,44 @@ class ha_innobase : public handler {
 
  public:
   int rename_table(const char *from, const char *to,
-                   const dd::Table *from_table, dd::Table *to_table);
+                   const dd::Table *from_table, dd::Table *to_table) override;
 
-  int check(THD *thd, HA_CHECK_OPT *check_opt);
+  int check(THD *thd, HA_CHECK_OPT *check_opt) override;
 
-  char *get_foreign_key_create_info();
+  char *get_foreign_key_create_info() override;
 
-  int get_foreign_key_list(THD *thd, List<FOREIGN_KEY_INFO> *f_key_list);
+  int get_foreign_key_list(THD *thd,
+                           List<FOREIGN_KEY_INFO> *f_key_list) override;
 
-  int get_parent_foreign_key_list(THD *thd, List<FOREIGN_KEY_INFO> *f_key_list);
+  int get_parent_foreign_key_list(THD *thd,
+                                  List<FOREIGN_KEY_INFO> *f_key_list) override;
 
   int get_cascade_foreign_key_table_list(
-      THD *thd, List<st_handler_tablename> *fk_table_list);
+      THD *thd, List<st_handler_tablename> *fk_table_list) override;
 
-  bool can_switch_engines();
+  uint referenced_by_foreign_key() override;
 
-  uint referenced_by_foreign_key();
+  void free_foreign_key_create_info(char *str) override;
 
-  void free_foreign_key_create_info(char *str);
-
-  uint lock_count(void) const;
+  uint lock_count(void) const override;
 
   THR_LOCK_DATA **store_lock(THD *thd, THR_LOCK_DATA **to,
-                             thr_lock_type lock_type);
+                             thr_lock_type lock_type) override;
 
-  void init_table_handle_for_HANDLER();
+  void init_table_handle_for_HANDLER() override;
 
   virtual void get_auto_increment(ulonglong offset, ulonglong increment,
                                   ulonglong nb_desired_values,
                                   ulonglong *first_value,
-                                  ulonglong *nb_reserved_values);
+                                  ulonglong *nb_reserved_values) override;
 
-  virtual bool get_error_message(int error, String *buf);
+  virtual bool get_error_message(int error, String *buf) override;
 
-  virtual bool get_foreign_dup_key(char *, uint, char *, uint);
+  virtual bool get_foreign_dup_key(char *, uint, char *, uint) override;
 
-  bool primary_key_is_clustered() const;
+  bool primary_key_is_clustered() const override;
 
-  int cmp_ref(const uchar *ref1, const uchar *ref2) const;
+  int cmp_ref(const uchar *ref1, const uchar *ref2) const override;
 
   /** On-line ALTER TABLE interface @see handler0alter.cc @{ */
 
@@ -343,7 +355,7 @@ class ha_innobase : public handler {
   @retval HA_ALTER_INPLACE_NO_LOCK_AFTER_PREPARE
           Supported, prepare phase requires exclusive lock.  */
   enum_alter_inplace_result check_if_supported_inplace_alter(
-      TABLE *altered_table, Alter_inplace_info *ha_alter_info);
+      TABLE *altered_table, Alter_inplace_info *ha_alter_info) override;
 
   /** Allows InnoDB to update internal structures with concurrent
   writes blocked (provided that check_if_supported_inplace_alter()
@@ -365,7 +377,7 @@ class ha_innobase : public handler {
   bool prepare_inplace_alter_table(TABLE *altered_table,
                                    Alter_inplace_info *ha_alter_info,
                                    const dd::Table *old_dd_tab,
-                                   dd::Table *new_dd_tab);
+                                   dd::Table *new_dd_tab) override;
 
   /** Alter the table structure in-place with operations
   specified using HA_ALTER_FLAGS and Alter_inplace_information.
@@ -386,7 +398,8 @@ class ha_innobase : public handler {
   */
   bool inplace_alter_table(TABLE *altered_table,
                            Alter_inplace_info *ha_alter_info,
-                           const dd::Table *old_dd_tab, dd::Table *new_dd_tab);
+                           const dd::Table *old_dd_tab,
+                           dd::Table *new_dd_tab) override;
 
   /** Commit or rollback the changes made during
   prepare_inplace_alter_table() and inplace_alter_table() inside
@@ -412,10 +425,44 @@ class ha_innobase : public handler {
   bool commit_inplace_alter_table(TABLE *altered_table,
                                   Alter_inplace_info *ha_alter_info,
                                   bool commit, const dd::Table *old_dd_tab,
-                                  dd::Table *new_dd_tab);
+                                  dd::Table *new_dd_tab) override;
   /** @} */
 
-  bool check_if_incompatible_data(HA_CREATE_INFO *info, uint table_changes);
+  using Reader = Parallel_reader_adapter;
+
+  /** Initializes a parallel scan. It creates a scan_ctx that has to
+  be used across all parallel_scan methods. Also, gets the number of threads
+  that would be spawned for parallel scan.
+  @param[out]   scan_ctx        A scan context created by this method
+                                that has to be used in
+                                parallel_scan
+  @param[out]   num_threads     Number of threads to be spawned
+  @return error code
+  @retval 0 on success */
+  int parallel_scan_init(void *&scan_ctx, size_t &num_threads) override;
+
+  /** Start parallel read of InnoDB records.
+  @param[in]  scan_ctx          A scan context created by parallel_scan_init
+  @param[in]  thread_ctxs       Context for each of the spawned threads
+  @param[in]  init_fn           Callback called by each parallel load
+                                thread at the beginning of the parallel load.
+  @param[in]  load_fn           Callback called by each parallel load
+                                thread when processing of rows is required.
+  @param[in]  end_fn            Callback called by each parallel load
+                                thread when processing of rows has ended.
+  @return error code
+  @retval 0 on success */
+  int parallel_scan(void *scan_ctx, void **thread_ctxs, Reader::Init_fn init_fn,
+                    Reader::Load_fn load_fn, Reader::End_fn end_fn) override;
+
+  /** End of the parallel scan.
+  @param[in]      scan_ctx      A scan context created by parallel_scan_init.
+  @return error code
+  @retval 0 on success */
+  int parallel_scan_end(void *scan_ctx) override;
+
+  bool check_if_incompatible_data(HA_CREATE_INFO *info,
+                                  uint table_changes) override;
 
  private:
   /** @name Multi Range Read interface @{ */
@@ -427,11 +474,12 @@ class ha_innobase : public handler {
   @param mode
   @param buf */
   int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
-                            uint n_ranges, uint mode, HANDLER_BUFFER *buf);
+                            uint n_ranges, uint mode,
+                            HANDLER_BUFFER *buf) override;
 
   /** Process next multi range read @see DsMrr_impl::dsmrr_next
   @param range_info */
-  int multi_range_read_next(char **range_info);
+  int multi_range_read_next(char **range_info) override;
 
   /** Initialize multi range read and get information.
   @see ha_myisam::multi_range_read_info_const
@@ -446,7 +494,7 @@ class ha_innobase : public handler {
   ha_rows multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
                                       void *seq_init_param, uint n_ranges,
                                       uint *bufsz, uint *flags,
-                                      Cost_estimate *cost);
+                                      Cost_estimate *cost) override;
 
   /** Initialize multi range read and get information.
   @see DsMrr_impl::dsmrr_info
@@ -457,13 +505,14 @@ class ha_innobase : public handler {
   @param flags
   @param cost */
   ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint keys,
-                                uint *bufsz, uint *flags, Cost_estimate *cost);
+                                uint *bufsz, uint *flags,
+                                Cost_estimate *cost) override;
 
   /** Attempt to push down an index condition.
   @param[in] keyno MySQL key number
   @param[in] idx_cond Index condition to be checked
   @return idx_cond if pushed; NULL if not pushed */
-  Item *idx_cond_push(uint keyno, Item *idx_cond);
+  Item *idx_cond_push(uint keyno, Item *idx_cond) override;
   /* @} */
 
  private:
@@ -493,7 +542,7 @@ class ha_innobase : public handler {
               allocate space for in the buffer
   @retval true   if the handler wants a buffer
   @retval false  if the handler does not want a buffer */
-  virtual bool is_record_buffer_wanted(ha_rows *const max_rows) const;
+  bool is_record_buffer_wanted(ha_rows *const max_rows) const override;
 
   /** TRUNCATE an InnoDB table.
   @param[in]		name		table name
@@ -596,6 +645,14 @@ class ha_innobase : public handler {
                                        bool commit, const Table *old_dd_tab,
                                        Table *new_dd_tab);
 
+  /**
+    Return max limits for a single set of multi-valued keys
+
+    @param[out]  num_keys      number of keys to store
+    @param[out]  keys_length   total length of keys, bytes
+  */
+  void mv_key_capacity(uint *num_keys, size_t *keys_length) const override;
+
   /** The multi range read session object */
   DsMrr_impl m_ds_mrr;
 
@@ -624,7 +681,7 @@ class ha_innobase : public handler {
 
   /*!< match mode of the latest search: ROW_SEL_EXACT,
   ROW_SEL_EXACT_PREFIX, or undefined */
-  uint m_last_match_mode;
+  uint m_last_match_mode{0};
 
   /** this field is used to remember the original select_lock_type that
   was decided in ha_innodb.cc,":: store_lock()", "::external_lock()",
@@ -638,6 +695,11 @@ class ha_innobase : public handler {
 struct trx_t;
 
 extern const struct _ft_vft ft_vft_result;
+
+/** Return the number of read threads for this session.
+@param[in]      thd       Session instance, or nullptr to query the global
+                          innodb_parallel_read_threads value. */
+ulong thd_parallel_read_threads(THD *thd);
 
 /** Structure Returned by ha_innobase::ft_init_ext() */
 typedef struct new_ft_info {
@@ -656,7 +718,7 @@ void innobase_register_trx(handlerton *hton, THD *thd, trx_t *trx);
 /**
 Allocates an InnoDB transaction for a MySQL handler object.
 @return InnoDB transaction handle */
-trx_t *innobase_trx_allocate(MYSQL_THD thd); /*!< in: user thread handle */
+trx_t *innobase_trx_allocate(THD *thd); /*!< in: user thread handle */
 
 /** Match index columns between MySQL and InnoDB.
 This function checks whether the index column information
@@ -715,6 +777,18 @@ bool tablespace_is_general_space(const HA_CREATE_INFO *create_info) {
       (0 != strcmp(create_info->tablespace, dict_sys_t::s_sys_space_name)));
 }
 
+/** Check if tablespace is shared tablespace.
+@param[in]	tablespace_name	Name of the tablespace
+@return true if tablespace is a shared tablespace. */
+UNIV_INLINE
+bool is_shared_tablespace(const char *tablespace_name) {
+  if (tablespace_name != NULL && tablespace_name[0] != '\0' &&
+      (strcmp(tablespace_name, dict_sys_t::s_file_per_table_name) != 0)) {
+    return true;
+  }
+  return false;
+}
+
 /** Parse hint for table and its indexes, and update the information
 in dictionary.
 @param[in]	thd		Connection thread
@@ -737,8 +811,8 @@ class create_table_info_t {
   - all but name/path is used, when validating options and using flags. */
   create_table_info_t(THD *thd, TABLE *form, HA_CREATE_INFO *create_info,
                       char *table_name, char *remote_path, char *tablespace,
-                      bool file_per_table, bool skip_strict, ulint old_flags,
-                      ulint old_flags2)
+                      bool file_per_table, bool skip_strict, uint32_t old_flags,
+                      uint32_t old_flags2)
       : m_thd(thd),
         m_trx(thd_to_trx(thd)),
         m_form(form),
@@ -802,10 +876,10 @@ class create_table_info_t {
   void set_remote_path_flags();
 
   /** Get table flags. */
-  ulint flags() const { return (m_flags); }
+  uint32_t flags() const { return (m_flags); }
 
   /** Get table flags2. */
-  ulint flags2() const { return (m_flags2); }
+  uint32_t flags2() const { return (m_flags2); }
 
   /** Reset table flags. */
   void flags_reset() { m_flags = 0; }
@@ -906,10 +980,10 @@ class create_table_info_t {
   bool m_use_shared_space;
 
   /** Table flags */
-  ulint m_flags;
+  uint32_t m_flags;
 
   /** Table flags2 */
-  ulint m_flags2;
+  uint32_t m_flags2;
 
   /** Skip strict check */
   bool m_skip_strict;
@@ -1122,11 +1196,18 @@ void innodb_base_col_setup(dict_table_t *table, const Field *field,
 void innodb_base_col_setup_for_stored(const dict_table_t *table,
                                       const Field *field, dict_s_col_t *s_col);
 
-/** whether this ia stored column */
+/** whether this is a stored column */
 #define innobase_is_s_fld(field) ((field)->gcol_info && (field)->stored_in_db)
 
 /** whether this is a computed virtual column */
 #define innobase_is_v_fld(field) ((field)->gcol_info && !(field)->stored_in_db)
+
+/** Whether this is a computed multi-value virtual column.
+This condition check should be equal to the following one:
+(innobase_is_v_fld(field) && (field)->gcol_info->expr_item &&
+ field->gcol_info->expr_item->returns_array())
+*/
+#define innobase_is_multi_value_fld(field) (field->is_array())
 
 /** Always normalize table name to lower case on Windows */
 #ifdef _WIN32
@@ -1147,11 +1228,11 @@ inline bool trx_is_registered_for_2pc(const trx_t *trx) {
 /** Converts an InnoDB error code to a MySQL error code.
 Also tells to MySQL about a possible transaction rollback inside InnoDB caused
 by a lock wait timeout or a deadlock.
-@param[in]	error	InnoDB error code.
-@param[in]	flags	InnoDB table flags or 0.
-@param[in]	thd	MySQL thread or NULL.
+@param[in]  error   InnoDB error code.
+@param[in]  flags   InnoDB table flags or 0.
+@param[in]  thd     MySQL thread or NULL.
 @return MySQL error code */
-int convert_error_code_to_mysql(dberr_t error, ulint flags, THD *thd);
+int convert_error_code_to_mysql(dberr_t error, uint32_t flags, THD *thd);
 
 /** Converts a search mode flag understood by MySQL to a flag understood
 by InnoDB.

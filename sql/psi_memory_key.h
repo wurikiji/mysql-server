@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -92,6 +92,7 @@ extern PSI_memory_key key_memory_QUICK_RANGE_SELECT_mrr_buf_desc;
 extern PSI_memory_key key_memory_Quick_ranges;
 extern PSI_memory_key key_memory_READ_INFO;
 extern PSI_memory_key key_memory_READ_RECORD_cache;
+extern PSI_memory_key key_memory_Recovered_xa_transactions;
 extern PSI_memory_key key_memory_Relay_log_info_group_relay_log_name;
 extern PSI_memory_key key_memory_Row_data_memory_memory;
 extern PSI_memory_key key_memory_Rpl_info_file_buffer;
@@ -135,11 +136,11 @@ extern PSI_memory_key key_memory_errmsgs;
 extern PSI_memory_key key_memory_fill_schema_schemata;
 extern PSI_memory_key key_memory_native_functions;
 extern PSI_memory_key key_memory_gdl;
-extern PSI_memory_key key_memory_get_all_tables;
 extern PSI_memory_key key_memory_global_system_variables;
 extern PSI_memory_key key_memory_handler_errmsgs;
 extern PSI_memory_key key_memory_handlerton;
 extern PSI_memory_key key_memory_hash_index_key_buffer;
+extern PSI_memory_key key_memory_hash_join;
 extern PSI_memory_key key_memory_help;
 extern PSI_memory_key key_memory_histograms;
 extern PSI_memory_key key_memory_host_cache_hostname;

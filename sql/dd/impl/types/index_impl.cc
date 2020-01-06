@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,6 +23,7 @@
 #include "sql/dd/impl/types/index_impl.h"
 
 #include <stddef.h>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -60,6 +61,9 @@ class Sdi_rcontext;
 class Sdi_wcontext;
 class Table;
 
+static const std::set<String_type> default_valid_option_keys = {
+    "block_size", "flags", "parser_name"};
+
 ///////////////////////////////////////////////////////////////////////////
 // Index_impl implementation.
 ///////////////////////////////////////////////////////////////////////////
@@ -68,8 +72,8 @@ Index_impl::Index_impl()
     : m_hidden(false),
       m_is_generated(false),
       m_ordinal_position(0),
-      m_options(new (std::nothrow) Properties_impl()),
-      m_se_private_data(new (std::nothrow) Properties_impl()),
+      m_options(default_valid_option_keys),
+      m_se_private_data(),
       m_type(IT_MULTIPLE),
       m_algorithm(IA_BTREE),
       m_is_algorithm_explicit(false),
@@ -82,8 +86,8 @@ Index_impl::Index_impl(Table_impl *table)
     : m_hidden(false),
       m_is_generated(false),
       m_ordinal_position(0),
-      m_options(new (std::nothrow) Properties_impl()),
-      m_se_private_data(new (std::nothrow) Properties_impl()),
+      m_options(default_valid_option_keys),
+      m_se_private_data(),
       m_type(IT_MULTIPLE),
       m_algorithm(IA_BTREE),
       m_is_algorithm_explicit(false),
@@ -99,38 +103,6 @@ Index_impl::~Index_impl() {}
 const Table &Index_impl::table() const { return *m_table; }
 
 Table &Index_impl::table() { return *m_table; }
-
-///////////////////////////////////////////////////////////////////////////
-
-bool Index_impl::set_options_raw(const String_type &options_raw) {
-  Properties *properties = Properties_impl::parse_properties(options_raw);
-
-  if (!properties)
-    return true;  // Error status, current values has not changed.
-
-  m_options.reset(properties);
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-void Index_impl::set_se_private_data(const Properties &se_private_data) {
-  m_se_private_data->assign(se_private_data);
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-bool Index_impl::set_se_private_data_raw(
-    const String_type &se_private_data_raw) {
-  Properties *properties =
-      Properties_impl::parse_properties(se_private_data_raw);
-
-  if (!properties)
-    return true;  // Error status, current values has not changed.
-
-  m_se_private_data.reset(properties);
-  return false;
-}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -200,8 +172,8 @@ bool Index_impl::restore_attributes(const Raw_record &r) {
 
   m_tablespace_id = r.read_ref_id(Indexes::FIELD_TABLESPACE_ID);
 
-  set_options_raw(r.read_str(Indexes::FIELD_OPTIONS, ""));
-  set_se_private_data_raw(r.read_str(Indexes::FIELD_SE_PRIVATE_DATA, ""));
+  set_options(r.read_str(Indexes::FIELD_OPTIONS, ""));
+  set_se_private_data(r.read_str(Indexes::FIELD_SE_PRIVATE_DATA, ""));
 
   m_engine = r.read_str(Indexes::FIELD_ENGINE);
 
@@ -231,8 +203,8 @@ bool Index_impl::store_attributes(Raw_record *r) {
          r->store(Indexes::FIELD_HIDDEN, m_hidden) ||
          r->store(Indexes::FIELD_ORDINAL_POSITION, m_ordinal_position) ||
          r->store(Indexes::FIELD_COMMENT, m_comment) ||
-         r->store(Indexes::FIELD_OPTIONS, *m_options) ||
-         r->store(Indexes::FIELD_SE_PRIVATE_DATA, *m_se_private_data) ||
+         r->store(Indexes::FIELD_OPTIONS, m_options) ||
+         r->store(Indexes::FIELD_SE_PRIVATE_DATA, m_se_private_data) ||
          r->store_ref_id(Indexes::FIELD_TABLESPACE_ID, m_tablespace_id) ||
          r->store(Indexes::FIELD_ENGINE, m_engine);
 }
@@ -281,8 +253,8 @@ bool Index_impl::deserialize(Sdi_rcontext *rctx, const RJ_Value &val) {
   read(&m_is_visible, val, "is_visible");
   read(&m_engine, val, "engine");
 
-  deserialize_each(rctx, [this]() { return add_element(nullptr); }, val,
-                   "elements");
+  deserialize_each(
+      rctx, [this]() { return add_element(nullptr); }, val, "elements");
 
   if (deserialize_tablespace_ref(rctx, &m_tablespace_id, val,
                                  "tablespace_name")) {
@@ -310,8 +282,8 @@ void Index_impl::debug_print(String_type &outb) const {
      << "m_comment: " << m_comment << "; "
      << "m_hidden: " << m_hidden << "; "
      << "m_ordinal_position: " << m_ordinal_position << "; "
-     << "m_options " << m_options->raw_string() << "; "
-     << "m_se_private_data " << m_se_private_data->raw_string() << "; "
+     << "m_options " << m_options.raw_string() << "; "
+     << "m_se_private_data " << m_se_private_data.raw_string() << "; "
      << "m_tablespace {OID: " << m_tablespace_id << "}; "
      << "m_engine: " << m_engine << "; "
      << "m_elements: " << m_elements.size() << " [ ";
@@ -390,9 +362,8 @@ Index_impl::Index_impl(const Index_impl &src, Table_impl *parent)
       m_is_generated(src.m_is_generated),
       m_ordinal_position(src.m_ordinal_position),
       m_comment(src.m_comment),
-      m_options(Properties_impl::parse_properties(src.m_options->raw_string())),
-      m_se_private_data(Properties_impl::parse_properties(
-          src.m_se_private_data->raw_string())),
+      m_options(src.m_options),
+      m_se_private_data(src.m_se_private_data),
       m_type(src.m_type),
       m_algorithm(src.m_algorithm),
       m_is_algorithm_explicit(src.m_is_algorithm_explicit),

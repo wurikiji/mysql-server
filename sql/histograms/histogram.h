@@ -1,7 +1,7 @@
 #ifndef HISTOGRAMS_HISTOGRAM_INCLUDED
 #define HISTOGRAMS_HISTOGRAM_INCLUDED
 
-/* Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -83,12 +83,10 @@ enum class Message {
   ENCRYPTED_TABLE,
   VIEW,
   HISTOGRAM_CREATED,
-  UNABLE_TO_OPEN_TABLE,
   MULTIPLE_TABLES_SPECIFIED,
   COVERED_BY_SINGLE_PART_UNIQUE_INDEX,
   NO_HISTOGRAM_FOUND,
   HISTOGRAM_DELETED,
-  NO_SUCH_TABLE,
   SERVER_READ_ONLY
 };
 
@@ -358,7 +356,7 @@ class Histogram {
   const CHARSET_INFO *get_character_set() const { return m_charset; }
 
   /// @return the sampling rate used to generate this histogram
-  double get_sampling_rate() const { return m_sampling_rate; };
+  double get_sampling_rate() const { return m_sampling_rate; }
 
   /**
     Returns the histogram type as a readable string.
@@ -371,6 +369,12 @@ class Histogram {
     @return number of buckets in this histogram
   */
   virtual size_t get_num_buckets() const = 0;
+
+  /**
+    Get the estimated number of distinct non-NULL values.
+    @return number of distinct non-NULL values
+  */
+  virtual size_t get_num_distinct_values() const = 0;
 
   /**
     @return the data type that this histogram contains
@@ -454,8 +458,8 @@ class Histogram {
     @param[out] selectivity the calculated selectivity if a usable histogram was
                             found
 
-    @retval true if an error occured (the Item provided was not a constant value
-            or similar).
+    @retval true if an error occurred (the Item provided was not a constant
+    value or similar).
     @return false if success
   */
   bool get_selectivity(Item **items, size_t item_count, enum_operator op,

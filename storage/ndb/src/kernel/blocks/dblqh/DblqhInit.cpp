@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -40,14 +40,22 @@ void Dblqh::initData()
   c_master_node_id = RNIL;
 #endif
 
+  c_num_fragments_created_since_restart = 0;
+  c_fragments_in_lcp = 0;
+
+  m_update_size = 0;
+  m_insert_size = 0;
+  m_delete_size = 0;
+
   c_gcp_stop_timer = 0;
   c_is_io_lag_reported = false;
   c_wait_lcp_surfacing = false;
   c_executing_redo_log = 0;
-  c_start_phase_49_waiting = false;
+  c_start_phase_9_waiting = false;
   c_outstanding_write_local_sysfile = false;
   c_send_gcp_saveref_needed = false;
   m_first_distributed_lcp_started = false;
+  m_in_send_next_scan = 0;
 
   caddfragrecFileSize = ZADDFRAGREC_FILE_SIZE;
   cgcprecFileSize = ZGCPREC_FILE_SIZE;
@@ -81,7 +89,7 @@ void Dblqh::initData()
   
   // Records with constant sizes
 
-  cLqhTimeOutCount = 0;
+  cLqhTimeOutCount = 1;
   cLqhTimeOutCheckCount = 0;
   cpackedListIndex = 0;
   m_backup_ptr = RNIL;
@@ -182,10 +190,31 @@ void Dblqh::initData()
   c_keep_gci_for_lcp = 0;
   c_max_keep_gci_in_lcp = 0;
   c_first_set_min_keep_gci = false;
+  m_restart_local_latest_lcp_id = 0;
 }//Dblqh::initData()
 
 void Dblqh::initRecords() 
 {
+#if defined(USE_INIT_GLOBAL_VARIABLES)
+  {
+    void* tmp[] = { 
+      &addfragptr,
+      &fragptr,
+      &prim_tab_fragptr,
+      &gcpPtr,
+      &lcpPtr,
+      &logPartPtr,
+      &logFilePtr,
+      &lfoPtr,
+      &logPagePtr,
+      &pageRefPtr,
+      &scanptr,
+      &tabptr,
+      &m_tc_connect_ptr,
+    }; 
+    init_global_ptrs(tmp, sizeof(tmp)/sizeof(tmp[0]));
+  }
+#endif
   // Records with dynamic sizes
   addFragRecord = (AddFragRecord*)allocRecord("AddFragRecord",
 					      sizeof(AddFragRecord), 
@@ -362,6 +391,8 @@ Dblqh::Dblqh(Block_context& ctx, Uint32 instanceNumber):
 {
   BLOCK_CONSTRUCTOR(Dblqh);
 
+  addRecSignal(GSN_LOCAL_LATEST_LCP_ID_REP,
+               &Dblqh::execLOCAL_LATEST_LCP_ID_REP);
   addRecSignal(GSN_PACKED_SIGNAL, &Dblqh::execPACKED_SIGNAL);
   addRecSignal(GSN_DEBUG_SIG, &Dblqh::execDEBUG_SIG);
   addRecSignal(GSN_ATTRINFO, &Dblqh::execATTRINFO);
@@ -414,6 +445,7 @@ Dblqh::Dblqh(Block_context& ctx, Uint32 instanceNumber):
   addRecSignal(GSN_ACCFRAGREF, &Dblqh::execACCFRAGREF);
   addRecSignal(GSN_TUPFRAGCONF, &Dblqh::execTUPFRAGCONF);
   addRecSignal(GSN_TUPFRAGREF, &Dblqh::execTUPFRAGREF);
+  addRecSignal(GSN_WAIT_LCP_IDLE_CONF, &Dblqh::execWAIT_LCP_IDLE_CONF);
   addRecSignal(GSN_TAB_COMMITREQ, &Dblqh::execTAB_COMMITREQ);
   addRecSignal(GSN_ACCSEIZECONF, &Dblqh::execACCSEIZECONF);
   addRecSignal(GSN_ACCSEIZEREF, &Dblqh::execACCSEIZEREF);
@@ -437,6 +469,7 @@ Dblqh::Dblqh(Block_context& ctx, Uint32 instanceNumber):
   addRecSignal(GSN_SCAN_NEXTREQ, &Dblqh::execSCAN_NEXTREQ);
   addRecSignal(GSN_NEXT_SCANCONF, &Dblqh::execNEXT_SCANCONF);
   addRecSignal(GSN_NEXT_SCANREF, &Dblqh::execNEXT_SCANREF);
+  addRecSignal(GSN_ACC_CHECK_SCAN, &Dblqh::execACC_CHECK_SCAN);
   addRecSignal(GSN_COPY_FRAGREQ, &Dblqh::execCOPY_FRAGREQ);
   addRecSignal(GSN_COPY_FRAGREF, &Dblqh::execCOPY_FRAGREF);
   addRecSignal(GSN_COPY_FRAGCONF, &Dblqh::execCOPY_FRAGCONF);
@@ -454,7 +487,6 @@ Dblqh::Dblqh(Block_context& ctx, Uint32 instanceNumber):
                &Dblqh::execINFORM_BACKUP_DROP_TAB_CONF);
   addRecSignal(GSN_LCP_ALL_COMPLETE_CONF, &Dblqh::execLCP_ALL_COMPLETE_CONF);
 
-  addRecSignal(GSN_EMPTY_LCP_REQ, &Dblqh::execEMPTY_LCP_REQ);
   addRecSignal(GSN_LCP_FRAG_ORD, &Dblqh::execLCP_FRAG_ORD);
   
   addRecSignal(GSN_START_FRAGREQ, &Dblqh::execSTART_FRAGREQ);
@@ -552,25 +584,6 @@ Dblqh::Dblqh(Block_context& ctx, Uint32 instanceNumber):
 
   initData();
 
-#ifdef VM_TRACE
-  {
-    void* tmp[] = { 
-      &addfragptr,
-      &fragptr,
-      &gcpPtr,
-      &lcpPtr,
-      &logPartPtr,
-      &logFilePtr,
-      &lfoPtr,
-      &logPagePtr,
-      &pageRefPtr,
-      &scanptr,
-      &tabptr,
-    }; 
-    init_globals_list(tmp, sizeof(tmp)/sizeof(tmp[0]));
-  }
-#endif
-  
 }//Dblqh::Dblqh()
 
 Dblqh::~Dblqh() 

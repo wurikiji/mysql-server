@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -71,13 +70,13 @@ MATCHER_P(EqCastToCStr, expected, "") {
 class Listener_unix_socket_testsuite : public Test {
  public:
   void SetUp() {
-    m_mock_factory = ngs::make_shared<StrictMock<ngs::test::Mock_factory>>();
-    m_mock_socket = ngs::make_shared<StrictMock<ngs::test::Mock_socket>>();
-    m_mock_system = ngs::make_shared<StrictMock<ngs::test::Mock_system>>();
-    m_mock_file = ngs::make_shared<StrictMock<ngs::test::Mock_file>>();
+    m_mock_factory = std::make_shared<StrictMock<ngs::test::Mock_factory>>();
+    m_mock_socket = std::make_shared<StrictMock<ngs::test::Mock_socket>>();
+    m_mock_system = std::make_shared<StrictMock<ngs::test::Mock_system>>();
+    m_mock_file = std::make_shared<StrictMock<ngs::test::Mock_file>>();
     m_mock_socket_invalid =
-        ngs::make_shared<StrictMock<ngs::test::Mock_socket>>();
-    m_mock_file_invalid = ngs::make_shared<StrictMock<ngs::test::Mock_file>>();
+        std::make_shared<StrictMock<ngs::test::Mock_socket>>();
+    m_mock_file_invalid = std::make_shared<StrictMock<ngs::test::Mock_file>>();
 
     EXPECT_CALL(*m_mock_factory, create_system_interface())
         .WillRepeatedly(Return(m_mock_system));
@@ -90,8 +89,8 @@ class Listener_unix_socket_testsuite : public Test {
         .WillRepeatedly(Return(SOCKET_OK));
     EXPECT_CALL(*m_mock_file, is_valid()).WillRepeatedly(Return(true));
 
-    sut = ngs::make_shared<Listener_unix_socket>(
-        m_mock_factory, UNIX_SOCKET_FILE, ngs::ref(m_mock_socket_events),
+    sut = std::make_shared<Listener_unix_socket>(
+        m_mock_factory, UNIX_SOCKET_FILE, std::ref(m_mock_socket_events),
         BACKLOG);
   }
 
@@ -136,15 +135,15 @@ class Listener_unix_socket_testsuite : public Test {
     ASSERT_TRUE(Mock::VerifyAndClearExpectations(m_mock_factory.get()));
   }
 
-  ngs::shared_ptr<ngs::test::Mock_socket> m_mock_socket;
-  ngs::shared_ptr<ngs::test::Mock_socket> m_mock_socket_invalid;
-  ngs::shared_ptr<ngs::test::Mock_system> m_mock_system;
-  ngs::shared_ptr<ngs::test::Mock_file> m_mock_file_invalid;
-  ngs::shared_ptr<ngs::test::Mock_file> m_mock_file;
+  std::shared_ptr<ngs::test::Mock_socket> m_mock_socket;
+  std::shared_ptr<ngs::test::Mock_socket> m_mock_socket_invalid;
+  std::shared_ptr<ngs::test::Mock_system> m_mock_system;
+  std::shared_ptr<ngs::test::Mock_file> m_mock_file_invalid;
+  std::shared_ptr<ngs::test::Mock_file> m_mock_file;
   StrictMock<ngs::test::Mock_socket_events> m_mock_socket_events;
-  ngs::shared_ptr<ngs::test::Mock_factory> m_mock_factory;
+  std::shared_ptr<ngs::test::Mock_factory> m_mock_factory;
 
-  ngs::shared_ptr<Listener_unix_socket> sut;
+  std::shared_ptr<Listener_unix_socket> sut;
 };
 
 ACTION_P(SetArg0ToChar, value) { *static_cast<char *>(arg0) = value; }
@@ -153,13 +152,13 @@ ACTION_P(SetArg0ToChar2, value) { (static_cast<char *>(arg0)[1]) = value; }
 TEST_F(Listener_unix_socket_testsuite,
        unixsocket_try_to_create_empty_unixsocket_filename) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(
-      m_mock_factory, "", ngs::ref(m_mock_socket_events), BACKLOG);
+  sut = std::make_shared<Listener_unix_socket>(
+      m_mock_factory, "", std::ref(m_mock_socket_events), BACKLOG);
 
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -167,20 +166,20 @@ TEST_F(Listener_unix_socket_testsuite,
        unixsocket_try_to_create_unixsocket_with_too_long_filename) {
 #if defined(HAVE_SYS_UN_H)
   std::string long_filename(2000, 'a');
-  sut = ngs::make_shared<Listener_unix_socket>(
-      m_mock_factory, long_filename, ngs::ref(m_mock_socket_events), BACKLOG);
+  sut = std::make_shared<Listener_unix_socket>(
+      m_mock_factory, long_filename, std::ref(m_mock_socket_events), BACKLOG);
 
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_create_a_lockfile) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_factory, open_file(StrEq(UNIX_SOCKET_LOCK_FILE), _, _))
@@ -190,14 +189,14 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_create_a_lockfile) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_open_existing_lockfile) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -208,14 +207,14 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_open_existing_lockfile) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_read_existing_lockfile) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -227,14 +226,14 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_cant_read_existing_lockfile) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite, unixsocket_read_empty_lockfile) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -247,14 +246,14 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_read_empty_lockfile) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite, unixsocket_read_not_x_plugin_lockfile) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -269,7 +268,7 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_read_not_x_plugin_lockfile) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -278,8 +277,8 @@ TEST_F(Listener_unix_socket_testsuite,
 #if defined(HAVE_SYS_UN_H)
   const int expected_pid = 5;
   const char char_pid = '0' + expected_pid;
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -296,7 +295,7 @@ TEST_F(Listener_unix_socket_testsuite,
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -305,8 +304,8 @@ TEST_F(Listener_unix_socket_testsuite,
 #if defined(HAVE_SYS_UN_H)
   const int expected_pid = 6;
   const char char_pid = '0' + expected_pid;
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -324,15 +323,15 @@ TEST_F(Listener_unix_socket_testsuite,
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite,
        unixsocket_write_x_plugin_lockfile_failed) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -342,15 +341,15 @@ TEST_F(Listener_unix_socket_testsuite,
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite,
        unixsocket_fsync_x_plugin_lockfile_failed) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -364,15 +363,15 @@ TEST_F(Listener_unix_socket_testsuite,
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite,
        unixsocket_close_x_plugin_lockfile_failed) {
 #if defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_system, get_pid()).WillOnce(Return(CURRENT_PID));
@@ -387,7 +386,7 @@ TEST_F(Listener_unix_socket_testsuite,
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -402,7 +401,7 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_create_socket_failed) {
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -425,7 +424,7 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_listen_failed) {
                   // second call in SUT destructor
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
@@ -435,7 +434,9 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_event_regiester_failure) {
 
   EXPECT_CALL(*m_mock_factory, create_socket(_, AF_UNIX, SOCK_STREAM, 0))
       .WillOnce(Return(m_mock_socket));
-  EXPECT_CALL(*m_mock_system, unlink(StrEq(UNIX_SOCKET_FILE)));
+  // First time before creating new file
+  // Second time at closure
+  EXPECT_CALL(*m_mock_system, unlink(StrEq(UNIX_SOCKET_FILE))).Times(2);
   EXPECT_CALL(*m_mock_socket, bind(_, _)).WillOnce(Return(BIND_OK));
   EXPECT_CALL(*m_mock_socket, listen(_)).WillOnce(Return(LISTEN_OK));
   EXPECT_CALL(*m_mock_socket, get_socket_fd())
@@ -446,19 +447,14 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_event_regiester_failure) {
   ngs::Socket_interface::Shared_ptr socket = m_mock_socket;
   EXPECT_CALL(m_mock_socket_events, listen(socket, _)).WillOnce(Return(false));
 
-  ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
-
-  // In SUT destructor
-  ASSERT_TRUE(Mock::VerifyAndClearExpectations(m_mock_system.get()));
-  ASSERT_TRUE(Mock::VerifyAndClearExpectations(m_mock_socket.get()));
-  EXPECT_CALL(*m_mock_socket, get_socket_fd()).WillOnce(Return(SOCKET_OK));
   EXPECT_CALL(*m_mock_system, unlink(StrEq(UNIX_SOCKET_LOCK_FILE)))
-      .WillOnce(Return(UNLINK_OK));
-  EXPECT_CALL(*m_mock_system, unlink(StrEq(UNIX_SOCKET_FILE)))
       .WillOnce(Return(UNLINK_OK));
 
   EXPECT_CALL(*m_mock_socket, close());
+
+  ASSERT_FALSE(sut->setup_listener(nullptr));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
+
 #endif
 }
 
@@ -481,21 +477,21 @@ TEST_F(Listener_unix_socket_testsuite, unixsocket_event_successful) {
 
 TEST_F(Listener_unix_socket_testsuite, unix_socket_unsupported) {
 #if !defined(HAVE_SYS_UN_H)
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   EXPECT_CALL(*m_mock_socket_invalid, close());
 
   ASSERT_FALSE(sut->setup_listener(nullptr));
-  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_initializing));
+  ASSERT_TRUE(sut->get_state().is(ngs::State_listener_stopped));
 #endif
 }
 
 TEST_F(Listener_unix_socket_testsuite,
        close_listener_does_nothing_when_not_started) {
-  sut = ngs::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
-                                               ngs::ref(m_mock_socket_events),
+  sut = std::make_shared<Listener_unix_socket>(m_mock_factory, UNIX_SOCKET_FILE,
+                                               std::ref(m_mock_socket_events),
                                                BACKLOG);
 
   sut->close_listener();
@@ -516,10 +512,6 @@ TEST_F(Listener_unix_socket_testsuite, close_listener_closes_valid_socket) {
   sut->close_listener();
 
   ASSERT_NO_FATAL_FAILURE(assert_and_clear_mocks());
-
-  // Required by SUT destructor
-  EXPECT_CALL(*m_mock_socket, get_socket_fd()).WillOnce(Return(INVALID_SOCKET));
-  EXPECT_CALL(*m_mock_socket, close());
 #endif
 }
 

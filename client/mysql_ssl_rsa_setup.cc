@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -222,9 +222,9 @@ static void free_resources() {
 
 class RSA_priv {
  public:
-  RSA_priv(uint32_t key_size = 2048) : m_key_size(key_size){};
+  RSA_priv(uint32_t key_size = 2048) : m_key_size(key_size) {}
 
-  ~RSA_priv(){};
+  ~RSA_priv() {}
 
   Sql_string_t operator()(const Sql_string_t &key_file) {
     stringstream command;
@@ -279,7 +279,7 @@ class X509v3_ext_writer {
 
     m_certv3_ext_options << "basicConstraints=CA:FALSE" << std::endl;
   }
-  ~X509v3_ext_writer(){};
+  ~X509v3_ext_writer() {}
 
   bool operator()(const Sql_string_t &cav3_ext_file,
                   const Sql_string_t &certv3_ext_file) {
@@ -310,9 +310,9 @@ class X509v3_ext_writer {
 
 class X509_cert {
  public:
-  X509_cert(uint32_t validity = 10 * 365L) : m_validity(validity){};
+  X509_cert(uint32_t validity = 10 * 365L) : m_validity(validity) {}
 
-  ~X509_cert(){};
+  ~X509_cert() {}
 
   Sql_string_t operator()(const Sql_string_t &req_file,
                           const Sql_string_t &cert_file, uint32_t serial,
@@ -380,7 +380,7 @@ int main(int argc, char *argv[]) {
   MEM_ROOT alloc{PSI_NOT_INSTRUMENTED, 512};
 
   MY_INIT(argv[0]);
-  DBUG_ENTER("main");
+  DBUG_TRACE;
   DBUG_PROCESS(argv[0]);
 
   /* Parse options : Command Line/Config file */
@@ -648,5 +648,5 @@ end:
   umask(saved_umask);
   free_resources();
 
-  DBUG_RETURN(ret_val);
+  return ret_val;
 }

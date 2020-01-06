@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -41,6 +41,12 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "ut0dbg.h"
 
+static std::function<void()> assert_callback;
+
+void ut_set_assert_callback(std::function<void()> &callback) {
+  assert_callback = callback;
+}
+
 /** Report a failed assertion. */
 [[noreturn]] void ut_dbg_assertion_failed(
     const char *expr, /*!< in: the failed assertion (optional) */
@@ -48,11 +54,13 @@ this program; if not, write to the Free Software Foundation, Inc.,
     ulint line)       /*!< in: line number of the assertion */
 {
 #if !defined(UNIV_HOTBACKUP) && !defined(UNIV_NO_ERR_MSGS)
-  sql_print_error("InnoDB: Assertion failure: %s:" ULINTPF
-                  "%s%s\n"
-                  "InnoDB: thread " UINT64PF,
-                  innobase_basename(file), line, expr != nullptr ? ":" : "",
-                  expr != nullptr ? expr : "", os_thread_handle());
+  ib::error(ER_IB_MSG_1273)
+      << "Assertion failure: " << innobase_basename(file) << ":" << line
+      << ((expr != nullptr) ? ":" : "") << ((expr != nullptr) ? expr : "")
+      << " thread " << os_thread_handle();
+
+  flush_error_log_messages();
+
 #else  /* !UNIV_HOTBACKUP && !defined(UNIV_NO_ERR_MSGS) */
   auto filename = base_name(file);
 
@@ -81,11 +89,11 @@ this program; if not, write to the Free Software Foundation, Inc.,
       "InnoDB: about forcing recovery.\n",
       stderr);
 
-#ifndef DBUG_OFF
-  dump_trace();
-#endif /* DBUG_OFF */
-
   fflush(stderr);
   fflush(stdout);
+  /* Call any registered callback function. */
+  if (assert_callback) {
+    assert_callback();
+  }
   abort();
 }

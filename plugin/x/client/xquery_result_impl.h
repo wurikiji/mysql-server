@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -32,9 +32,9 @@
 #include <string>
 #include <vector>
 
+#include "plugin/x/client/context/xcontext.h"
 #include "plugin/x/client/mysqlxclient/xprotocol.h"
 #include "plugin/x/client/mysqlxclient/xquery_result.h"
-#include "plugin/x/client/xcontext.h"
 #include "plugin/x/client/xquery_instances.h"
 #include "plugin/x/client/xrow_impl.h"
 
@@ -57,6 +57,7 @@ class Query_result : public XQuery_result {
       std::vector<std::string> *out_ids) const override;
 
   const Metadata &get_metadata(XError *out_error) override;
+  void set_metadata(const Metadata &metadata) override;
   const Warnings &get_warnings() override;
 
   bool next_resultset(XError *out_error) override;
@@ -65,6 +66,7 @@ class Query_result : public XQuery_result {
   bool get_next_row(const XRow **out_row, XError *out_error) override;
   const XRow *get_next_row(XError *out_error) override;
   bool has_resultset(XError *out_error) override;
+  bool is_out_parameter_resultset() const override;
 
  private:
   void clear();
@@ -74,16 +76,12 @@ class Query_result : public XQuery_result {
                                const uint32_t payload_size);
 
   bool had_fetch_not_ended() const;
-  void read_stmt_ok();
+  void check_if_stmt_ok();
   void read_if_needed_metadata();
   Row_ptr read_row();
   XError read_metadata(const XProtocol::Server_message_type_id msg_id,
                        std::unique_ptr<XProtocol::Message> &msg);
   bool is_end_resultset_msg() const;
-
-  static XError read_dump_out_params_or_resultset(
-      const XProtocol::Server_message_type_id msg_id,
-      std::unique_ptr<XProtocol::Message> &msg);
 
   void check_error(const XError &error);
   bool verify_current_instance(XError *out_error);
@@ -116,6 +114,7 @@ class Query_result : public XQuery_result {
 
   bool m_received_fetch_done{false};
   bool m_read_metadata{true};
+  bool m_is_out_param_resultset{false};
   std::shared_ptr<XProtocol> m_protocol;
   XError m_error;
   Metadata m_metadata;

@@ -38,7 +38,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "dict0dd.h"
 #include "eval0eval.h"
 #include "mem0mem.h"
-#include "my_inttypes.h"
 #include "pars0grm.h"
 #include "pars0pars.h"
 #include "que0que.h"
@@ -145,11 +144,10 @@ sym_node_t *sym_tab_add_int_lit(sym_tab_t *sym_tab, /*!< in: symbol table */
 
 /** Adds a string literal to a symbol table.
  @return symbol table node */
-sym_node_t *sym_tab_add_str_lit(
-    sym_tab_t *sym_tab, /*!< in: symbol table */
-    const byte *str,    /*!< in: string with no quotes around
-                        it */
-    ulint len)          /*!< in: string length */
+sym_node_t *sym_tab_add_str_lit(sym_tab_t *sym_tab, /*!< in: symbol table */
+                                const byte *str, /*!< in: string with no quotes
+                                                 around it */
+                                ulint len)       /*!< in: string length */
 {
   sym_node_t *node;
   byte *data;

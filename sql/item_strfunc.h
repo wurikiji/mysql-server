@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -28,8 +28,8 @@
 #include <sys/types.h>
 #include <algorithm>
 
-#include "control_events.h"
 #include "lex_string.h"
+#include "libbinlogevents/include/control_events.h"
 #include "m_ctype.h"
 #include "my_dbug.h"
 #include "my_inttypes.h"
@@ -57,6 +57,16 @@ class List;
 
 CHARSET_INFO *mysqld_collation_get_by_name(
     const char *name, CHARSET_INFO *name_cs = system_charset_info);
+
+/**
+  Generate Universal Unique Identifier (UUID).
+
+  @param  str Pointer to string which will hold the UUID.
+
+  @return str Pointer to string which contains the UUID.
+*/
+
+String *mysql_generate_uuid(String *str);
 
 class Item_str_func : public Item_func {
   typedef Item_func super;
@@ -131,6 +141,13 @@ class Item_str_func : public Item_func {
   void left_right_max_length();
   bool fix_fields(THD *thd, Item **ref) override;
   String *val_str_from_val_str_ascii(String *str, String *str2);
+
+ protected:
+  /**
+    Calls push_warning_printf for packet overflow.
+    @return error_str().
+   */
+  String *push_packet_overflow_warning(THD *thd, const char *func);
 };
 
 /*
@@ -216,14 +233,20 @@ class Item_func_statement_digest final : public Item_str_ascii_func {
       : Item_str_ascii_func(pos, query_string) {}
 
   const char *func_name() const override { return "statement_digest"; }
-  bool check_gcol_func_processor(uchar *) override { return true; }
-
-  bool resolve_type(THD *) override {
-    set_data_type_string(DIGEST_HASH_TO_STRING_LENGTH, default_charset());
-    return false;
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return (func_arg->source == VGS_GENERATED_COLUMN);
   }
 
+  bool resolve_type(THD *thd) override;
+
   String *val_str_ascii(String *) override;
+
+ private:
+  uchar *m_token_buffer{nullptr};
 };
 
 class Item_func_statement_digest_text final : public Item_str_func {
@@ -237,13 +260,19 @@ class Item_func_statement_digest_text final : public Item_str_func {
     The type is always LONGTEXT, just like the digest_text columns in
     Performance Schema
   */
-  bool resolve_type(THD *) override {
-    set_data_type_string(MAX_BLOB_WIDTH, args[0]->collation);
-    return false;
-  }
+  bool resolve_type(THD *thd) override;
 
-  bool check_gcol_func_processor(uchar *) override { return true; }
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return (func_arg->source == VGS_GENERATED_COLUMN);
+  }
   String *val_str(String *) override;
+
+ private:
+  uchar *m_token_buffer{nullptr};
 };
 
 class Item_func_from_base64 final : public Item_str_func {
@@ -347,7 +376,7 @@ class Item_func_reverse : public Item_str_func {
 class Item_func_replace : public Item_str_func {
   String tmp_value, tmp_value2;
   /// Holds result in case we need to allocate our own result buffer.
-  String tmp_value_res;
+  String tmp_value_res{"", 0, &my_charset_bin};
 
  public:
   Item_func_replace(const POS &pos, Item *org, Item *find, Item *replace)
@@ -523,7 +552,8 @@ class Item_func_trim : public Item_str_func {
     }
     return NULL;
   }
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_func_ltrim final : public Item_func_trim {
@@ -556,7 +586,14 @@ class Item_func_sysconst : public Item_str_func {
     call
   */
   virtual const Name_string fully_qualified_func_name() const = 0;
-  bool check_gcol_func_processor(uchar *) override { return true; }
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return ((func_arg->source == VGS_GENERATED_COLUMN) ||
+            (func_arg->source == VGS_CHECK_CONSTRAINT));
+  }
 };
 
 class Item_func_database : public Item_func_sysconst {
@@ -601,6 +638,13 @@ class Item_func_user : public Item_func_sysconst {
     return (null_value ? 0 : &str_value);
   }
   bool fix_fields(THD *thd, Item **ref) override;
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return true;
+  }
   bool resolve_type(THD *) override {
     set_data_type_string(uint32(USERNAME_CHAR_LENGTH + HOSTNAME_LENGTH + 1U));
     return false;
@@ -676,16 +720,17 @@ class Item_func_make_set final : public Item_str_func {
   const char *func_name() const override { return "make_set"; }
 
   bool walk(Item_processor processor, enum_walk walk, uchar *arg) override {
-    if ((walk & WALK_PREFIX) && (this->*processor)(arg)) return true;
+    if ((walk & enum_walk::PREFIX) && (this->*processor)(arg)) return true;
     if (item->walk(processor, walk, arg)) return true;
     for (uint i = 0; i < arg_count; i++) {
       if (args[i]->walk(processor, walk, arg)) return true;
     }
-    return ((walk & WALK_POSTFIX) && (this->*processor)(arg));
+    return ((walk & enum_walk::POSTFIX) && (this->*processor)(arg));
   }
 
   Item *transform(Item_transformer transformer, uchar *arg) override;
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_func_format final : public Item_str_ascii_func {
@@ -702,7 +747,8 @@ class Item_func_format final : public Item_str_ascii_func {
   String *val_str_ascii(String *) override;
   bool resolve_type(THD *thd) override;
   const char *func_name() const override { return "format"; }
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_func_char final : public Item_str_func {
@@ -878,16 +924,16 @@ class Item_func_like_range_max final : public Item_func_like_range {
 };
 #endif
 
-class Item_char_typecast final : public Item_str_func {
+class Item_typecast_char final : public Item_str_func {
   longlong cast_length;
   const CHARSET_INFO *cast_cs, *from_cs;
   bool charset_conversion;
   String tmp_value;
 
  public:
-  Item_char_typecast(Item *a, longlong length_arg, const CHARSET_INFO *cs_arg)
+  Item_typecast_char(Item *a, longlong length_arg, const CHARSET_INFO *cs_arg)
       : Item_str_func(a), cast_length(length_arg), cast_cs(cs_arg) {}
-  Item_char_typecast(const POS &pos, Item *a, longlong length_arg,
+  Item_typecast_char(const POS &pos, Item *a, longlong length_arg,
                      const CHARSET_INFO *cs_arg)
       : Item_str_func(pos, a), cast_length(length_arg), cast_cs(cs_arg) {}
   enum Functype functype() const override { return TYPECAST_FUNC; }
@@ -895,27 +941,8 @@ class Item_char_typecast final : public Item_str_func {
   const char *func_name() const override { return "cast_as_char"; }
   String *val_str(String *a) override;
   bool resolve_type(THD *) override;
-  void print(String *str, enum_query_type query_type) override;
-};
-
-class Item_func_binary final : public Item_str_func {
- public:
-  Item_func_binary(const POS &pos, Item *a) : Item_str_func(pos, a) {}
-  String *val_str(String *a) override {
-    DBUG_ASSERT(fixed == 1);
-    String *tmp = args[0]->val_str(a);
-    null_value = args[0]->null_value;
-    if (tmp) tmp->set_charset(&my_charset_bin);
-    return tmp;
-  }
-  bool resolve_type(THD *) override {
-    // Determine binary string length from max length of argument in bytes
-    set_data_type_string(args[0]->max_length, &my_charset_bin);
-    return false;
-  }
-  void print(String *str, enum_query_type query_type) override;
-  const char *func_name() const override { return "cast_as_binary"; }
-  enum Functype functype() const override { return TYPECAST_FUNC; }
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_load_file final : public Item_str_func {
@@ -935,7 +962,13 @@ class Item_load_file final : public Item_str_func {
     maybe_null = true;
     return false;
   }
-  bool check_gcol_func_processor(uchar *) override { return true; }
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return true;
+  }
 };
 
 class Item_func_export_set final : public Item_str_func {
@@ -959,12 +992,7 @@ class Item_func_quote : public Item_str_func {
   Item_func_quote(const POS &pos, Item *a) : Item_str_func(pos, a) {}
   const char *func_name() const override { return "quote"; }
   String *val_str(String *) override;
-  bool resolve_type(THD *) override {
-    uint32 max_result_length = args[0]->max_char_length() + 2U;
-    set_data_type_string(std::min<uint32>(max_result_length, MAX_BLOB_WIDTH),
-                         args[0]->collation);
-    return false;
-  }
+  bool resolve_type(THD *thd) override;
 };
 
 class Item_func_conv_charset final : public Item_str_func {
@@ -992,7 +1020,7 @@ class Item_func_conv_charset final : public Item_str_func {
   Item_func_conv_charset(THD *thd, Item *a, const CHARSET_INFO *cs,
                          bool cache_if_const)
       : Item_str_func(a) {
-    DBUG_ASSERT(is_fixed_or_outer_ref(args[0]));
+    DBUG_ASSERT(args[0]->fixed);
 
     conv_charset = cs;
     if (cache_if_const && args[0]->may_evaluate_const(thd)) {
@@ -1014,7 +1042,8 @@ class Item_func_conv_charset final : public Item_str_func {
   String *val_str(String *) override;
   bool resolve_type(THD *) override;
   const char *func_name() const override { return "convert"; }
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_func_set_collation final : public Item_str_func {
@@ -1033,7 +1062,8 @@ class Item_func_set_collation final : public Item_str_func {
   bool eq(const Item *item, bool binary_cmp) const override;
   const char *func_name() const override { return "collate"; }
   enum Functype functype() const override { return COLLATE_FUNC; }
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
   Item_field *field_for_view_update() override {
     /* this function is transparent for view updating */
     return args[0]->field_for_view_update();
@@ -1051,7 +1081,7 @@ class Item_func_charset final : public Item_str_func {
     set_data_type_string(64U, system_charset_info);
     maybe_null = false;
     return false;
-  };
+  }
 };
 
 class Item_func_collation : public Item_str_func {
@@ -1065,7 +1095,7 @@ class Item_func_collation : public Item_str_func {
     set_data_type_string(64U, system_charset_info);
     maybe_null = false;
     return false;
-  };
+  }
 };
 
 class Item_func_weight_string final : public Item_str_func {
@@ -1095,7 +1125,8 @@ class Item_func_weight_string final : public Item_str_func {
   bool eq(const Item *item, bool binary_cmp) const override;
   String *val_str(String *) override;
   bool resolve_type(THD *) override;
-  void print(String *str, enum_query_type query_type) override;
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
 };
 
 class Item_func_crc32 final : public Item_int_func {
@@ -1168,7 +1199,14 @@ class Item_func_uuid final : public Item_str_func {
   bool resolve_type(THD *) override;
   const char *func_name() const override { return "uuid"; }
   String *val_str(String *) override;
-  bool check_gcol_func_processor(uchar *) override { return true; }
+  bool check_function_as_value_generator(uchar *checker_args) override {
+    Check_function_as_value_generator_parameters *func_arg =
+        pointer_cast<Check_function_as_value_generator_parameters *>(
+            checker_args);
+    func_arg->banned_function_name = func_name();
+    return ((func_arg->source == VGS_GENERATED_COLUMN) ||
+            (func_arg->source == VGS_CHECK_CONSTRAINT));
+  }
 };
 
 class Item_func_gtid_subtract final : public Item_str_ascii_func {
@@ -1276,8 +1314,8 @@ class Item_func_get_dd_column_privileges final : public Item_str_func {
 
 class Item_func_get_dd_create_options final : public Item_str_func {
  public:
-  Item_func_get_dd_create_options(const POS &pos, Item *a, Item *b)
-      : Item_str_func(pos, a, b) {}
+  Item_func_get_dd_create_options(const POS &pos, Item *a, Item *b, Item *c)
+      : Item_str_func(pos, a, b, c) {}
 
   enum Functype functype() const override { return DD_INTERNAL_FUNC; }
   bool resolve_type(THD *) override {
@@ -1302,9 +1340,12 @@ class Item_func_internal_get_comment_or_error final : public Item_str_func {
 
   enum Functype functype() const override { return DD_INTERNAL_FUNC; }
   bool resolve_type(THD *) override {
-    // maximum string length of all options is expected
-    // to be less than 256 characters.
-    set_data_type_string(256, system_charset_info);
+    /*
+      maximum expected string length to be less than 2048 characters,
+      which is same as size of column holding comments in dictionary,
+      i.e., the mysql.tables.comment DD column.
+    */
+    set_data_type_string(2048, system_charset_info);
     maybe_null = 1;
     null_on_null = false;
 
@@ -1478,6 +1519,28 @@ class Item_func_internal_tablespace_row_format : public Item_str_func {
   String *val_str(String *) override;
 };
 
+class Item_func_internal_tablespace_extra : public Item_str_func {
+ public:
+  Item_func_internal_tablespace_extra(const POS &pos, Item *a, Item *b, Item *c,
+                                      Item *d)
+      : Item_str_func(pos, a, b, c, d) {}
+
+  enum Functype functype() const override { return DD_INTERNAL_FUNC; }
+  bool resolve_type(THD *) override {
+    // maximum string length of all options is expected
+    // to be less than 256 characters.
+    set_data_type_string(256, system_charset_info);
+    maybe_null = 1;
+    null_on_null = false;
+
+    return false;
+  }
+
+  const char *func_name() const override { return "internal_tablespace_extra"; }
+
+  String *val_str(String *) override;
+};
+
 class Item_func_convert_cpu_id_mask final : public Item_str_func {
  public:
   Item_func_convert_cpu_id_mask(const POS &pos, Item *list)
@@ -1491,6 +1554,90 @@ class Item_func_convert_cpu_id_mask final : public Item_str_func {
   }
 
   const char *func_name() const override { return "convert_cpu_id_mask"; }
+
+  String *val_str(String *) override;
+};
+
+class Item_func_get_dd_property_key_value final : public Item_str_func {
+ public:
+  Item_func_get_dd_property_key_value(const POS &pos, Item *a, Item *b)
+      : Item_str_func(pos, a, b) {}
+
+  enum Functype functype() const override { return DD_INTERNAL_FUNC; }
+  bool resolve_type(THD *) override {
+    set_data_type_string(MAX_BLOB_WIDTH, system_charset_info);
+    maybe_null = true;
+    null_on_null = false;
+
+    return false;
+  }
+
+  const char *func_name() const override { return "get_dd_property_key_value"; }
+
+  String *val_str(String *) override;
+};
+
+class Item_func_remove_dd_property_key final : public Item_str_func {
+ public:
+  Item_func_remove_dd_property_key(const POS &pos, Item *a, Item *b)
+      : Item_str_func(pos, a, b) {}
+
+  enum Functype functype() const override { return DD_INTERNAL_FUNC; }
+  bool resolve_type(THD *) override {
+    set_data_type_string(MAX_BLOB_WIDTH, system_charset_info);
+    maybe_null = true;
+    null_on_null = false;
+
+    return false;
+  }
+
+  const char *func_name() const override { return "remove_dd_property_key"; }
+
+  String *val_str(String *) override;
+};
+
+class Item_func_convert_interval_to_user_interval final : public Item_str_func {
+ public:
+  Item_func_convert_interval_to_user_interval(const POS &pos, Item *a, Item *b)
+      : Item_str_func(pos, a, b) {}
+
+  enum Functype functype() const override { return DD_INTERNAL_FUNC; }
+  bool resolve_type(THD *) override {
+    // maximum string length of all options is expected
+    // to be less than 256 characters.
+    set_data_type_string(256, system_charset_info);
+    maybe_null = true;
+    null_on_null = false;
+
+    return false;
+  }
+
+  const char *func_name() const override {
+    return "convert_interval_to_user_interval";
+  }
+
+  String *val_str(String *) override;
+};
+
+class Item_func_internal_get_dd_column_extra final : public Item_str_func {
+ public:
+  Item_func_internal_get_dd_column_extra(const POS &pos, PT_item_list *list)
+      : Item_str_func(pos, list) {}
+
+  enum Functype functype() const override { return DD_INTERNAL_FUNC; }
+  bool resolve_type(THD *) override {
+    // maximum string length of all options is expected
+    // to be less than 256 characters.
+    set_data_type_string(256, system_charset_info);
+    maybe_null = false;
+    null_on_null = false;
+
+    return false;
+  }
+
+  const char *func_name() const override {
+    return "internal_get_dd_column_extra";
+  }
 
   String *val_str(String *) override;
 };

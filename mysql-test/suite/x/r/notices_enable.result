@@ -840,7 +840,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 21
   flags: 16
 }
@@ -865,7 +865,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 1536
   flags: 16
 }
@@ -946,7 +946,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: "t1"
   schema: "test"
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 30
 }
 
@@ -1027,7 +1027,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: "t1"
   schema: "test"
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 30
 }
 
@@ -3278,3001 +3278,3001 @@ Mysqlx.Sql.StmtExecuteOk {
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\\x00\\\' for column \\\'a\\\' at row 9\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\\x00\\\' for column \\\'a\\\' at row 10\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\\x00\\\' for column \\\'a\\\' at row 11\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\\x00\\\' for column \\\'a\\\' at row 15\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\\x00\\\' for column \\\'a\\\' at row 16\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\\x00\\\' for column \\\'a\\\' at row 25\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\\x00\\\' for column \\\'a\\\' at row 26\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\\x00\\\' for column \\\'a\\\' at row 31\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\\x00\\\' for column \\\'a\\\' at row 32\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\\x00\\\' for column \\\'a\\\' at row 41\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\\x00\\\' for column \\\'a\\\' at row 42\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\\x00\\\' for column \\\'a\\\' at row 47\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\\x00\\\' for column \\\'a\\\' at row 48\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\\x00\\\' for column \\\'a\\\' at row 57\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\\x00\\\' for column \\\'a\\\' at row 58\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\\x00\\\' for column \\\'a\\\' at row 63\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\\x00\\\' for column \\\'a\\\' at row 64\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\\x00\\\' for column \\\'a\\\' at row 73\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\\x00\\\' for column \\\'a\\\' at row 74\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\\x00\\\' for column \\\'a\\\' at row 79\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\\x00\\\' for column \\\'a\\\' at row 80\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\\x00\\\' for column \\\'a\\\' at row 89\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\\x00\\\' for column \\\'a\\\' at row 90\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\\x00\\\' for column \\\'a\\\' at row 95\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\\x00\\\' for column \\\'a\\\' at row 96\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\\x00\\\' for column \\\'a\\\' at row 105\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\\x00\\\' for column \\\'a\\\' at row 106\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\\x00\\\' for column \\\'a\\\' at row 111\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\\x00\\\' for column \\\'a\\\' at row 112\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\\x00\\\' for column \\\'a\\\' at row 121\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\\x00\\\' for column \\\'a\\\' at row 122\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\\x00\\\' for column \\\'a\\\' at row 127\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\\x00\\\' for column \\\'a\\\' at row 128\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\\x00\\\' for column \\\'a\\\' at row 137\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\\x00\\\' for column \\\'a\\\' at row 138\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\\x00\\\' for column \\\'a\\\' at row 143\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\\x00\\\' for column \\\'a\\\' at row 144\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\\x00\\\' for column \\\'a\\\' at row 153\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\\x00\\\' for column \\\'a\\\' at row 154\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\\x00\\\' for column \\\'a\\\' at row 159\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\\x00\\\' for column \\\'a\\\' at row 160\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\\x00\\\' for column \\\'a\\\' at row 169\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\\x00\\\' for column \\\'a\\\' at row 170\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\\x00\\\' for column \\\'a\\\' at row 175\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\\x00\\\' for column \\\'a\\\' at row 176\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\\x00\\\' for column \\\'a\\\' at row 185\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\\x00\\\' for column \\\'a\\\' at row 186\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\\x00\\\' for column \\\'a\\\' at row 191\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\\x00\\\' for column \\\'a\\\' at row 192\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\\x00\\\' for column \\\'a\\\' at row 201\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\\x00\\\' for column \\\'a\\\' at row 202\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\\x00\\\' for column \\\'a\\\' at row 207\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\\x00\\\' for column \\\'a\\\' at row 208\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\\x00\\\' for column \\\'a\\\' at row 217\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\\x00\\\' for column \\\'a\\\' at row 218\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\\x00\\\' for column \\\'a\\\' at row 223\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\\x00\\\' for column \\\'a\\\' at row 224\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\\x00\\\' for column \\\'a\\\' at row 233\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\\x00\\\' for column \\\'a\\\' at row 234\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\\x00\\\' for column \\\'a\\\' at row 239\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\\x00\\\' for column \\\'a\\\' at row 240\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\\x00\\\' for column \\\'a\\\' at row 249\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\\x00\\\' for column \\\'a\\\' at row 250\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\\x00\\\' for column \\\'a\\\' at row 255\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\\x00\\\' for column \\\'a\\\' at row 256\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\\x10\\\' for column \\\'a\\\' at row 265\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\\x10\\\' for column \\\'a\\\' at row 266\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\\x10\\\' for column \\\'a\\\' at row 267\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\\x10\\\' for column \\\'a\\\' at row 271\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\\x10\\\' for column \\\'a\\\' at row 272\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\\x10\\\' for column \\\'a\\\' at row 281\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\\x10\\\' for column \\\'a\\\' at row 282\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\\x10\\\' for column \\\'a\\\' at row 287\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\\x10\\\' for column \\\'a\\\' at row 288\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\\x10\\\' for column \\\'a\\\' at row 297\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\\x10\\\' for column \\\'a\\\' at row 298\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\\x10\\\' for column \\\'a\\\' at row 303\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\\x10\\\' for column \\\'a\\\' at row 304\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\\x10\\\' for column \\\'a\\\' at row 313\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\\x10\\\' for column \\\'a\\\' at row 314\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\\x10\\\' for column \\\'a\\\' at row 319\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\\x10\\\' for column \\\'a\\\' at row 320\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\\x10\\\' for column \\\'a\\\' at row 329\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\\x10\\\' for column \\\'a\\\' at row 330\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\\x10\\\' for column \\\'a\\\' at row 335\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\\x10\\\' for column \\\'a\\\' at row 336\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\\x10\\\' for column \\\'a\\\' at row 345\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\\x10\\\' for column \\\'a\\\' at row 346\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\\x10\\\' for column \\\'a\\\' at row 351\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\\x10\\\' for column \\\'a\\\' at row 352\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\\x10\\\' for column \\\'a\\\' at row 361\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\\x10\\\' for column \\\'a\\\' at row 362\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\\x10\\\' for column \\\'a\\\' at row 367\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\\x10\\\' for column \\\'a\\\' at row 368\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\\x10\\\' for column \\\'a\\\' at row 377\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\\x10\\\' for column \\\'a\\\' at row 378\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\\x10\\\' for column \\\'a\\\' at row 383\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\\x10\\\' for column \\\'a\\\' at row 384\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\\x10\\\' for column \\\'a\\\' at row 393\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\\x10\\\' for column \\\'a\\\' at row 394\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\\x10\\\' for column \\\'a\\\' at row 399\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\\x10\\\' for column \\\'a\\\' at row 400\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\\x10\\\' for column \\\'a\\\' at row 409\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\\x10\\\' for column \\\'a\\\' at row 410\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\\x10\\\' for column \\\'a\\\' at row 415\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\\x10\\\' for column \\\'a\\\' at row 416\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\\x10\\\' for column \\\'a\\\' at row 425\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\\x10\\\' for column \\\'a\\\' at row 426\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\\x10\\\' for column \\\'a\\\' at row 431\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\\x10\\\' for column \\\'a\\\' at row 432\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\\x10\\\' for column \\\'a\\\' at row 441\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\\x10\\\' for column \\\'a\\\' at row 442\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\\x10\\\' for column \\\'a\\\' at row 447\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\\x10\\\' for column \\\'a\\\' at row 448\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\\x10\\\' for column \\\'a\\\' at row 457\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\\x10\\\' for column \\\'a\\\' at row 458\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\\x10\\\' for column \\\'a\\\' at row 463\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\\x10\\\' for column \\\'a\\\' at row 464\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\\x10\\\' for column \\\'a\\\' at row 473\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\\x10\\\' for column \\\'a\\\' at row 474\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\\x10\\\' for column \\\'a\\\' at row 479\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\\x10\\\' for column \\\'a\\\' at row 480\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\\x10\\\' for column \\\'a\\\' at row 489\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\\x10\\\' for column \\\'a\\\' at row 490\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\\x10\\\' for column \\\'a\\\' at row 495\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\\x10\\\' for column \\\'a\\\' at row 496\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\\x10\\\' for column \\\'a\\\' at row 505\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\\x10\\\' for column \\\'a\\\' at row 506\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\\x10\\\' for column \\\'a\\\' at row 511\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\\x10\\\' for column \\\'a\\\' at row 512\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80 \\\' for column \\\'a\\\' at row 521\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90 \\\' for column \\\'a\\\' at row 522\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0 \\\' for column \\\'a\\\' at row 523\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0 \\\' for column \\\'a\\\' at row 527\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0 \\\' for column \\\'a\\\' at row 528\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81 \\\' for column \\\'a\\\' at row 537\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91 \\\' for column \\\'a\\\' at row 538\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1 \\\' for column \\\'a\\\' at row 543\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1 \\\' for column \\\'a\\\' at row 544\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82 \\\' for column \\\'a\\\' at row 553\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92 \\\' for column \\\'a\\\' at row 554\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2 \\\' for column \\\'a\\\' at row 559\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2 \\\' for column \\\'a\\\' at row 560\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83 \\\' for column \\\'a\\\' at row 569\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93 \\\' for column \\\'a\\\' at row 570\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3 \\\' for column \\\'a\\\' at row 575\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3 \\\' for column \\\'a\\\' at row 576\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84 \\\' for column \\\'a\\\' at row 585\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94 \\\' for column \\\'a\\\' at row 586\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4 \\\' for column \\\'a\\\' at row 591\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4 \\\' for column \\\'a\\\' at row 592\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85 \\\' for column \\\'a\\\' at row 601\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95 \\\' for column \\\'a\\\' at row 602\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5 \\\' for column \\\'a\\\' at row 607\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5 \\\' for column \\\'a\\\' at row 608\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86 \\\' for column \\\'a\\\' at row 617\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96 \\\' for column \\\'a\\\' at row 618\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6 \\\' for column \\\'a\\\' at row 623\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6 \\\' for column \\\'a\\\' at row 624\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87 \\\' for column \\\'a\\\' at row 633\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97 \\\' for column \\\'a\\\' at row 634\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7 \\\' for column \\\'a\\\' at row 639\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7 \\\' for column \\\'a\\\' at row 640\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88 \\\' for column \\\'a\\\' at row 649\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98 \\\' for column \\\'a\\\' at row 650\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8 \\\' for column \\\'a\\\' at row 655\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8 \\\' for column \\\'a\\\' at row 656\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89 \\\' for column \\\'a\\\' at row 665\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99 \\\' for column \\\'a\\\' at row 666\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9 \\\' for column \\\'a\\\' at row 671\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9 \\\' for column \\\'a\\\' at row 672\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A \\\' for column \\\'a\\\' at row 681\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A \\\' for column \\\'a\\\' at row 682\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA \\\' for column \\\'a\\\' at row 687\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA \\\' for column \\\'a\\\' at row 688\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B \\\' for column \\\'a\\\' at row 697\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B \\\' for column \\\'a\\\' at row 698\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB \\\' for column \\\'a\\\' at row 703\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB \\\' for column \\\'a\\\' at row 704\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C \\\' for column \\\'a\\\' at row 713\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C \\\' for column \\\'a\\\' at row 714\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC \\\' for column \\\'a\\\' at row 719\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC \\\' for column \\\'a\\\' at row 720\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D \\\' for column \\\'a\\\' at row 729\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D \\\' for column \\\'a\\\' at row 730\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED \\\' for column \\\'a\\\' at row 735\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD \\\' for column \\\'a\\\' at row 736\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E \\\' for column \\\'a\\\' at row 745\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E \\\' for column \\\'a\\\' at row 746\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE \\\' for column \\\'a\\\' at row 751\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE \\\' for column \\\'a\\\' at row 752\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F \\\' for column \\\'a\\\' at row 761\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F \\\' for column \\\'a\\\' at row 762\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF \\\' for column \\\'a\\\' at row 767\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF \\\' for column \\\'a\\\' at row 768\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x800\\\' for column \\\'a\\\' at row 777\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x900\\\' for column \\\'a\\\' at row 778\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA00\\\' for column \\\'a\\\' at row 779\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE00\\\' for column \\\'a\\\' at row 783\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF00\\\' for column \\\'a\\\' at row 784\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x810\\\' for column \\\'a\\\' at row 793\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x910\\\' for column \\\'a\\\' at row 794\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE10\\\' for column \\\'a\\\' at row 799\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF10\\\' for column \\\'a\\\' at row 800\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x820\\\' for column \\\'a\\\' at row 809\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x920\\\' for column \\\'a\\\' at row 810\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE20\\\' for column \\\'a\\\' at row 815\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF20\\\' for column \\\'a\\\' at row 816\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x830\\\' for column \\\'a\\\' at row 825\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x930\\\' for column \\\'a\\\' at row 826\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE30\\\' for column \\\'a\\\' at row 831\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF30\\\' for column \\\'a\\\' at row 832\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x840\\\' for column \\\'a\\\' at row 841\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x940\\\' for column \\\'a\\\' at row 842\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE40\\\' for column \\\'a\\\' at row 847\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF40\\\' for column \\\'a\\\' at row 848\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x850\\\' for column \\\'a\\\' at row 857\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x950\\\' for column \\\'a\\\' at row 858\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE50\\\' for column \\\'a\\\' at row 863\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF50\\\' for column \\\'a\\\' at row 864\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x860\\\' for column \\\'a\\\' at row 873\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x960\\\' for column \\\'a\\\' at row 874\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE60\\\' for column \\\'a\\\' at row 879\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF60\\\' for column \\\'a\\\' at row 880\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x870\\\' for column \\\'a\\\' at row 889\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x970\\\' for column \\\'a\\\' at row 890\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE70\\\' for column \\\'a\\\' at row 895\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF70\\\' for column \\\'a\\\' at row 896\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x880\\\' for column \\\'a\\\' at row 905\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x980\\\' for column \\\'a\\\' at row 906\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE80\\\' for column \\\'a\\\' at row 911\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF80\\\' for column \\\'a\\\' at row 912\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x890\\\' for column \\\'a\\\' at row 921\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x990\\\' for column \\\'a\\\' at row 922\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE90\\\' for column \\\'a\\\' at row 927\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF90\\\' for column \\\'a\\\' at row 928\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A0\\\' for column \\\'a\\\' at row 937\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A0\\\' for column \\\'a\\\' at row 938\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA0\\\' for column \\\'a\\\' at row 943\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA0\\\' for column \\\'a\\\' at row 944\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B0\\\' for column \\\'a\\\' at row 953\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B0\\\' for column \\\'a\\\' at row 954\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB0\\\' for column \\\'a\\\' at row 959\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB0\\\' for column \\\'a\\\' at row 960\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C0\\\' for column \\\'a\\\' at row 969\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C0\\\' for column \\\'a\\\' at row 970\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC0\\\' for column \\\'a\\\' at row 975\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC0\\\' for column \\\'a\\\' at row 976\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D0\\\' for column \\\'a\\\' at row 985\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D0\\\' for column \\\'a\\\' at row 986\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED0\\\' for column \\\'a\\\' at row 991\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD0\\\' for column \\\'a\\\' at row 992\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E0\\\' for column \\\'a\\\' at row 1001\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E0\\\' for column \\\'a\\\' at row 1002\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE0\\\' for column \\\'a\\\' at row 1007\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE0\\\' for column \\\'a\\\' at row 1008\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F0\\\' for column \\\'a\\\' at row 1017\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F0\\\' for column \\\'a\\\' at row 1018\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF0\\\' for column \\\'a\\\' at row 1023\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF0\\\' for column \\\'a\\\' at row 1024\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80@\\\' for column \\\'a\\\' at row 1033\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0@\\\' for column \\\'a\\\' at row 1035\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD@\\\' for column \\\'a\\\' at row 1248\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE@\\\' for column \\\'a\\\' at row 1264\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF@\\\' for column \\\'a\\\' at row 1280\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80P\\\' for column \\\'a\\\' at row 1289\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0P\\\' for column \\\'a\\\' at row 1291\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFDP\\\' for column \\\'a\\\' at row 1504\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFEP\\\' for column \\\'a\\\' at row 1520\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFFP\\\' for column \\\'a\\\' at row 1536\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80`\\\' for column \\\'a\\\' at row 1545\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0`\\\' for column \\\'a\\\' at row 1547\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD`\\\' for column \\\'a\\\' at row 1760\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE`\\\' for column \\\'a\\\' at row 1776\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF`\\\' for column \\\'a\\\' at row 1792\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80p\\\' for column \\\'a\\\' at row 1801\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0p\\\' for column \\\'a\\\' at row 1803\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFDp\\\' for column \\\'a\\\' at row 2016\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFEp\\\' for column \\\'a\\\' at row 2032\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFFp\\\' for column \\\'a\\\' at row 2048\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2049\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2050\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2051\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2052\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2053\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2054\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2055\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2056\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\\x80\\\' for column \\\'a\\\' at row 2057\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\\x80\\\' for column \\\'a\\\' at row 2059\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2060\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2061\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2062\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2065\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2066\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2067\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2068\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2069\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2070\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2071\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2072\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2075\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2076\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2077\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2078\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2081\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2082\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2083\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2084\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2085\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2086\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2087\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2088\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2091\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2092\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2093\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2094\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2097\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2098\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2099\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2100\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2101\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2102\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2103\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2104\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2107\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2108\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2109\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2110\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2113\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2114\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2115\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2116\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2117\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2118\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2119\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2120\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2123\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2124\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2125\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2126\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2129\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2130\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2131\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2132\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2133\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2134\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2135\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2136\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2139\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2140\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2141\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2142\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2145\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2146\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2147\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2148\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2149\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2150\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2151\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2152\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2155\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2156\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2157\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2158\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2161\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2162\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2163\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2164\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2165\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2166\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2167\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2168\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2171\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2172\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2173\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2174\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2177\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2178\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2179\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2180\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2181\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2182\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2183\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2184\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2187\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2188\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2189\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2190\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2193\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2194\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2195\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2196\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2197\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2198\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2199\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2200\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2203\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2204\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2205\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2206\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2209\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2210\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2211\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2212\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2213\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2214\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2215\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2216\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2219\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2220\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2221\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2222\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2225\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2226\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2227\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2228\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2229\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2230\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2231\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2232\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2235\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2236\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2237\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2238\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2241\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2242\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2243\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2244\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2245\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2246\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2247\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2248\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2251\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2252\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2253\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xED\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2254\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2257\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2258\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2259\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2260\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2261\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2262\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2263\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2264\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2267\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2268\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2269\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xF9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2270\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\\x80\\\' for column \\\'a\\\' at row 2272\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2273\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFC\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2274\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFD\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2275\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2276\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2277\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2278\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x81\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2279\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x82\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2280\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x83\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2283\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x84\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2284\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x85\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2285\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x86\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2286\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x87\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFE\\\\x80\\\' for column \\\'a\\\' at row 2288\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x88\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2289\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x89\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2290\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2291\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2292\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2293\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2294\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2295\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x8F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2296\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2299\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x91\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2300\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x92\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2301\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x93\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\' for column \\\'a\\\' at row 2302\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x94\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xFF\\\\x80\\\' for column \\\'a\\\' at row 2304\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x95\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2305\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x96\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2306\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x97\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2307\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x98\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2308\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x99\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2309\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9A\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2310\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9B\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2311\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9C\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2312\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9D\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x80\\\\x90\\\' for column \\\'a\\\' at row 2313\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9E\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\\x90\\\' for column \\\'a\\\' at row 2315\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x9F\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2316\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xA0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2317\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE0\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2318\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE1\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2321\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE2\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2322\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE3\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2323\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE4\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2324\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE5\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2325\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE6\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2326\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE7\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2327\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE8\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2328\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xE9\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2331\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEA\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2332\"\n }"
 }
 
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\xEB\\\' for column \\\'a\\\' at row 17\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1366\nmsg: \"Incorrect string value: \\\'\\\\x90\\\' for column \\\'a\\\' at row 2333\"\n }"
 }
 
 Mysqlx.Notice.Frame {
@@ -6358,7 +6358,7 @@ Mysqlx.Resultset.FetchDone {
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect INTEGER value: \\\'test\\\'\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect DOUBLE value: \\\'test\\\'\"\n }"
 }
 
 Mysqlx.Notice.Frame {
@@ -6407,7 +6407,7 @@ Mysqlx.Resultset.FetchDone {
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect INTEGER value: \\\'test\\\'\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect DOUBLE value: \\\'test\\\'\"\n }"
 }
 
 Mysqlx.Notice.Frame {
@@ -6441,7 +6441,7 @@ Mysqlx.Resultset.FetchDone {
 Mysqlx.Notice.Frame {
   type: 1
   scope: LOCAL
-  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect INTEGER value: \\\'test\\\'\"\n }"
+  payload: "Mysqlx.Notice.Warning { level: WARNING\ncode: 1292\nmsg: \"Truncated incorrect DOUBLE value: \\\'test\\\'\"\n }"
 }
 
 Mysqlx.Notice.Frame {
@@ -6891,7 +6891,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 21
   flags: 16
 }
@@ -6916,7 +6916,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 1536
   flags: 16
 }
@@ -6947,7 +6947,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 21
   flags: 16
 }
@@ -6972,7 +6972,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 1536
   flags: 16
 }
@@ -7068,7 +7068,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 21
   flags: 16
 }
@@ -7093,7 +7093,7 @@ Mysqlx.Resultset.ColumnMetaData {
   original_table: ""
   schema: ""
   catalog: "def"
-  collation: 33
+  collation: 45
   length: 1536
   flags: 16
 }
@@ -7497,8 +7497,8 @@ Try to enable fixed notice, should be ok
 
 command ok
 Namespace 'xplugin' is deprecated, please use 'mysqlx' instead
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 168]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 857]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 169]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 1]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]
@@ -7810,8 +7810,9 @@ Mysqlx.Error {
 0 rows affected
 
 0 rows affected
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 37]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 32]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 39]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]
@@ -7839,8 +7840,9 @@ Try enable produced_message
 Mysqlx.Sql.StmtExecuteOk {
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 2]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 0]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 4]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 5]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]
@@ -7869,8 +7871,9 @@ Try enable produced_message
 Mysqlx.Sql.StmtExecuteOk {
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 2]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 0]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 4]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 5]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]
@@ -7908,6 +7911,26 @@ Mysqlx.Resultset.Row {
 }
 
 Mysqlx.Resultset.Row {
+  field: "group_replication/membership/quorum_loss\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/membership/view\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/role_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/state_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
   field: "account_expired\000"
   field: "\002"
 }
@@ -7933,8 +7956,9 @@ Mysqlx.Resultset.FetchDone {
 Mysqlx.Sql.StmtExecuteOk {
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 2]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 0]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 4]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 1]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 1]
@@ -7998,6 +8022,26 @@ Mysqlx.Resultset.Row {
 }
 
 Mysqlx.Resultset.Row {
+  field: "group_replication/membership/quorum_loss\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/membership/view\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/role_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/state_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
   field: "account_expired\000"
   field: "\002"
 }
@@ -8050,6 +8094,26 @@ Mysqlx.Resultset.Row {
 }
 
 Mysqlx.Resultset.Row {
+  field: "group_replication/membership/quorum_loss\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/membership/view\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/role_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
+  field: "group_replication/status/state_change\000"
+  field: "\000"
+}
+
+Mysqlx.Resultset.Row {
   field: "account_expired\000"
   field: "\002"
 }
@@ -8075,8 +8139,9 @@ Mysqlx.Resultset.FetchDone {
 Mysqlx.Sql.StmtExecuteOk {
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 4]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 1]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 6]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 1]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 2]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 2]
@@ -8102,8 +8167,9 @@ Mysqlx.Notice.Frame {
 Mysqlx.Sql.StmtExecuteOk {
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 3]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 1]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 5]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]
@@ -8122,8 +8188,9 @@ Mysqlx.Error {
   sql_state: "3D000"
 }
 
-Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 1]
+Verify [Status variable "Mysqlx_notice_global_sent" needs to have a value of 1]
 Verify [Status variable "Mysqlx_notice_warning_sent" needs to have a value of 0]
+Verify [Status variable "Mysqlx_notice_other_sent" needs to have a value of 3]
 Verify [Status variable "Mysqlx_stmt_disable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_enable_notices" needs to have a value of 0]
 Verify [Status variable "Mysqlx_stmt_list_notices" needs to have a value of 0]

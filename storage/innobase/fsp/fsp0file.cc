@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2013, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2013, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -40,6 +40,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "os0file.h"
 #include "page0page.h"
 #include "srv0start.h"
+#include "trx0purge.h"
 #include "ut0new.h"
 
 #ifdef UNIV_HOTBACKUP
@@ -49,7 +50,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 /** Initialize the name and flags of this datafile.
 @param[in]	name	tablespace name, will be copied
 @param[in]	flags	tablespace flags */
-void Datafile::init(const char *name, ulint flags) {
+void Datafile::init(const char *name, uint32_t flags) {
   ut_ad(m_name == NULL);
   ut_ad(name != NULL);
 
@@ -278,9 +279,12 @@ void Datafile::set_name(const char *name) {
     m_name = mem_strdup(name);
   } else if (fsp_is_file_per_table(m_space_id, m_flags)) {
     m_name = fil_path_to_space_name(m_filepath);
+#ifndef UNIV_HOTBACKUP
   } else if (fsp_is_undo_tablespace(m_space_id)) {
-    undo::Tablespace undo_space(m_space_id);
-    m_name = mem_strdup(undo_space.space_name());
+    m_name = undo::make_space_name(m_space_id);
+#endif /* !UNIV_HOTBACKUP */
+  } else if (fsp_is_dd_tablespace(m_space_id)) {
+    m_name = mem_strdup(dict_sys_t::s_dd_space_name);
   } else {
 #ifndef UNIV_HOTBACKUP
     /* Give this general tablespace a temporary name. */
@@ -334,8 +338,8 @@ dberr_t Datafile::read_first_page(bool read_only_mode) {
   while (page_size >= UNIV_PAGE_SIZE_MIN) {
     ulint n_read = 0;
 
-    err = os_file_read_no_error_handling(request, m_handle, m_first_page, 0,
-                                         page_size, &n_read);
+    err = os_file_read_no_error_handling(request, m_filename, m_handle,
+                                         m_first_page, 0, page_size, &n_read);
 
     if (err == DB_IO_ERROR && n_read >= UNIV_PAGE_SIZE_MIN) {
       page_size >>= 1;
@@ -382,7 +386,7 @@ in order for this function to validate it.
 @param[in]	for_import	if it is for importing
 @retval DB_SUCCESS if tablespace is valid, DB_ERROR if not.
 m_is_valid is also set true on success, else false. */
-dberr_t Datafile::validate_to_dd(space_id_t space_id, ulint flags,
+dberr_t Datafile::validate_to_dd(space_id_t space_id, uint32_t flags,
                                  bool for_import) {
   dberr_t err;
 
@@ -398,6 +402,11 @@ dberr_t Datafile::validate_to_dd(space_id_t space_id, ulint flags,
     return (err);
   }
 
+  if (m_space_id == space_id && FSP_FLAGS_ARE_NOT_SET(flags) &&
+      fsp_is_dd_tablespace(space_id)) {
+    return (DB_SUCCESS);
+  }
+
   /* Make sure the datafile we found matched the space ID.
   If the datafile is a file-per-table tablespace then also match
   the row format and zip page size. */
@@ -409,6 +418,19 @@ dberr_t Datafile::validate_to_dd(space_id_t space_id, ulint flags,
       !((m_flags ^ flags) & ~(FSP_FLAGS_MASK_DATA_DIR | FSP_FLAGS_MASK_SHARED |
                               FSP_FLAGS_MASK_SDI))) {
     /* Datafile matches the tablespace expected. */
+    return (DB_SUCCESS);
+  }
+
+  /* It is possible for a space flag to be updated for encryption in the
+  ibd file, but the server crashed before DD flags are updated. Exclude
+  encryption flags for that scenario.
+
+  This is safe because m_encryption_op_in_progress will always be set to
+  NONE unless there is a crash before Encryption is finished. */
+  if (m_encryption_op_in_progress == ENCRYPTION &&
+      !((m_flags ^ flags) &
+        ~(FSP_FLAGS_MASK_ENCRYPTION | FSP_FLAGS_MASK_DATA_DIR |
+          FSP_FLAGS_MASK_SHARED | FSP_FLAGS_MASK_SDI))) {
     return (DB_SUCCESS);
   }
 
@@ -577,8 +599,8 @@ dberr_t Datafile::validate_first_page(space_id_t space_id, lsn_t *flush_lsn,
     error_txt = "A bad Space ID was found";
 
   } else if (m_space_id != 0 && space_id != m_space_id) {
-  /* Tablespace ID mismatch. The file could be in use
-  by another tablespace. */
+    /* Tablespace ID mismatch. The file could be in use
+    by another tablespace. */
 
 #ifndef UNIV_HOTBACKUP
     ut_d(ib::info(ER_IB_MSG_398)
@@ -639,11 +661,9 @@ dberr_t Datafile::validate_first_page(space_id_t space_id, lsn_t *flush_lsn,
     if (!fsp_header_get_encryption_key(m_flags, m_encryption_key,
                                        m_encryption_iv, m_first_page)) {
       ib::error(ER_IB_MSG_401)
-          << "Encryption information in"
-          << " datafile: " << m_filepath << " can't be decrypted"
-          << " , please confirm the keyfile"
-          << " is match and keyring plugin"
-          << " is loaded.";
+          << "Encryption information in datafile: " << m_filepath
+          << " can't be decrypted, please confirm the "
+             "keyfile is match and keyring plugin is loaded.";
 
       m_is_valid = false;
       free_first_page();
@@ -666,6 +686,12 @@ dberr_t Datafile::validate_first_page(space_id_t space_id, lsn_t *flush_lsn,
       m_encryption_iv = NULL;
     }
   }
+#ifndef UNIV_HOTBACKUP
+  /* Set encryption operation in progress based on operation type
+  at page 0. */
+  m_encryption_op_in_progress =
+      fsp_header_encryption_op_type_in_progress(m_first_page, page_size);
+#endif /* UNIV_HOTBACKUP */
 
   if (fil_space_read_name_and_filepath(m_space_id, &prev_name,
                                        &prev_filepath)) {
@@ -743,7 +769,8 @@ dberr_t Datafile::find_space_id() {
       ulint n_bytes = j * page_size;
       IORequest request(IORequest::READ);
 
-      err = os_file_read(request, m_handle, page, n_bytes, page_size);
+      err =
+          os_file_read(request, m_filename, m_handle, page, n_bytes, page_size);
 
       if (err == DB_IO_DECOMPRESS_FAIL) {
         /* If the page was compressed on the fly then
@@ -752,7 +779,7 @@ dberr_t Datafile::find_space_id() {
         n_bytes = os_file_compressed_page_size(page);
 
         if (n_bytes != ULINT_UNDEFINED) {
-          err = os_file_read(request, m_handle, page, page_size,
+          err = os_file_read(request, m_filename, m_handle, page, page_size,
                              UNIV_PAGE_SIZE_MAX);
 
           if (err != DB_SUCCESS) {
@@ -862,7 +889,7 @@ dberr_t Datafile::restore_from_doublewrite(page_no_t restore_page_no) {
     return (DB_CORRUPTION);
   }
 
-  const ulint flags =
+  const uint32_t flags =
       mach_read_from_4(FSP_HEADER_OFFSET + FSP_SPACE_FLAGS + page);
 
   const page_size_t page_size(flags);

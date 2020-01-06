@@ -1,4 +1,4 @@
-# Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -24,7 +24,7 @@
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/storage/ndb/src/mgmapi)
 INCLUDE(${CMAKE_SOURCE_DIR}/storage/ndb/config/type_kernel.cmake)
 
-ADD_CONVENIENCE_LIBRARY(ndbkernel
+ADD_LIBRARY(ndbkernel STATIC
     VMSignal.cpp
     Emulator.cpp
     Configuration.cpp
@@ -45,11 +45,14 @@ ADD_CONVENIENCE_LIBRARY(ndbkernel
     NdbinfoTables.cpp
     ArenaPool.cpp
     mt_thr_config.cpp
+    StaticSlotPool.cpp
+    TransientPagePool.cpp
+    TransientSlotPool.cpp
 )
 #    WOPool.cpp
 #    RWPool.cpp
 
-ADD_CONVENIENCE_LIBRARY(ndbsched
+ADD_LIBRARY(ndbsched STATIC
     TimeQueue.cpp
     ThreadConfig.cpp
     FastScheduler.cpp
@@ -61,7 +64,7 @@ ADD_CONVENIENCE_LIBRARY(ndbsched
 )
 
 IF(WITH_NDBMTD)
-  ADD_CONVENIENCE_LIBRARY(ndbsched_mt
+  ADD_LIBRARY(ndbsched_mt STATIC
     SimulatedBlock_mt.cpp
     TransporterCallback_mt.cpp
     LongSignal_mt.cpp
@@ -70,25 +73,23 @@ IF(WITH_NDBMTD)
     dummy_mt.cpp)
 ENDIF()
 
-ADD_CONVENIENCE_LIBRARY(ndbtest
+ADD_LIBRARY(ndbtest STATIC
     test_context.cpp
     ../blocks/dbtup/tuppage.cpp
 )
 
 NDB_ADD_TEST(mt_thr_config-t mt_thr_config.cpp LIBS ndbgeneral)
 
-FOREACH(testprog CountingPool DynArr256 IntrusiveList LHLevel SegmentList)
-  NDB_ADD_TEST("${testprog}-t" "${testprog}.cpp" LIBS ndbtest ndbkernel ndbsched ndberror ndbtransport ndbmgmcommon ndbmgmapi ndbportlib ndbgeneral)
+# ${ALL_UNIT_TEST_LIBS} may be listed twice in the linker command due
+# to inter-library dependencies
+SET(ALL_UNIT_TEST_LIBS ndbtest ndbkernel ndbsched ndberror ndbtransport
+                       ndbmgmcommon ndbmgmapi ndbportlib ndbgeneral)
+
+FOREACH(testprog CountingPool DynArr256 IntrusiveList LHLevel SegmentList Rope)
+  NDB_ADD_TEST("${testprog}-t" "${testprog}.cpp"
+               LIBS ${ALL_UNIT_TEST_LIBS} ${ALL_UNIT_TEST_LIBS})
 ENDFOREACH(testprog)
 
-# Todo : Fix
-#FOREACH(testprog SegmentList)
-#  ADD_EXECUTABLE(${testprog}-t ${testprog}.cpp)
-#  SET_TARGET_PROPERTIES(${testprog}-t PROPERTIES COMPILE_FLAGS "-DTAP_TEST")
-#  TARGET_LINK_LIBRARIES(${testprog}-t ndbtest ndbkernel ndbsched ndberror
-#                ndbtransport ndbmgmcommon ndbmgmapi ndbportlib ndbgeneral)
-#ENDFOREACH(testprog)
-
 IF(WITH_NDBMTD)
-  NDB_ADD_TEST(mt-send-t mt-send-t.cpp LIBS ndbtest ndbkernel ndbsched ndberror ndbtransport ndbmgmcommon ndbmgmapi ndbportlib ndbgeneral)
+  NDB_ADD_TEST(mt-send-t mt-send-t.cpp LIBS ${ALL_UNIT_TEST_LIBS})
 ENDIF()

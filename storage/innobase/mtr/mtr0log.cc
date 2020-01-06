@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1995, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1995, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -37,7 +37,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "buf0dblwr.h"
 #include "dict0dict.h"
 #include "log0recv.h"
-#include "my_inttypes.h"
 #endif /* !UNIV_HOTBACKUP */
 #include "page0page.h"
 
@@ -533,10 +532,11 @@ byte *mlog_parse_index(byte *ptr,            /*!< in: buffer */
                        ibool comp,           /*!< in: TRUE=compact row format */
                        dict_index_t **index) /*!< out, own: dummy index */
 {
-  ulint i, n, n_uniq;
+  ulint i;
   dict_table_t *table;
   dict_index_t *ind;
   bool instant = false;
+  uint16_t n, n_uniq;
   uint16_t instant_cols = 0;
 
   ut_ad(comp == FALSE || comp == TRUE);
@@ -570,7 +570,7 @@ byte *mlog_parse_index(byte *ptr,            /*!< in: buffer */
   } else {
     n = n_uniq = 1;
   }
-  table = dict_mem_table_create("LOG_DUMMY", DICT_HDR_SPACE, n, 0,
+  table = dict_mem_table_create("LOG_DUMMY", DICT_HDR_SPACE, n, 0, 0,
                                 comp ? DICT_TF_COMPACT : 0, 0);
   if (instant) {
     table->set_instant_cols(instant_cols);

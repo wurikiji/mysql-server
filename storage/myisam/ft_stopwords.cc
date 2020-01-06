@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -30,6 +30,7 @@
 #include "my_inttypes.h"
 #include "my_io.h"
 #include "storage/myisam/ftdefs.h"
+#include "storage/myisam/myisamdef.h"
 
 static CHARSET_INFO *ft_stopword_cs = NULL;
 
@@ -40,17 +41,17 @@ struct FT_STOPWORD {
 
 static TREE *stopwords3 = NULL;
 
-static int FT_STOPWORD_cmp(const void *cmp_arg MY_ATTRIBUTE((unused)),
-                           const void *a, const void *b) {
-  FT_STOPWORD *w1 = (FT_STOPWORD *)a;
-  FT_STOPWORD *w2 = (FT_STOPWORD *)b;
-  return ha_compare_text(ft_stopword_cs, (uchar *)w1->pos, w1->len,
-                         (uchar *)w2->pos, w2->len, 0);
+static int FT_STOPWORD_cmp(const void *, const void *a, const void *b) {
+  const FT_STOPWORD *w1 = static_cast<const FT_STOPWORD *>(a);
+  const FT_STOPWORD *w2 = static_cast<const FT_STOPWORD *>(b);
+  return ha_compare_text(ft_stopword_cs, pointer_cast<const uchar *>(w1->pos),
+                         w1->len, pointer_cast<const uchar *>(w2->pos), w2->len,
+                         false);
 }
 
-static void FT_STOPWORD_free(FT_STOPWORD *w, TREE_FREE action,
-                             void *arg MY_ATTRIBUTE((unused))) {
-  if (action == free_free) my_free((void *)w->pos);
+static void FT_STOPWORD_free(void *v_w, TREE_FREE action, const void *) {
+  FT_STOPWORD *w = static_cast<FT_STOPWORD *>(v_w);
+  if (action == free_free) my_free(const_cast<char *>(w->pos));
 }
 
 static int ft_add_stopword(const char *w) {
@@ -66,8 +67,7 @@ int ft_init_stopwords() {
                                          sizeof(TREE), MYF(0))))
       return -1;
     init_tree(stopwords3, 0, 0, sizeof(FT_STOPWORD), &FT_STOPWORD_cmp, 0,
-              (ft_stopword_file ? (tree_element_free)&FT_STOPWORD_free : 0),
-              NULL);
+              (ft_stopword_file ? &FT_STOPWORD_free : 0), nullptr);
     /*
       Stopword engine currently does not support tricky
       character sets UCS2, UTF16, UTF32.
@@ -109,7 +109,7 @@ int ft_init_stopwords() {
     return error;
   } else {
     /* compatibility mode: to be removed */
-    char **sws = (char **)ft_precompiled_stopwords;
+    const char **sws = ft_precompiled_stopwords;
 
     for (; *sws; sws++) {
       if (ft_add_stopword(*sws)) return -1;

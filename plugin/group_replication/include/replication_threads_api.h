@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -36,10 +36,10 @@
 class Replication_thread_api {
  public:
   Replication_thread_api(const char *channel_interface)
-      : stop_wait_timeout(LONG_TIMEOUT), interface_channel(channel_interface){};
+      : stop_wait_timeout(LONG_TIMEOUT), interface_channel(channel_interface) {}
 
   Replication_thread_api()
-      : stop_wait_timeout(LONG_TIMEOUT), interface_channel(NULL){};
+      : stop_wait_timeout(LONG_TIMEOUT), interface_channel(NULL) {}
 
   ~Replication_thread_api() {}
 
@@ -74,6 +74,9 @@ class Replication_thread_api {
     @param preserve_logs If logs should be always preserved
     @param public_key_path The file with public key path information
     @param get_public_key Preference to get public key if unavailable.
+    @param compression_algorithm The compression algorithm
+    @param zstd_compression_level The compression level
+
 
     @return the operation status
       @retval 0      OK
@@ -85,7 +88,9 @@ class Replication_thread_api {
                          char *ssl_crl, char *ssl_crlpath,
                          bool ssl_verify_server_cert, int priority,
                          int retry_count, bool preserve_logs,
-                         char *public_key_path, bool get_public_key);
+                         char *public_key_path, bool get_public_key,
+                         char *compression_algorithm,
+                         uint zstd_compression_level);
 
   /**
     Start the Applier/Receiver threads according to the given options.
@@ -207,6 +212,22 @@ class Replication_thread_api {
   int wait_for_gtid_execution(double timeout);
 
   /**
+    Checks if all the set transactions were executed.
+
+    @param retrieved_set the set in string format of transaction to wait for
+    @param timeout  the time (seconds) after which the method returns if the
+                    above condition was not satisfied
+    @param update_THD_status  Shall the method update the THD stage
+
+    @return the operation status
+      @retval 0   All transactions were executed
+      @retval REPLICATION_THREAD_WAIT_TIMEOUT_ERROR     A timeout occurred
+      @retval REPLICATION_THREAD_WAIT_NO_INFO_ERROR     An error occurred
+  */
+  int wait_for_gtid_execution(std::string &retrieved_set, double timeout,
+                              bool update_THD_status = true);
+
+  /**
     Method to get applier ids from the configured channel
 
     @param[out] thread_ids The retrieved thread ids.
@@ -282,6 +303,33 @@ class Replication_thread_api {
       @retval false If relaylog does not contain partial transaction.
   */
   bool is_partial_transaction_on_relay_log();
+
+  /**
+    Interface to Channel Service Interface channel_stop_all method.
+    Stops all the running channel threads according to the given options.
+
+    @param threads_to_stop      The types of threads to be stopped
+    @param timeout              The max time in which the thread should stop
+
+    @return the operation status
+      @retval 0      OK
+      @retval !=0    Error
+  */
+  static int rpl_channel_stop_all(int threads_to_stop, long timeout);
+
+  /**
+    Method to get the credentials configured for a channel
+
+    @param[out] username      The user to extract
+    @param[out] password      The password to extract
+    @param[in]  channel_name  The name of the channel to get the information.
+
+    @return the operation status
+      @retval false   OK
+      @retval true    Error, channel not found
+  */
+  bool get_channel_credentials(std::string &username, std::string &password,
+                               const char *channel_name = NULL);
 
  private:
   ulong stop_wait_timeout;

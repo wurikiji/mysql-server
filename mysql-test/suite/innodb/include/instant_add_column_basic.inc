@@ -537,6 +537,8 @@ let $instant_add_column = ALTER TABLE t1 ADD COLUMN c INT NOT NULL DEFAULT 100, 
 
 ALTER TABLE t1 ADD KEY(c);
 
+# Replace the numbers in the output with '#' to stablize the result, after all we only care about the index picked.
+--replace_column 8 # 10 #
 EXPLAIN SELECT c FROM t1;
 
 SELECT c FROM t1 WHERE c != 100;
@@ -549,6 +551,8 @@ UPDATE t1 SET e = 'Hello MySQL' WHERE a > 30;
 
 ALTER TABLE t1 ADD KEY(e);
 
+# Replace the numbers in the output with '#' to stablize the result, after all we only care about the index picked.
+--replace_column 8 # 10 #
 EXPLAIN SELECT e FROM t1;
 SELECT count(e) FROM t1 WHERE e LIKE '%MySQL%';
 SELECT count(e) FROM t1 WHERE e LIKE '%world%';
@@ -885,7 +889,7 @@ DROP TABLE t1;
 --echo # instant after ALTER PARTITION, will the metadata be copied correctly
 --echo #
 
---eval CREATE TABLE t1 (col1 INT, col2 INT, col3 INT, col4 TEXT) ENGINE = InnoDB PARTITION BY RANGE(col1 * 2) ( PARTITION p0 VALUES LESS THAN (128) TABLESPACE innodb_system, PARTITION p1 VALUES LESS THAN (256) , PARTITION p2 VALUES LESS THAN (384) , PARTITION p3 VALUES LESS THAN MAXVALUE TABLESPACE innodb_system);
+--eval CREATE TABLE t1 (col1 INT, col2 INT, col3 INT, col4 TEXT) ENGINE = InnoDB PARTITION BY RANGE(col1 * 2) ( PARTITION p0 VALUES LESS THAN (128), PARTITION p1 VALUES LESS THAN (256) , PARTITION p2 VALUES LESS THAN (384) , PARTITION p3 VALUES LESS THAN MAXVALUE);
 
 INSERT INTO t1 VALUES(1, 2, 3, 'abcdefg'), (100, 200, 300, 'qwerty'), (200, 300, 400, 'asdfg');
 
@@ -1425,3 +1429,38 @@ SHOW CREATE TABLE t2;
 
 DROP TABLE t1;
 DROP TABLE t2;
+
+
+--echo #
+--echo # Scenario 24:
+--echo # Create a small table, and add stored and(or) virtual columns
+--echo # after last stored column in the table
+--echo #
+
+--eval CREATE TABLE t1 (a INT NOT NULL AUTO_INCREMENT PRIMARY KEY, b INT, c INT, d INT GENERATED ALWAYS AS (b + c) VIRTUAL, e INT GENERATED ALWAYS AS (b * c) VIRTUAL) ROW_FORMAT=$row_format
+
+INSERT INTO t1(a, b, c) VALUES(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 5), (0, 5, 6);
+
+
+let $new_cols = 1;
+let $instant_add_column = ALTER TABLE t1 ADD COLUMN h INT NOT NULL AFTER c;
+
+--source ../mysql-test/suite/innodb/include/instant_add_column_exec_and_verify.inc
+
+INSERT INTO t1(a, b, c, h) VALUES(0, 6, 20, 40);
+SELECT * FROM t1;
+
+
+let $new_cols = 1;
+let $instant_add_column = ALTER TABLE t1 ADD COLUMN i VARCHAR(100) DEFAULT 'ABCD EFGH' AFTER h, ADD COLUMN f INT GENERATED ALWAYS AS (LENGTH(i)) AFTER i;
+
+--source ../mysql-test/suite/innodb/include/instant_add_column_exec_and_verify.inc
+
+INSERT INTO t1(a, b, c, h, i) VALUES(0, 20, 30, 50, 'qwerty');
+SELECT * FROM t1;
+
+CHECK TABLE t1;
+
+SHOW CREATE TABLE t1;
+
+DROP TABLE t1;

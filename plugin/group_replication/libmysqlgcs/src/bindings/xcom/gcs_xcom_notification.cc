@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -63,18 +63,21 @@ void Initialize_notification::do_execute() {
 
 Data_notification::Data_notification(xcom_receive_data_functor *functor,
                                      synode_no message_id,
-                                     Gcs_xcom_nodes *xcom_nodes, u_int size,
+                                     Gcs_xcom_nodes *xcom_nodes,
+
+                                     synode_no last_removed, u_int size,
                                      char *data)
     : m_functor(functor),
       m_message_id(message_id),
       m_xcom_nodes(xcom_nodes),
+      m_last_removed(last_removed),
       m_size(size),
       m_data(data) {}
 
 Data_notification::~Data_notification() {}
 
 void Data_notification::do_execute() {
-  (*m_functor)(m_message_id, m_xcom_nodes, m_size, m_data);
+  (*m_functor)(m_message_id, m_xcom_nodes, m_last_removed, m_size, m_data);
 }
 
 Status_notification::Status_notification(xcom_status_functor *functor,
@@ -87,30 +90,44 @@ void Status_notification::do_execute() { (*m_functor)(m_status); }
 
 Global_view_notification::Global_view_notification(
     xcom_global_view_functor *functor, synode_no config_id,
-    synode_no message_id, Gcs_xcom_nodes *xcom_nodes)
+    synode_no message_id, Gcs_xcom_nodes *xcom_nodes,
+    xcom_event_horizon event_horizon, synode_no max_synode)
 
     : m_functor(functor),
       m_config_id(config_id),
       m_message_id(message_id),
-      m_xcom_nodes(xcom_nodes) {}
+      m_xcom_nodes(xcom_nodes),
+      m_event_horizon(event_horizon),
+      m_max_synode(max_synode) {}
 
 Global_view_notification::~Global_view_notification() {}
 
 void Global_view_notification::do_execute() {
-  (*m_functor)(m_config_id, m_message_id, m_xcom_nodes);
+  (*m_functor)(m_config_id, m_message_id, m_xcom_nodes, m_event_horizon,
+               m_max_synode);
 }
 
 Local_view_notification::Local_view_notification(
     xcom_local_view_functor *functor, synode_no message_id,
-    Gcs_xcom_nodes *xcom_nodes)
+    Gcs_xcom_nodes *xcom_nodes, synode_no max_synode)
 
-    : m_functor(functor), m_message_id(message_id), m_xcom_nodes(xcom_nodes) {}
+    : m_functor(functor),
+      m_message_id(message_id),
+      m_xcom_nodes(xcom_nodes),
+      m_max_synode(max_synode) {}
 
 Local_view_notification::~Local_view_notification() {}
 
 void Local_view_notification::do_execute() {
-  (*m_functor)(m_message_id, m_xcom_nodes);
+  (*m_functor)(m_message_id, m_xcom_nodes, m_max_synode);
 }
+
+Expel_notification::Expel_notification(xcom_expel_functor *functor)
+    : m_functor(functor) {}
+
+Expel_notification::~Expel_notification() {}
+
+void Expel_notification::do_execute() { (*m_functor)(); }
 
 Control_notification::Control_notification(xcom_control_functor *functor,
                                            Gcs_control_interface *control_if)
@@ -120,6 +137,18 @@ Control_notification::~Control_notification() {}
 
 void Control_notification::do_execute() {
   static_cast<void>((*m_functor)(m_control_if));
+}
+
+Protocol_change_notification::Protocol_change_notification(
+    xcom_protocol_change_functor *functor,
+    Gcs_xcom_communication_protocol_changer *protocol_changer,
+    Gcs_tagged_lock::Tag const tag)
+    : m_functor(functor), m_protocol_changer(protocol_changer), m_tag(tag) {}
+
+Protocol_change_notification::~Protocol_change_notification() {}
+
+void Protocol_change_notification::do_execute() {
+  (*m_functor)(m_protocol_changer, m_tag);
 }
 
 void *process_notification_thread(void *ptr_object) {
@@ -150,6 +179,7 @@ Gcs_xcom_engine::~Gcs_xcom_engine() {
 
 void Gcs_xcom_engine::initialize(
     xcom_initialize_functor *functor MY_ATTRIBUTE((unused))) {
+  MYSQL_GCS_LOG_DEBUG("Gcs_xcom_engine::initialize invoked!");
   assert(m_notification_queue.empty());
   assert(m_schedule);
   m_engine_thread.create(key_GCS_THD_Gcs_xcom_engine_m_engine_thread, NULL,
@@ -157,6 +187,7 @@ void Gcs_xcom_engine::initialize(
 }
 
 void Gcs_xcom_engine::finalize(xcom_finalize_functor *functor) {
+  MYSQL_GCS_LOG_DEBUG("Gcs_xcom_engine::finalize invoked!");
   push(new Finalize_notification(this, functor));
   m_engine_thread.join(NULL);
   assert(m_notification_queue.empty());

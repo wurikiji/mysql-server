@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2016, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2016, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -48,13 +48,19 @@ ulint z_read(ReadContext *ctx, lob::ref_t ref, ulint offset, ulint len,
   ut_ad(offset == 0);
   ut_ad(len > 0);
 
-  const uint32_t avail_lob = ref.length();
+  const ulint avail_lob = ref.length();
 
   if (avail_lob == 0) {
     return (0);
   }
 
-  const uint32_t lob_version = ref.offset();
+  if (ref.is_being_modified()) {
+    /* This should happen only for READ UNCOMMITTED transactions. */
+    ut_ad(ctx->assert_read_uncommitted());
+    return (0);
+  }
+
+  const uint32_t lob_version = ref.version();
 
   fil_addr_t old_node_loc = fil_addr_null;
   fil_addr_t node_loc = fil_addr_null;
@@ -85,6 +91,16 @@ ulint z_read(ReadContext *ctx, lob::ref_t ref, ulint offset, ulint len,
   }
 
   ut_ad(page_type == FIL_PAGE_TYPE_ZLOB_FIRST);
+
+  if (page_type != FIL_PAGE_TYPE_ZLOB_FIRST) {
+    /* In the optimized build, assume that the BLOB has been freed and return
+    without taking further action.  This condition is hit when there are stale
+    LOB references in the clustered index record, especially when there are
+    server crashes during updation of delete-marked clustered index record
+    with external fields. */
+    mtr_commit(&mtr);
+    return (0);
+  }
 
   flst_base_node_t *flst = first.index_list();
 
@@ -194,13 +210,13 @@ ulint z_read_chunk(dict_index_t *index, z_index_entry_t &entry, ulint offset,
   int ret = inflateInit(&strm);
   ut_a(ret == Z_OK);
 
-  strm.avail_in = zbytes;
+  strm.avail_in = static_cast<uInt>(zbytes);
   strm.next_in = zbuf.get();
 
   ulint to_copy = 0;
   if (offset == 0 && len >= data_len) {
     /* The full chunk is needed for output. */
-    strm.avail_out = len;
+    strm.avail_out = static_cast<uInt>(len);
     strm.next_out = buf;
 
     ret = inflate(&strm, Z_FINISH);
@@ -252,7 +268,7 @@ ulint z_read_strm(dict_index_t *index, z_index_entry_t &entry, byte *zbuf,
         buf_page_get(page_id_t(dict_index_get_space(index), page_no),
                      dict_table_page_size(index->table), RW_X_LATCH, mtr);
 
-    ulint ptype = block->get_page_type();
+    page_type_t ptype = block->get_page_type();
     byte *data = nullptr;
     ulint data_size = 0;
     if (ptype == FIL_PAGE_TYPE_ZLOB_FRAG) {
@@ -301,7 +317,7 @@ bool z_validate_strm(dict_index_t *index, z_index_entry_t &entry, mtr_t *mtr) {
         buf_page_get(page_id_t(dict_index_get_space(index), page_no),
                      dict_table_page_size(index->table), RW_X_LATCH, mtr);
 
-    ulint ptype = block->get_page_type();
+    page_type_t ptype = block->get_page_type();
     ulint data_size = 0;
     if (ptype == FIL_PAGE_TYPE_ZLOB_FRAG) {
       frag_id_t fid = entry.get_z_frag_id();
@@ -327,4 +343,4 @@ bool z_validate_strm(dict_index_t *index, z_index_entry_t &entry, mtr_t *mtr) {
 }
 #endif /* UNIV_DEBUG */
 
-};  // namespace lob
+}  // namespace lob

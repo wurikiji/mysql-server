@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,6 +23,7 @@
 #include "sql/dd/impl/types/table_impl.h"
 
 #include <string.h>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -36,24 +37,27 @@
 #include "my_sys.h"
 #include "mysqld_error.h"                         // ER_*
 #include "sql/current_thd.h"                      // current_thd
+#include "sql/dd/impl/bootstrap/bootstrap_ctx.h"  // dd::bootstrap::DD_bootstrap_ctx
 #include "sql/dd/impl/dictionary_impl.h"          // Dictionary_impl
 #include "sql/dd/impl/properties_impl.h"          // Properties_impl
 #include "sql/dd/impl/raw/raw_record.h"           // Raw_record
 #include "sql/dd/impl/raw/raw_record_set.h"       // Raw_record_set
 #include "sql/dd/impl/raw/raw_table.h"            // Raw_table
 #include "sql/dd/impl/sdi_impl.h"                 // sdi read/write functions
-#include "sql/dd/impl/tables/columns.h"           // Columns
-#include "sql/dd/impl/tables/foreign_keys.h"      // Foreign_keys
-#include "sql/dd/impl/tables/indexes.h"           // Indexes
-#include "sql/dd/impl/tables/schemata.h"          // Schemata
-#include "sql/dd/impl/tables/table_partitions.h"  // Table_partitions
-#include "sql/dd/impl/tables/tables.h"            // Tables
-#include "sql/dd/impl/tables/triggers.h"          // Triggers
-#include "sql/dd/impl/transaction_impl.h"         // Open_dictionary_tables_ctx
-#include "sql/dd/impl/types/foreign_key_impl.h"   // Foreign_key_impl
-#include "sql/dd/impl/types/index_impl.h"         // Index_impl
-#include "sql/dd/impl/types/partition_impl.h"     // Partition_impl
-#include "sql/dd/impl/types/trigger_impl.h"       // Trigger_impl
+#include "sql/dd/impl/tables/check_constraints.h"  // Check_constraints
+#include "sql/dd/impl/tables/columns.h"            // Columns
+#include "sql/dd/impl/tables/foreign_keys.h"       // Foreign_keys
+#include "sql/dd/impl/tables/indexes.h"            // Indexes
+#include "sql/dd/impl/tables/schemata.h"           // Schemata
+#include "sql/dd/impl/tables/table_partitions.h"   // Table_partitions
+#include "sql/dd/impl/tables/tables.h"             // Tables
+#include "sql/dd/impl/tables/triggers.h"           // Triggers
+#include "sql/dd/impl/transaction_impl.h"          // Open_dictionary_tables_ctx
+#include "sql/dd/impl/types/check_constraint_impl.h"  // Check_constraint_impl
+#include "sql/dd/impl/types/foreign_key_impl.h"       // Foreign_key_impl
+#include "sql/dd/impl/types/index_impl.h"             // Index_impl
+#include "sql/dd/impl/types/partition_impl.h"         // Partition_impl
+#include "sql/dd/impl/types/trigger_impl.h"           // Trigger_impl
 #include "sql/dd/properties.h"
 #include "sql/dd/string_type.h"   // dd::String_type
 #include "sql/dd/types/column.h"  // Column
@@ -63,6 +67,7 @@
 #include "sql/dd/types/weak_object.h"
 #include "sql/sql_class.h"
 
+using dd::tables::Check_constraints;
 using dd::tables::Foreign_keys;
 using dd::tables::Indexes;
 using dd::tables::Table_partitions;
@@ -80,8 +85,9 @@ class Sdi_wcontext;
 
 Table_impl::Table_impl()
     : m_se_private_id(INVALID_OBJECT_ID),
-      m_se_private_data(new Properties_impl()),
+      m_se_private_data(),
       m_row_format(RF_FIXED),
+      m_is_temporary(false),
       m_partition_type(PT_NONE),
       m_default_partitioning(DP_NONE),
       m_subpartition_type(ST_NONE),
@@ -90,30 +96,11 @@ Table_impl::Table_impl()
       m_foreign_keys(),
       m_partitions(),
       m_triggers(),
+      m_check_constraints(),
       m_collation_id(INVALID_OBJECT_ID),
       m_tablespace_id(INVALID_OBJECT_ID) {}
 
 Table_impl::~Table_impl() { delete_container_pointers(m_foreign_key_parents); }
-
-///////////////////////////////////////////////////////////////////////////
-
-bool Table_impl::set_se_private_data_raw(
-    const String_type &se_private_data_raw) {
-  Properties *properties =
-      Properties_impl::parse_properties(se_private_data_raw);
-
-  if (!properties)
-    return true;  // Error status, current values has not changed.
-
-  m_se_private_data.reset(properties);
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-void Table_impl::set_se_private_data(const Properties &se_private_data) {
-  m_se_private_data->assign(se_private_data);
-}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -268,6 +255,14 @@ bool Table_impl::restore_children(Open_dictionary_tables_ctx *otx) {
   //   - Partitions should be loaded at the end, as it refers to
   //     indexes.
 
+  /*
+    Do not load check constraints if upgrade is from the DD version before
+    check constraints support. Check constraint support is introduced in 80016.
+  */
+  bool skip_check_constraints =
+      (bootstrap::DD_bootstrap_ctx::instance().is_dd_upgrade_from_before(
+          bootstrap::DD_VERSION_80016));
+
   return (
       Abstract_table_impl::restore_children(otx) ||
       m_indexes.restore_items(this, otx, otx->get_table<Index>(),
@@ -285,7 +280,12 @@ bool Table_impl::restore_children(Open_dictionary_tables_ctx *otx) {
       m_triggers.restore_items(this, otx, otx->get_table<Trigger>(),
                                Triggers::create_key_by_table_id(this->id()),
                                Trigger_order_comparator()) ||
-      load_foreign_key_parents(otx));
+      load_foreign_key_parents(otx) ||
+      (!skip_check_constraints &&
+       m_check_constraints.restore_items(
+           this, otx, otx->get_table<Check_constraint>(),
+           Check_constraints::create_key_by_table_id(this->id()),
+           Check_constraint_order_comparator())));
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -353,11 +353,20 @@ bool Table_impl::store_triggers(Open_dictionary_tables_ctx *otx) {
 ///////////////////////////////////////////////////////////////////////////
 
 bool Table_impl::store_children(Open_dictionary_tables_ctx *otx) {
+  /*
+    Do not store check constraints if upgrade is from the DD version before
+    check constraints support. Check constraint support is introduced in 80016.
+  */
+  bool skip_check_constraints =
+      (bootstrap::DD_bootstrap_ctx::instance().is_dd_upgrade_from_before(
+          bootstrap::DD_VERSION_80016));
+
   return Abstract_table_impl::store_children(otx) ||
          // Note that indexes has to be stored first, as
          // partitions refer indexes.
          m_indexes.store_items(otx) || m_foreign_keys.store_items(otx) ||
-         m_partitions.store_items(otx) || store_triggers(otx);
+         m_partitions.store_items(otx) || store_triggers(otx) ||
+         (!skip_check_constraints && m_check_constraints.store_items(otx));
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -366,7 +375,10 @@ bool Table_impl::drop_children(Open_dictionary_tables_ctx *otx) const {
   // Note that partition collection has to be dropped first
   // as it has foreign key to indexes.
 
-  return m_triggers.drop_items(otx, otx->get_table<Trigger>(),
+  return m_check_constraints.drop_items(
+             otx, otx->get_table<Check_constraint>(),
+             Check_constraints::create_key_by_table_id(this->id())) ||
+         m_triggers.drop_items(otx, otx->get_table<Trigger>(),
                                Triggers::create_key_by_table_id(this->id())) ||
          m_partitions.drop_items(
              otx, otx->get_table<Partition>(),
@@ -415,10 +427,18 @@ bool Table_impl::restore_attributes(const Raw_record &r) {
   m_collation_id = r.read_ref_id(Tables::FIELD_COLLATION_ID);
   m_tablespace_id = r.read_ref_id(Tables::FIELD_TABLESPACE_ID);
 
-  set_se_private_data_raw(r.read_str(Tables::FIELD_SE_PRIVATE_DATA, ""));
+  set_se_private_data(r.read_str(Tables::FIELD_SE_PRIVATE_DATA, ""));
 
   m_engine = r.read_str(Tables::FIELD_ENGINE);
 
+  // m_last_checked_for_upgrade_version added in 80012
+  if (bootstrap::DD_bootstrap_ctx::instance().is_dd_upgrade_from_before(
+          bootstrap::DD_VERSION_80013)) {
+    m_last_checked_for_upgrade_version_id = 0;
+  } else {
+    m_last_checked_for_upgrade_version_id =
+        r.read_int(Tables::FIELD_LAST_CHECKED_FOR_UPGRADE_VERSION_ID, 0);
+  }
   m_partition_expression = r.read_str(Tables::FIELD_PARTITION_EXPRESSION, "");
   m_partition_expression_utf8 =
       r.read_str(Tables::FIELD_PARTITION_EXPRESSION_UTF8, "");
@@ -453,12 +473,23 @@ bool Table_impl::store_attributes(Raw_record *r) {
   //   - Store NULL in default subpartitioning if not set.
   //
 
+  // Temporary table definitions are never persisted.
+  DBUG_ASSERT(!m_is_temporary);
+
+  // Store last_checked_for_upgrade_version_id only if we're not upgrading
+  if (!bootstrap::DD_bootstrap_ctx::instance().is_dd_upgrade_from_before(
+          bootstrap::DD_VERSION_80013) &&
+      r->store(Tables::FIELD_LAST_CHECKED_FOR_UPGRADE_VERSION_ID,
+               m_last_checked_for_upgrade_version_id)) {
+    return true;
+  }
+
   // Store field values
   return Abstract_table_impl::store_attributes(r) ||
          r->store(Tables::FIELD_ENGINE, m_engine) ||
          r->store_ref_id(Tables::FIELD_COLLATION_ID, m_collation_id) ||
          r->store(Tables::FIELD_COMMENT, m_comment) ||
-         r->store(Tables::FIELD_SE_PRIVATE_DATA, *m_se_private_data) ||
+         r->store(Tables::FIELD_SE_PRIVATE_DATA, m_se_private_data) ||
          r->store(Tables::FIELD_SE_PRIVATE_ID, m_se_private_id,
                   m_se_private_id == (Object_id)-1) ||
          r->store(Tables::FIELD_ROW_FORMAT, m_row_format) ||
@@ -488,10 +519,15 @@ bool Table_impl::store_attributes(Raw_record *r) {
 ///////////////////////////////////////////////////////////////////////////
 
 void Table_impl::serialize(Sdi_wcontext *wctx, Sdi_writer *w) const {
+  // Temporary table definitions are never persisted.
+  DBUG_ASSERT(!m_is_temporary);
+
   w->StartObject();
   Abstract_table_impl::serialize(wctx, w);
   write(w, m_se_private_id, STRING_WITH_LEN("se_private_id"));
   write(w, m_engine, STRING_WITH_LEN("engine"));
+  write(w, m_last_checked_for_upgrade_version_id,
+        STRING_WITH_LEN("last_checked_for_upgrade_version_id"));
   write(w, m_comment, STRING_WITH_LEN("comment"));
   write_properties(w, m_se_private_data, STRING_WITH_LEN("se_private_data"));
   write_enum(w, m_row_format, STRING_WITH_LEN("row_format"));
@@ -510,6 +546,8 @@ void Table_impl::serialize(Sdi_wcontext *wctx, Sdi_writer *w) const {
              STRING_WITH_LEN("default_subpartitioning"));
   serialize_each(wctx, w, m_indexes, STRING_WITH_LEN("indexes"));
   serialize_each(wctx, w, m_foreign_keys, STRING_WITH_LEN("foreign_keys"));
+  serialize_each(wctx, w, m_check_constraints,
+                 STRING_WITH_LEN("check_constraints"));
   serialize_each(wctx, w, m_partitions, STRING_WITH_LEN("partitions"));
   write(w, m_collation_id, STRING_WITH_LEN("collation_id"));
   serialize_tablespace_ref(wctx, w, m_tablespace_id,
@@ -523,6 +561,8 @@ bool Table_impl::deserialize(Sdi_rcontext *rctx, const RJ_Value &val) {
   Abstract_table_impl::deserialize(rctx, val);
   read(&m_se_private_id, val, "se_private_id");
   read(&m_engine, val, "engine");
+  read(&m_last_checked_for_upgrade_version_id, val,
+       "last_checked_for_upgrade_version_id");
   read(&m_comment, val, "comment");
   read_properties(&m_se_private_data, val, "se_private_data");
   read_enum(&m_row_format, val, "row_format");
@@ -546,12 +586,16 @@ bool Table_impl::deserialize(Sdi_rcontext *rctx, const RJ_Value &val) {
   // (as we don't know the address of the referenced Column or Index
   // object).
 
-  deserialize_each(rctx, [this]() { return add_index(); }, val, "indexes");
+  deserialize_each(
+      rctx, [this]() { return add_index(); }, val, "indexes");
 
-  deserialize_each(rctx, [this]() { return add_foreign_key(); }, val,
-                   "foreign_keys");
-  deserialize_each(rctx, [this]() { return add_partition(); }, val,
-                   "partitions");
+  deserialize_each(
+      rctx, [this]() { return add_foreign_key(); }, val, "foreign_keys");
+  deserialize_each(
+      rctx, [this]() { return add_check_constraint(); }, val,
+      "check_constraints");
+  deserialize_each(
+      rctx, [this]() { return add_partition(); }, val, "partitions");
   read(&m_collation_id, val, "collation_id");
   return deserialize_tablespace_ref(rctx, &m_tablespace_id, val,
                                     "tablespace_id");
@@ -565,11 +609,14 @@ void Table_impl::debug_print(String_type &outb) const {
 
   dd::Stringstream_type ss;
   ss << "TABLE OBJECT: { " << s << "m_engine: " << m_engine << "; "
+     << "m_last_checked_for_upgrade_version_id: "
+     << m_last_checked_for_upgrade_version_id << "; "
      << "m_collation: {OID: " << m_collation_id << "}; "
      << "m_comment: " << m_comment << "; "
-     << "m_se_private_data " << m_se_private_data->raw_string() << "; "
+     << "m_se_private_data " << m_se_private_data.raw_string() << "; "
      << "m_se_private_id: {OID: " << m_se_private_id << "}; "
      << "m_row_format: " << m_row_format << "; "
+     << "m_is_temporary: " << m_is_temporary << "; "
      << "m_tablespace: {OID: " << m_tablespace_id << "}; "
      << "m_partition_type " << m_partition_type << "; "
      << "m_default_partitioning " << m_default_partitioning << "; "
@@ -606,6 +653,16 @@ void Table_impl::debug_print(String_type &outb) const {
     for (const Foreign_key *fk : foreign_keys()) {
       String_type s;
       fk->debug_print(s);
+      ss << s << " | ";
+    }
+  }
+
+  ss << "] m_check_constraints: " << m_check_constraints.size() << " [ ";
+
+  {
+    for (const Check_constraint *cc : check_constraints()) {
+      String_type s;
+      cc->debug_print(s);
       ss << s << " | ";
     }
   }
@@ -751,8 +808,14 @@ Trigger *Table_impl::add_trigger(Trigger::enum_action_timing at,
 ///////////////////////////////////////////////////////////////////////////
 
 const Trigger *Table_impl::get_trigger(const char *name) const {
+  const uchar *src_trg_name = pointer_cast<const uchar *>(name);
+  size_t src_trg_name_len = strlen(name);
   for (const Trigger *trigger : triggers()) {
-    if (!strcmp(name, trigger->name().c_str())) return trigger;
+    if (!my_strnncoll(dd::tables::Triggers::name_collation(), src_trg_name,
+                      src_trg_name_len,
+                      pointer_cast<const uchar *>(trigger->name().c_str()),
+                      trigger->name().length()))
+      return trigger;
   }
 
   return nullptr;
@@ -875,6 +938,16 @@ void Table_impl::drop_trigger(const Trigger *trigger) {
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// Check constraint collection.
+///////////////////////////////////////////////////////////////////////////
+
+Check_constraint *Table_impl::add_check_constraint() {
+  Check_constraint_impl *cc = new (std::nothrow) Check_constraint_impl(this);
+  if (cc != nullptr) m_check_constraints.push_back(cc);
+  return cc;
+}
+
+///////////////////////////////////////////////////////////////////////////
 
 Partition *Table_impl::get_partition(const String_type &name) {
   for (Partition *i : m_partitions) {
@@ -905,6 +978,13 @@ void Table_impl::register_tables(Open_dictionary_tables_ctx *otx) {
   otx->register_tables<Foreign_key>();
   otx->register_tables<Partition>();
   otx->register_tables<Trigger>();
+  /*
+    Do not register check constraint table if upgrade is from the DD version
+    before check constraints support. Check constraint is introduced in 8.0.15.
+  */
+  if (!bootstrap::DD_bootstrap_ctx::instance().is_dd_upgrade_from_before(
+          bootstrap::DD_VERSION_80016))
+    otx->register_tables<Check_constraint>();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -915,9 +995,11 @@ Table_impl::Table_impl(const Table_impl &src)
       m_se_private_id(src.m_se_private_id),
       m_engine(src.m_engine),
       m_comment(src.m_comment),
-      m_se_private_data(Properties_impl::parse_properties(
-          src.m_se_private_data->raw_string())),
+      m_last_checked_for_upgrade_version_id{
+          src.m_last_checked_for_upgrade_version_id},
+      m_se_private_data(src.m_se_private_data),
       m_row_format(src.m_row_format),
+      m_is_temporary(src.m_is_temporary),
       m_partition_type(src.m_partition_type),
       m_partition_expression(src.m_partition_expression),
       m_partition_expression_utf8(src.m_partition_expression_utf8),
@@ -930,6 +1012,7 @@ Table_impl::Table_impl(const Table_impl &src)
       m_foreign_keys(),
       m_partitions(),
       m_triggers(),
+      m_check_constraints(),
       m_collation_id(src.m_collation_id),
       m_tablespace_id(src.m_tablespace_id) {
   m_indexes.deep_copy(src.m_indexes, this);
@@ -939,5 +1022,6 @@ Table_impl::Table_impl(const Table_impl &src)
                                         Foreign_key_parent(*fk_parent));
   m_partitions.deep_copy(src.m_partitions, this);
   m_triggers.deep_copy(src.m_triggers, this);
+  m_check_constraints.deep_copy(src.m_check_constraints, this);
 }
 }  // namespace dd

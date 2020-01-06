@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -52,6 +52,25 @@ IF(LINUX)
   )
 ENDIF()
 
+IF(MY_COMPILER_IS_GNU)
+  LIST(APPEND ICU_LINUX_COMPILE_OPTIONS "-Wno-stringop-overflow")
+ENDIF()
+
+MY_CHECK_CXX_COMPILER_WARNING("-Wunused-but-set-variable" HAS_WARN_FLAG)
+IF(HAS_WARN_FLAG)
+  LIST(APPEND ICU_LINUX_COMPILE_OPTIONS "${HAS_WARN_FLAG}")
+ENDIF()
+
+MY_CHECK_CXX_COMPILER_WARNING("-Wmisleading-indentation" HAS_WARN_FLAG)
+IF(HAS_WARN_FLAG)
+  LIST(APPEND ICU_LINUX_COMPILE_OPTIONS "${HAS_WARN_FLAG}")
+ENDIF()
+
+MY_CHECK_CXX_COMPILER_WARNING("-Wmaybe-uninitialized" HAS_WARN_FLAG)
+IF(HAS_WARN_FLAG)
+  LIST(APPEND ICU_LINUX_COMPILE_OPTIONS "${HAS_WARN_FLAG}")
+ENDIF()
+
 IF(WIN32)
   ADD_DEFINITIONS(
     -DU_STATIC_IMPLEMENTATION=1
@@ -59,6 +78,16 @@ IF(WIN32)
     -DU_EXPORT=
   )
 ENDIF()
+
+IF(MSVC AND NOT WIN32_CLANG)
+  # ICU does not build cleanly with Visual Studio's /permissive-
+  STRING(REPLACE "/permissive-" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  # anachronism used : modifiers on data are ignored
+  STRING_APPEND(CMAKE_CXX_FLAGS " /wd4229")
+ENDIF()
+
+STRING(REPLACE "-flto" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+STRING(REPLACE "-flto" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 ADD_SUBDIRECTORY(source/common)
 ADD_SUBDIRECTORY(source/i18n)

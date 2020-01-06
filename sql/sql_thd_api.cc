@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -59,6 +59,7 @@
 #include "sql/sql_plugin.h"  // plugin_unlock
 #include "sql/sql_plugin_ref.h"
 #include "sql/sql_thd_internal_api.h"
+#include "sql/strfunc.h"
 #include "sql/system_variables.h"
 #include "sql/transaction_info.h"
 #include "sql/xa.h"
@@ -266,11 +267,9 @@ my_socket thd_get_fd(THD *thd) {
   Set thread specific environment required for thd cleanup in thread pool.
 
   @param thd            THD object
-
-  @retval               1 if thread-specific enviroment could be set else 0
 */
 
-int thd_store_globals(THD *thd) { return thd->store_globals(); }
+void thd_store_globals(THD *thd) { thd->store_globals(); }
 
 /**
   Get thread attributes for connection threads
@@ -369,12 +368,12 @@ void thd_set_ha_data(MYSQL_THD thd, const struct handlerton *hton,
                      const void *ha_data) {
   plugin_ref *lock = &thd->get_ha_data(hton->slot)->lock;
   if (ha_data && !*lock)
-    *lock = ha_lock_engine(NULL, (handlerton *)hton);
+    *lock = ha_lock_engine(NULL, hton);
   else if (!ha_data && *lock) {
     plugin_unlock(NULL, *lock);
     *lock = NULL;
   }
-  *thd_ha_data(thd, hton) = (void *)ha_data;
+  *thd_ha_data(thd, hton) = const_cast<void *>(ha_data);
 }
 
 long long thd_test_options(const MYSQL_THD thd, long long test_options) {
@@ -493,18 +492,21 @@ char *thd_security_context(MYSQL_THD thd, char *buffer, size_t length,
 }
 
 void thd_get_xid(const MYSQL_THD thd, MYSQL_XID *xid) {
-  *xid = *(MYSQL_XID *)thd->get_transaction()->xid_state()->get_xid();
+  *xid = *pointer_cast<const MYSQL_XID *>(
+      thd->get_transaction()->xid_state()->get_xid());
 }
 
 /**
   Check the killed state of a user thread
-  @param thd  user thread
+  @param v_thd  user thread
   @retval 0 the user thread is active
   @retval 1 the user thread has been killed
 */
 
-int thd_killed(const MYSQL_THD thd) {
-  if (thd == NULL) return current_thd != NULL ? current_thd->killed : 0;
+int thd_killed(const void *v_thd) {
+  const THD *thd = static_cast<const THD *>(v_thd);
+  if (thd == nullptr) thd = current_thd;
+  if (thd == nullptr) return 0;
   return thd->killed;
 }
 
@@ -541,7 +543,7 @@ int thd_allow_batch(MYSQL_THD thd) {
 }
 
 void thd_mark_transaction_to_rollback(MYSQL_THD thd, int all) {
-  DBUG_ENTER("thd_mark_transaction_to_rollback");
+  DBUG_TRACE;
   DBUG_ASSERT(thd);
   /*
     The parameter "all" has type int since the function is defined
@@ -551,7 +553,6 @@ void thd_mark_transaction_to_rollback(MYSQL_THD thd, int all) {
     specifically.
   */
   thd->mark_transaction_to_rollback((all != 0));
-  DBUG_VOID_RETURN;
 }
 
 //////////////////////////////////////////////////////////
@@ -575,7 +576,10 @@ char *thd_strmake(MYSQL_THD thd, const char *str, size_t size) {
 MYSQL_LEX_STRING *thd_make_lex_string(MYSQL_THD thd, MYSQL_LEX_STRING *lex_str,
                                       const char *str, size_t size,
                                       int allocate_lex_string) {
-  return thd->make_lex_string(lex_str, str, size, (bool)allocate_lex_string);
+  if (allocate_lex_string != 0)
+    return make_lex_string_root(thd->mem_root, str, size);
+  if (lex_string_strmake(thd->mem_root, lex_str, str, size)) return nullptr;
+  return lex_str;
 }
 
 void *thd_memdup(MYSQL_THD thd, const void *str, size_t size) {
@@ -637,13 +641,11 @@ void thd_wait_end(MYSQL_THD thd) {
    called.
 */
 void thd_report_row_lock_wait(THD *self, THD *wait_for) {
-  DBUG_ENTER("thd_report_row_lock_wait");
+  DBUG_TRACE;
 
   if (self != NULL && wait_for != NULL && is_mts_worker(self) &&
       is_mts_worker(wait_for))
     commit_order_manager_check_deadlock(self, wait_for);
-
-  DBUG_VOID_RETURN;
 }
 
 /**
@@ -651,7 +653,7 @@ void thd_report_row_lock_wait(THD *self, THD *wait_for) {
 */
 
 void remove_ssl_err_thread_state() {
-#if !defined(HAVE_WOLFSSL) && !defined(HAVE_OPENSSL11)
+#if !defined(HAVE_OPENSSL11)
   ERR_remove_thread_state(nullptr);
 #endif
 }

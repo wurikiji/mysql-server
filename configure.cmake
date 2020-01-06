@@ -1,4 +1,4 @@
-# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -32,16 +32,6 @@ INCLUDE (CheckCXXSourceRuns)
 INCLUDE (CheckSymbolExists)
 
 
-IF(CMAKE_SYSTEM_NAME MATCHES "SunOS" AND CMAKE_COMPILER_IS_GNUCXX)
-  ## We will be using gcc to generate .so files
-  ## Add C flags (e.g. -m64) to CMAKE_SHARED_LIBRARY_C_FLAGS
-  ## The client library contains C++ code, so add dependency on libstdc++
-  ## See cmake --help-policy CMP0018
-  SET(CMAKE_SHARED_LIBRARY_C_FLAGS
-    "${CMAKE_SHARED_LIBRARY_C_FLAGS} ${CMAKE_C_FLAGS} -lstdc++")
-ENDIF()
-
-
 # System type affects version_compile_os variable 
 IF(NOT SYSTEM_TYPE)
   IF(PLATFORM)
@@ -49,12 +39,6 @@ IF(NOT SYSTEM_TYPE)
   ELSE()
     SET(SYSTEM_TYPE ${CMAKE_SYSTEM_NAME})
   ENDIF()
-ENDIF()
-
-# Probobuf 2.6.1 on Sparc. Both gcc and Solaris Studio need this.
-IF(CMAKE_SYSTEM_NAME MATCHES "SunOS" AND
-    SIZEOF_VOIDP EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "sparc")
-  ADD_DEFINITIONS(-DSOLARIS_64BIT_ENABLED)
 ENDIF()
 
 # Check to see if we are using LLVM's libc++ rather than e.g. libstd++
@@ -108,15 +92,26 @@ ENDFUNCTION()
 FIND_PACKAGE (Threads)
 
 IF(UNIX)
+  IF(FREEBSD)
+    MYSQL_CHECK_PKGCONFIG()
+    PKG_CHECK_MODULES(LIBUNWIND libunwind)
+  ENDIF()
   MY_SEARCH_LIBS(floor m LIBM)
   IF(NOT LIBM)
     MY_SEARCH_LIBS(__infinity m LIBM)
+  ENDIF()
+  IF(NOT LIBM)
+    MY_SEARCH_LIBS(log m LIBM)
   ENDIF()
   MY_SEARCH_LIBS(gethostbyname_r  "nsl_r;nsl" LIBNSL)
   MY_SEARCH_LIBS(bind "bind;socket" LIBBIND)
   MY_SEARCH_LIBS(crypt crypt LIBCRYPT)
   MY_SEARCH_LIBS(setsockopt socket LIBSOCKET)
   MY_SEARCH_LIBS(dlopen dl LIBDL)
+  # HAVE_dlopen_IN_LIBC
+  IF(NOT LIBDL)
+    MY_SEARCH_LIBS(dlsym dl LIBDL)
+  ENDIF()
   MY_SEARCH_LIBS(sched_yield rt LIBRT)
   IF(NOT LIBRT)
     MY_SEARCH_LIBS(clock_gettime rt LIBRT)
@@ -125,7 +120,7 @@ IF(UNIX)
   MY_SEARCH_LIBS(atomic_thread_fence atomic LIBATOMIC)
   MY_SEARCH_LIBS(backtrace execinfo LIBEXECINFO)
 
-  SET(CMAKE_REQUIRED_LIBRARIES 
+  LIST(APPEND CMAKE_REQUIRED_LIBRARIES
     ${LIBM} ${LIBNSL} ${LIBBIND} ${LIBCRYPT} ${LIBSOCKET} ${LIBDL}
     ${CMAKE_THREAD_LIBS_INIT} ${LIBRT} ${LIBATOMIC} ${LIBEXECINFO}
   )
@@ -135,7 +130,7 @@ IF(UNIX)
   ENDIF()
 
   # https://bugs.llvm.org/show_bug.cgi?id=16404
-  IF(LINUX AND HAVE_UBSAN AND CMAKE_C_COMPILER_ID MATCHES "Clang")
+  IF(LINUX AND HAVE_UBSAN AND MY_COMPILER_IS_CLANG)
     SET(CMAKE_EXE_LINKER_FLAGS_DEBUG
       "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -rtlib=compiler-rt -lgcc_s")
     SET(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO
@@ -144,6 +139,13 @@ IF(UNIX)
 
   IF(WITH_ASAN)
     SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -fsanitize=address")
+  ENDIF()
+
+  IF(WITH_ASAN OR WITH_LSAN OR WITH_TSAN)
+    IF(CMAKE_USE_PTHREADS_INIT AND NOT CMAKE_THREAD_LIBS_INIT)
+      MESSAGE(STATUS "No CMAKE_THREAD_LIBS_INIT ??")
+      SET(CMAKE_THREAD_LIBS_INIT "-lpthread")
+    ENDIF()
   ENDIF()
 
   LIST(LENGTH CMAKE_REQUIRED_LIBRARIES required_libs_length)
@@ -250,7 +252,6 @@ IF(WITH_ASAN)
 ENDIF()
 CHECK_FUNCTION_EXISTS (_aligned_malloc HAVE_ALIGNED_MALLOC)
 CHECK_FUNCTION_EXISTS (backtrace HAVE_BACKTRACE)
-CHECK_FUNCTION_EXISTS (printstack HAVE_PRINTSTACK)
 CHECK_FUNCTION_EXISTS (index HAVE_INDEX)
 CHECK_FUNCTION_EXISTS (chown HAVE_CHOWN)
 CHECK_FUNCTION_EXISTS (cuserid HAVE_CUSERID)
@@ -288,6 +289,7 @@ CHECK_FUNCTION_EXISTS (posix_fallocate HAVE_POSIX_FALLOCATE)
 CHECK_FUNCTION_EXISTS (posix_memalign HAVE_POSIX_MEMALIGN)
 CHECK_FUNCTION_EXISTS (pread HAVE_PREAD) # Used by NDB
 CHECK_FUNCTION_EXISTS (pthread_condattr_setclock HAVE_PTHREAD_CONDATTR_SETCLOCK)
+CHECK_FUNCTION_EXISTS (pthread_getaffinity_np HAVE_PTHREAD_GETAFFINITY_NP)
 CHECK_FUNCTION_EXISTS (pthread_sigmask HAVE_PTHREAD_SIGMASK)
 CHECK_FUNCTION_EXISTS (setfd HAVE_SETFD) # Used by libevent (never true)
 CHECK_FUNCTION_EXISTS (sigaction HAVE_SIGACTION)
@@ -336,6 +338,14 @@ CHECK_SYMBOL_EXISTS(lrand48 "stdlib.h" HAVE_LRAND48)
 CHECK_SYMBOL_EXISTS(TIOCGWINSZ "sys/ioctl.h" GWINSZ_IN_SYS_IOCTL)
 CHECK_SYMBOL_EXISTS(FIONREAD "sys/ioctl.h" FIONREAD_IN_SYS_IOCTL)
 CHECK_SYMBOL_EXISTS(FIONREAD "sys/filio.h" FIONREAD_IN_SYS_FILIO)
+CHECK_SYMBOL_EXISTS(MADV_DONTDUMP "sys/mman.h" HAVE_MADV_DONTDUMP)
+CHECK_CXX_SOURCE_COMPILES(
+"#include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+int main() {
+  long long int foo = O_TMPFILE;
+}" HAVE_O_TMPFILE)
 
 # On Solaris, it is only visible in C99 mode
 CHECK_SYMBOL_EXISTS(isinf "math.h" HAVE_C_ISINF)
@@ -359,6 +369,19 @@ ENDIF()
 CHECK_FUNCTION_EXISTS (timer_create HAVE_TIMER_CREATE)
 CHECK_FUNCTION_EXISTS (timer_settime HAVE_TIMER_SETTIME)
 CHECK_FUNCTION_EXISTS (kqueue HAVE_KQUEUE)
+
+# Check whether the setns() API function supported by a target platform
+CHECK_C_SOURCE_RUNS("
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+int main()
+{
+  (void)setns(0, 0);
+  return 0;
+}" HAVE_SETNS)
+
 CHECK_SYMBOL_EXISTS(EVFILT_TIMER "sys/types.h;sys/event.h;sys/time.h" HAVE_EVFILT_TIMER)
 IF(HAVE_KQUEUE AND HAVE_EVFILT_TIMER)
   SET(HAVE_KQUEUE_TIMERS 1 CACHE INTERNAL "Have kqueue timer-related filter")
@@ -387,11 +410,6 @@ set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS}
 
 SET(CMAKE_EXTRA_INCLUDE_FILES stdint.h stdio.h sys/types.h time.h)
 
-CHECK_TYPE_SIZE(uint8_t HAVE_UINT8_T)
-CHECK_TYPE_SIZE(uint16_t HAVE_UINT16_T)
-CHECK_TYPE_SIZE(uint32_t HAVE_UINT32_T)
-CHECK_TYPE_SIZE(uint64_t HAVE_UINT64_T)
-
 CHECK_TYPE_SIZE("void *"    SIZEOF_VOIDP)
 CHECK_TYPE_SIZE("char *"    SIZEOF_CHARP)
 CHECK_TYPE_SIZE("long"      SIZEOF_LONG)
@@ -400,6 +418,9 @@ CHECK_TYPE_SIZE("int"       SIZEOF_INT)
 CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
 CHECK_TYPE_SIZE("off_t"     SIZEOF_OFF_T)
 CHECK_TYPE_SIZE("time_t"    SIZEOF_TIME_T)
+
+CHECK_STRUCT_HAS_MEMBER("struct tm"
+ tm_gmtoff "time.h" HAVE_TM_GMTOFF)
 
 # If finds the size of a type, set SIZEOF_<type> and HAVE_<type>
 FUNCTION(MY_CHECK_TYPE_SIZE type defbase)
@@ -445,9 +466,6 @@ int main()
   return clock_gettime(CLOCK_REALTIME, &ts);
 }" HAVE_CLOCK_REALTIME)
 
-# For libevent
-SET(DNS_USE_CPU_CLOCK_FOR_ID CACHE ${HAVE_CLOCK_GETTIME} INTERNAL "")
-
 IF(NOT STACK_DIRECTION)
   IF(CMAKE_CROSSCOMPILING)
    MESSAGE(FATAL_ERROR 
@@ -477,8 +495,10 @@ ENDIF()
 
 IF(NOT CMAKE_CROSSCOMPILING AND NOT MSVC)
   STRING(TOLOWER ${CMAKE_SYSTEM_PROCESSOR}  processor)
-  IF(processor MATCHES "86" OR processor MATCHES "amd64" OR processor MATCHES "x64")
-    IF(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  IF(processor MATCHES "86" OR
+      processor MATCHES "amd64" OR
+      processor MATCHES "x64")
+    IF(NOT SOLARIS)
       # The loader in some Solaris versions has a bug due to which it refuses to
       # start a binary that has been compiled by GCC and uses __asm__("pause")
       # with the error:
@@ -554,15 +574,15 @@ int main()
 }" HAVE_BUILTIN_EXPECT)
 
 # GCC has __builtin_stpcpy but still calls stpcpy
-IF(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS" OR NOT CMAKE_COMPILER_IS_GNUCC)
-CHECK_C_SOURCE_COMPILES("
-int main()
-{
-  char foo1[1];
-  char foo2[1];
-  __builtin_stpcpy(foo1, foo2);
-  return 0;
-}" HAVE_BUILTIN_STPCPY)
+IF(NOT SOLARIS OR NOT MY_COMPILER_IS_GNU)
+  CHECK_C_SOURCE_COMPILES("
+  int main()
+  {
+    char foo1[1];
+    char foo2[1];
+    __builtin_stpcpy(foo1, foo2);
+    return 0;
+  }" HAVE_BUILTIN_STPCPY)
 ENDIF()
 
 CHECK_CXX_SOURCE_COMPILES("
@@ -672,32 +692,6 @@ int main(int ac, char **av)
 HAVE_INTEGER_PTHREAD_SELF
 FAIL_REGEX "warning: incompatible pointer to integer conversion"
 )
-
-CHECK_CXX_SOURCE_COMPILES(
-  "
-  #include <vector>
-  template<typename T>
-  class ct2
-  {
-  public:
-    typedef T type;
-    void func();
-  };
-
-  template<typename T>
-  void ct2<T>::func()
-  {
-    std::vector<T> vec;
-    std::vector<T>::iterator itr = vec.begin();
-  }
-
-  int main(int argc, char **argv)
-  {
-    ct2<double> o2;
-    o2.func();
-    return 0;
-  }
-  " HAVE_IMPLICIT_DEPENDENT_NAME_TYPING)
 
 #--------------------------------------------------------------------
 # Check for IPv6 support

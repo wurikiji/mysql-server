@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -41,6 +41,7 @@
 #include "my_byteorder.h"
 #include "my_dbug.h"
 #include "my_inttypes.h"
+#include "sql/current_thd.h"
 #include "sql/dd/cache/dictionary_client.h"
 #include "sql/item_func.h"
 #include "sql/mdl.h"
@@ -56,7 +57,7 @@ class Spatial_reference_system;
 }  // namespace dd
 
 bool Srs_fetcher::lock(gis::srid_t srid, enum_mdl_type lock_type) {
-  DBUG_ENTER("lock_srs");
+  DBUG_TRACE;
   DBUG_ASSERT(srid != 0);
 
   char id_str[11];  // uint32 => max 10 digits + \0
@@ -69,11 +70,11 @@ bool Srs_fetcher::lock(gis::srid_t srid, enum_mdl_type lock_type) {
                                       m_thd->variables.lock_wait_timeout)) {
     /* purecov: begin inspected */
     // If locking fails, an error has already been flagged.
-    DBUG_RETURN(true);
+    return true;
     /* purecov: end */
   }
 
-  DBUG_RETURN(false);
+  return false;
 }
 
 bool Srs_fetcher::acquire(gis::srid_t srid,
@@ -96,7 +97,8 @@ bool Srs_fetcher::acquire_for_modification(gis::srid_t srid,
 
 bool Srs_fetcher::srs_exists(THD *thd, gis::srid_t srid, bool *exists) {
   DBUG_ASSERT(exists);
-  dd::cache::Dictionary_client::Auto_releaser m_releaser(thd->dd_client());
+  std::unique_ptr<dd::cache::Dictionary_client::Auto_releaser> releaser(
+      new dd::cache::Dictionary_client::Auto_releaser(thd->dd_client()));
   Srs_fetcher fetcher(thd);
   const dd::Spatial_reference_system *srs = nullptr;
   if (fetcher.acquire(srid, &srs)) return true; /* purecov: inspected */
@@ -509,14 +511,14 @@ bool post_fix_result(BG_result_buf_mgr *resbuf_mgr, BG_geotype &geout,
     geout.set_components_no_overlapped(true);
   if (geout.get_ptr() == NULL) return true;
   if (res) {
-    const char *resptr = geout.get_cptr() - GEOM_HEADER_SIZE;
+    char *resptr = geout.get_cptr() - GEOM_HEADER_SIZE;
     size_t len = geout.get_nbytes();
 
     /*
       The resptr buffer is now owned by resbuf_mgr and used by res, resptr
       will be released properly by resbuf_mgr.
      */
-    resbuf_mgr->add_buffer(const_cast<char *>(resptr));
+    resbuf_mgr->add_buffer(resptr);
     /*
       Pass resptr as const pointer so that the memory space won't be reused
       by res object. Reuse is forbidden because the memory comes from BG
@@ -525,8 +527,7 @@ bool post_fix_result(BG_result_buf_mgr *resbuf_mgr, BG_geotype &geout,
     res->set(resptr, len + GEOM_HEADER_SIZE, &my_charset_bin);
 
     // Prefix the GEOMETRY header.
-    write_geometry_header(const_cast<char *>(resptr), geout.get_srid(),
-                          geout.get_geotype());
+    write_geometry_header(resptr, geout.get_srid(), geout.get_geotype());
 
     /*
       Give up ownership because the buffer may have to live longer than
@@ -578,8 +579,8 @@ bool is_empty_geocollection(const Geometry *g) {
 
   Is_empty_geometry checker;
   uint32 len = g->get_data_size();
-  wkb_scanner(g->get_cptr(), &len, Geometry::wkb_geometrycollection, false,
-              &checker);
+  wkb_scanner(current_thd, g->get_cptr(), &len,
+              Geometry::wkb_geometrycollection, false, &checker);
   return checker.is_empty;
 }
 
@@ -595,7 +596,7 @@ bool is_empty_geocollection(const String &wkbres) {
 
   Is_empty_geometry checker;
   uint32 len = static_cast<uint32>(wkbres.length()) - GEOM_HEADER_SIZE;
-  wkb_scanner(wkbres.ptr() + GEOM_HEADER_SIZE, &len,
+  wkb_scanner(current_thd, wkbres.ptr() + GEOM_HEADER_SIZE, &len,
               Geometry::wkb_geometrycollection, false, &checker);
   return checker.is_empty;
 }

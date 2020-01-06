@@ -1,4 +1,4 @@
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -26,8 +26,9 @@ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/include/memcached
                     ${CMAKE_CURRENT_SOURCE_DIR}/utilities 
-                    ${CMAKE_CURRENT_SOURCE_DIR}/daemon                                    
-                    ${LIBEVENT_INCLUDE_DIR})
+                    ${CMAKE_CURRENT_SOURCE_DIR}/daemon)
+
+INCLUDE_DIRECTORIES(SYSTEM ${LIBEVENT_INCLUDE_DIRS})
 
 IF(${CMAKE_COMPILER_IS_GNUCC})
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
@@ -38,13 +39,12 @@ ENDIF()
 
 # This is third-party code so we reduce the compiler warnings.
 # These are numerous, so memcached cannot currently be built with -Werror.
-IF(CMAKE_C_FLAGS)
-  STRING(REPLACE "-Wextra "  " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-  STRING(REPLACE "-Wdeclaration-after-statement" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-  STRING(REPLACE "-Wvla"    "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-  STRING(REPLACE "-Werror"  "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-extra")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-declaration-after-statement")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-vla")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error")
 ENDIF()
-
 
 SET(LIBMEMCACHED_UTILITIES_SOURCES
                 include/memcached/config_parser.h
@@ -58,7 +58,7 @@ SET(LIBMEMCACHED_UTILITIES_SOURCES
                 utilities/genhash_int.h
                 utilities/util.c)
 
-ADD_CONVENIENCE_LIBRARY(ndb_memcached_utilities ${LIBMEMCACHED_UTILITIES_SOURCES})
+ADD_LIBRARY(ndb_memcached_utilities STATIC ${LIBMEMCACHED_UTILITIES_SOURCES})
 IF(HAVE_LIBDL)
 target_link_libraries(ndb_memcached_utilities dl)
 ENDIF()
@@ -84,7 +84,7 @@ add_executable(memcached ${MEMCACHED_SOURCES})
 
 target_link_libraries(memcached 
                       ndb_memcached_utilities
-                      ${LIBEVENT_LIBRARY}
+                      ${LIBEVENT_LIBRARIES}
                       ${LIBM} ${LIBNSL} ${LIBSOCKET})
 IF(HAVE_LIBDL)
 target_link_libraries(memcached dl)

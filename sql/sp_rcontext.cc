@@ -1,4 +1,4 @@
-/* Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -152,7 +152,7 @@ bool sp_rcontext::set_return_value(THD *thd, Item **return_value_item) {
   return sp_eval_expr(thd, m_return_value_fld, return_value_item);
 }
 
-bool sp_rcontext::push_cursor(THD *thd, sp_instr_cpush *i) {
+bool sp_rcontext::push_cursor(sp_instr_cpush *i) {
   /*
     We should create cursors on the system heap because:
      - they could be (and usually are) used in several instructions,
@@ -160,7 +160,7 @@ bool sp_rcontext::push_cursor(THD *thd, sp_instr_cpush *i) {
      - a cursor can be pushed/popped many times in a loop, having these objects
        on callers' mem-root would lead to a memory leak in every iteration.
   */
-  sp_cursor *c = new (std::nothrow) sp_cursor(thd, i);
+  sp_cursor *c = new (std::nothrow) sp_cursor(i);
 
   if (!c) {
     sql_alloc_error_handler();
@@ -252,7 +252,7 @@ void sp_rcontext::exit_handler(THD *thd, sp_pcontext *target_scope) {
 
 bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
                                        const sp_instr *cur_spi) {
-  DBUG_ENTER("sp_rcontext::handle_sql_condition");
+  DBUG_TRACE;
 
   /*
     If this is a fatal sub-statement error, and this runtime
@@ -260,7 +260,7 @@ bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
     handlers from this context are applicable: try to locate one
     in the outer scope.
   */
-  if (thd->is_fatal_sub_stmt_error && m_in_sub_stmt) DBUG_RETURN(false);
+  if (thd->is_fatal_sub_stmt_error && m_in_sub_stmt) return false;
 
   Diagnostics_area *da = thd->get_stmt_da();
   const sp_handler *found_handler = NULL;
@@ -323,7 +323,7 @@ bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
     }
   }
 
-  if (!found_handler) DBUG_RETURN(false);
+  if (!found_handler) return false;
 
   // At this point, we know that:
   //  - there is a pending SQL-condition (error or warning);
@@ -357,7 +357,7 @@ bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
       DECLARE EXIT HANDLER ...     -- this handler does not catch the warning
     END
   */
-  if (!handler_entry) DBUG_RETURN(false);
+  if (!handler_entry) return false;
 
   uint continue_ip = handler_entry->handler->type == sp_handler::CONTINUE
                          ? cur_spi->get_cont_dest()
@@ -368,7 +368,7 @@ bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
       Handler_call_frame(found_handler, found_condition, continue_ip);
   if (!frame) {
     sql_alloc_error_handler();
-    DBUG_RETURN(false);
+    return false;
   }
 
   m_activated_handlers.push_back(frame);
@@ -393,7 +393,7 @@ bool sp_rcontext::handle_sql_condition(THD *thd, uint *ip,
 
   *ip = handler_entry->first_ip;
 
-  DBUG_RETURN(true);
+  return true;
 }
 
 bool sp_rcontext::set_variable(THD *thd, Field *field, Item **value) {
@@ -408,14 +408,13 @@ bool sp_rcontext::set_variable(THD *thd, Field *field, Item **value) {
 Item_cache *sp_rcontext::create_case_expr_holder(THD *thd,
                                                  const Item *item) const {
   Item_cache *holder;
-  Query_arena current_arena;
+  Query_arena backup_arena;
 
-  thd->set_n_backup_active_arena(thd->sp_runtime_ctx->callers_arena,
-                                 &current_arena);
+  thd->swap_query_arena(*thd->sp_runtime_ctx->callers_arena, &backup_arena);
 
   holder = Item_cache::get_cache(item);
 
-  thd->restore_active_arena(thd->sp_runtime_ctx->callers_arena, &current_arena);
+  thd->swap_query_arena(backup_arena, thd->sp_runtime_ctx->callers_arena);
 
   return holder;
 }
@@ -512,17 +511,18 @@ bool sp_cursor::fetch(List<sp_variable> *vars) {
 // sp_cursor::Query_fetch_into_spvars implementation.
 ///////////////////////////////////////////////////////////////////////////
 
-bool sp_cursor::Query_fetch_into_spvars::prepare(List<Item> &fields,
+bool sp_cursor::Query_fetch_into_spvars::prepare(THD *thd, List<Item> &fields,
                                                  SELECT_LEX_UNIT *u) {
   /*
     Cache the number of columns in the result set in order to easily
     return an error if column count does not match value count.
   */
   field_count = fields.elements;
-  return Query_result_interceptor::prepare(fields, u);
+  return Query_result_interceptor::prepare(thd, fields, u);
 }
 
-bool sp_cursor::Query_fetch_into_spvars::send_data(List<Item> &items) {
+bool sp_cursor::Query_fetch_into_spvars::send_data(THD *thd,
+                                                   List<Item> &items) {
   List_iterator_fast<sp_variable> spvar_iter(*spvar_list);
   List_iterator_fast<Item> item_iter(items);
   sp_variable *spvar;

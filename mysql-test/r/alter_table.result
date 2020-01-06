@@ -1,5 +1,3 @@
-drop table if exists t1,t2;
-drop database if exists mysqltest;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 SET SESSION information_schema_stats_expiry=0;
 create table t1 (
@@ -80,6 +78,9 @@ LANG_ID smallint(5) unsigned DEFAULT '0' NOT NULL,
 NAME varchar(80) DEFAULT '' NOT NULL,
 PRIMARY KEY (GROUP_ID,LANG_ID),
 KEY NAME (NAME));
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 ALTER TABLE t1 CHANGE NAME NAME CHAR(80) not null;
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -106,9 +107,16 @@ user_id int(11) unsigned NOT NULL default '0',
 status enum('new','old') NOT NULL default 'new',
 PRIMARY KEY (id)
 ) ENGINE=MyISAM;
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 ALTER TABLE t1 ORDER BY t1.id, t1.status, t1.type_id, t1.user_id, t1.body;
 DROP TABLE t1;
 CREATE TABLE t1 (AnamneseId int(10) unsigned NOT NULL auto_increment,B BLOB,PRIMARY KEY (AnamneseId)) engine=myisam;
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 insert into t1 values (null,"hello");
 LOCK TABLES t1 WRITE;
 ALTER TABLE t1 ADD Column new_col int not null;
@@ -156,24 +164,24 @@ key (n3, n4, n1, n2),
 key (n4, n1, n2, n3) ) engine=Myisam;
 alter table t1 disable keys;
 show keys from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	n1	1	n1	A	0	NULL	NULL		BTREE			YES
-t1	1	n1_2	1	n1	A	NULL	NULL	NULL		BTREE	disabled		YES
-t1	1	n1_2	2	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n1_2	3	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n1_2	4	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n2	1	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n2	2	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n2	3	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n2	4	n1	A	NULL	NULL	NULL		BTREE	disabled		YES
-t1	1	n3	1	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n3	2	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n3	3	n1	A	NULL	NULL	NULL		BTREE	disabled		YES
-t1	1	n3	4	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n4	1	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n4	2	n1	A	NULL	NULL	NULL		BTREE	disabled		YES
-t1	1	n4	3	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
-t1	1	n4	4	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	n1	1	n1	A	0	NULL	NULL		BTREE			YES	NULL
+t1	1	n1_2	1	n1	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
+t1	1	n1_2	2	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n1_2	3	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n1_2	4	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n2	1	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n2	2	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n2	3	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n2	4	n1	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
+t1	1	n3	1	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n3	2	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n3	3	n1	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
+t1	1	n3	4	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n4	1	n4	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n4	2	n1	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
+t1	1	n4	3	n2	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
+t1	1	n4	4	n3	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 insert into t1 values(10,RAND()*1000,RAND()*1000,RAND());
 insert into t1 values(9,RAND()*1000,RAND()*1000,RAND());
 insert into t1 values(8,RAND()*1000,RAND()*1000,RAND());
@@ -186,24 +194,24 @@ insert into t1 values(2,RAND()*1000,RAND()*1000,RAND());
 insert into t1 values(1,RAND()*1000,RAND()*1000,RAND());
 alter table t1 enable keys;
 show keys from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	n1	1	n1	A	10	NULL	NULL		BTREE			YES
-t1	1	n1_2	1	n1	A	10	NULL	NULL		BTREE			YES
-t1	1	n1_2	2	n2	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n1_2	3	n3	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n1_2	4	n4	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n2	1	n2	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n2	2	n3	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n2	3	n4	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n2	4	n1	A	10	NULL	NULL		BTREE			YES
-t1	1	n3	1	n3	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n3	2	n4	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n3	3	n1	A	10	NULL	NULL		BTREE			YES
-t1	1	n3	4	n2	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n4	1	n4	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n4	2	n1	A	10	NULL	NULL		BTREE			YES
-t1	1	n4	3	n2	A	10	NULL	NULL	YES	BTREE			YES
-t1	1	n4	4	n3	A	10	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	n1	1	n1	A	10	NULL	NULL		BTREE			YES	NULL
+t1	1	n1_2	1	n1	A	10	NULL	NULL		BTREE			YES	NULL
+t1	1	n1_2	2	n2	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n1_2	3	n3	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n1_2	4	n4	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n2	1	n2	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n2	2	n3	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n2	3	n4	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n2	4	n1	A	10	NULL	NULL		BTREE			YES	NULL
+t1	1	n3	1	n3	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n3	2	n4	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n3	3	n1	A	10	NULL	NULL		BTREE			YES	NULL
+t1	1	n3	4	n2	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n4	1	n4	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n4	2	n1	A	10	NULL	NULL		BTREE			YES	NULL
+t1	1	n4	3	n2	A	10	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	n4	4	n3	A	10	NULL	NULL	YES	BTREE			YES	NULL
 drop table t1;
 create table t1 (i int unsigned not null auto_increment primary key);
 alter table t1 rename t2;
@@ -316,31 +324,34 @@ insert into t1 values(1,2), (2,2), (3, 2);
 insert into t1 values(1,1), (2,1), (3, 1);
 alter table t1 add unique (a,b), add key (b);
 show keys from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	3	NULL	NULL	YES	BTREE			YES
-t1	0	a	2	b	A	300	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	100	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	3	NULL	NULL	YES	BTREE			YES	NULL
+t1	0	a	2	b	A	300	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	100	NULL	NULL	YES	BTREE			YES	NULL
 analyze table t1;
 Table	Op	Msg_type	Msg_text
 test.t1	analyze	status	OK
 show keys from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	3	NULL	NULL	YES	BTREE			YES
-t1	0	a	2	b	A	300	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	100	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	3	NULL	NULL	YES	BTREE			YES	NULL
+t1	0	a	2	b	A	300	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	100	NULL	NULL	YES	BTREE			YES	NULL
 drop table t1;
 CREATE TABLE t1 (
 Host varchar(16) binary NOT NULL default '',
 User varchar(16) binary NOT NULL default '',
 PRIMARY KEY  (Host,User)
 ) ENGINE=MyISAM;
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 ALTER TABLE t1 DISABLE KEYS;
 LOCK TABLES t1 WRITE;
 INSERT INTO t1 VALUES ('localhost','root'),('localhost',''),('games','monty');
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES
-t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES	NULL
+t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES	NULL
 ALTER TABLE t1 ENABLE KEYS;
 UNLOCK TABLES;
 CHECK TABLES t1;
@@ -353,25 +364,28 @@ User varchar(16) binary NOT NULL default '',
 PRIMARY KEY  (Host,User),
 KEY  (Host)
 ) ENGINE=MyISAM;
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 ALTER TABLE t1 DISABLE KEYS;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES
-t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES
-t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES	NULL
+t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES	NULL
+t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
 LOCK TABLES t1 WRITE;
 INSERT INTO t1 VALUES ('localhost','root'),('localhost','');
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES
-t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES
-t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES	NULL
+t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES	NULL
+t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
 ALTER TABLE t1 ENABLE KEYS;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES
-t1	0	PRIMARY	2	User	A	2	NULL	NULL		BTREE			YES
-t1	1	Host	1	Host	A	1	NULL	NULL		BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES	NULL
+t1	0	PRIMARY	2	User	A	2	NULL	NULL		BTREE			YES	NULL
+t1	1	Host	1	Host	A	1	NULL	NULL		BTREE			YES	NULL
 UNLOCK TABLES;
 CHECK TABLES t1;
 Table	Op	Msg_type	Msg_text
@@ -390,13 +404,16 @@ User varchar(16) binary NOT NULL default '',
 PRIMARY KEY  (Host,User),
 KEY  (Host)
 ) ENGINE=MyISAM;
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 LOCK TABLES t1 WRITE;
 ALTER TABLE t1 DISABLE KEYS;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES
-t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES
-t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	PRIMARY	1	Host	A	NULL	NULL	NULL		BTREE			YES	NULL
+t1	0	PRIMARY	2	User	A	0	NULL	NULL		BTREE			YES	NULL
+t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE	disabled		YES	NULL
 DROP TABLE t1;
 create table t1 (a int);
 alter table t1 rename to ``;
@@ -576,41 +593,40 @@ create table t1 ( a timestamp );
 alter table t1 add unique ( a(1) );
 ERROR HY000: Incorrect prefix key; the used key part isn't a string, the used length is longer than the key part, or the storage engine doesn't support unique prefix keys
 drop table t1;
-drop table if exists t1;
 create table t1 (a int, key(a)) engine=myisam;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 "this used not to disable the index"
 alter table t1 modify a int, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 alter table t1 enable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 modify a bigint, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 alter table t1 enable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 add b char(10), disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 alter table t1 add c decimal(10,2), enable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 "this however did"
 alter table t1 disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 desc t1;
 Field	Type	Null	Key	Default	Extra
 a	bigint(20)	YES	MUL	NULL	
@@ -619,83 +635,83 @@ c	decimal(10,2)	YES		NULL
 alter table t1 add d decimal(15,5);
 "The key should still be disabled"
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 drop table t1;
 "Now will test with one unique index"
 create table t1(a int, b char(10), unique(a)) engine=myisam;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 enable keys;
 "If no copy on noop change, this won't touch the data file"
 "Unique index, no change"
 alter table t1 modify a int, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 "Change the type implying data copy"
 "Unique index, no change"
 alter table t1 modify a bigint, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 modify a bigint;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 modify a int;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 drop table t1;
 "Now will test with one unique and one non-unique index"
 create table t1(a int, b char(10), unique(a), key(b)) engine=myisam;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 alter table t1 disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 alter table t1 enable keys;
 "If no copy on noop change, this won't touch the data file"
 "The non-unique index will be disabled"
 alter table t1 modify a int, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 alter table t1 enable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 "Change the type implying data copy"
 "The non-unique index will be disabled"
 alter table t1 modify a bigint, disable keys;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 "Change again the type, but leave the indexes as_is"
 alter table t1 modify a int;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 "Try the same. When data is no copied on similar tables, this is noop"
 alter table t1 modify a int;
 show indexes from t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
-t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
+t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 drop table t1;
 create database mysqltest;
 create table t1 (c1 int);
@@ -727,18 +743,15 @@ t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=FIXED
 DROP TABLE t1;
-DROP TABLE IF EXISTS bug24219;
-DROP TABLE IF EXISTS bug24219_2;
 CREATE TABLE bug24219 (a INT, INDEX(a)) ENGINE=MyISAM;
 SHOW INDEX FROM bug24219;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-bug24219	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+bug24219	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 ALTER TABLE bug24219 RENAME TO bug24219_2, DISABLE KEYS;
 SHOW INDEX FROM bug24219_2;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-bug24219_2	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+bug24219_2	1	a	1	a	A	NULL	NULL	NULL	YES	BTREE	disabled		YES	NULL
 DROP TABLE bug24219_2;
-drop table if exists table_24562;
 create table table_24562(
 section int,
 subsection int,
@@ -852,12 +865,16 @@ alter table table_24562 order by no_such_col;
 ERROR 42S22: Unknown column 'no_such_col' in 'order clause'
 drop table table_24562;
 create table t1 (mycol int(10) not null);
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 alter table t1 alter column mycol set default 0;
 desc t1;
 Field	Type	Null	Key	Default	Extra
 mycol	int(10)	NO		0	
 drop table t1;
 create table t1(id int(8) primary key auto_increment) engine=heap;
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 insert into t1 values (null);
 insert into t1 values (null);
 select * from t1;
@@ -993,11 +1010,15 @@ ALTER TABLE t1 ADD e GEOMETRY NOT NULL, ADD SPATIAL KEY (e(30));
 ERROR HY000: Incorrect prefix key; the used key part isn't a string, the used length is longer than the key part, or the storage engine doesn't support unique prefix keys
 DROP TABLE t1;
 CREATE TABLE t1 (s CHAR(8) BINARY);
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 INSERT INTO t1 VALUES ('test');
 SELECT LENGTH(s) FROM t1;
 LENGTH(s)
 4
 ALTER TABLE t1 MODIFY s CHAR(10) BINARY;
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 SELECT LENGTH(s) FROM t1;
 LENGTH(s)
 4
@@ -1049,7 +1070,6 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 drop table t1;
 End of 5.0 tests
-drop table if exists t1, t2, t3;
 create table t1 (i int);
 create table t3 (j int);
 insert into t1 values ();
@@ -1110,7 +1130,6 @@ Two
 Three
 Four
 drop tables t1, t3;
-DROP TABLE IF EXISTS `t+1`, `t+2`;
 CREATE TABLE `t+1` (c1 INT);
 ALTER TABLE  `t+1` RENAME `t+2`;
 CREATE TABLE `t+1` (c1 INT);
@@ -1175,8 +1194,6 @@ Table	Create Table
   `c1` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 DROP TABLE `#sql2`, `@0023sql1`;
-DROP TABLE IF EXISTS t1;
-DROP TABLE IF EXISTS t2;
 CREATE TABLE t1 (
 int_field INTEGER UNSIGNED NOT NULL,
 char_field CHAR(10),
@@ -1187,8 +1204,8 @@ Field	Type	Null	Key	Default	Extra
 int_field	int(10) unsigned	NO	MUL	NULL	
 char_field	char(10)	YES		NULL	
 SHOW INDEXES FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	int_field	1	int_field	A	0	NULL	NULL		BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	int_field	1	int_field	A	0	NULL	NULL		BTREE			YES	NULL
 INSERT INTO t1 VALUES (1, "edno"), (1, "edno"), (2, "dve"), (3, "tri"), (5, "pet");
 "Non-copy data change - new frm, but old data and index files"
 ALTER TABLE t1
@@ -1243,7 +1260,6 @@ check table t1;
 Table	Op	Msg_type	Msg_text
 test.t1	check	status	OK
 drop table t1;
-DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (id int, c int) character set latin1;
 INSERT INTO t1 VALUES (1,1);
 ALTER TABLE t1 CHANGE c d int;
@@ -1262,7 +1278,6 @@ ALTER TABLE t1 CHANGE d c varchar(10);
 affected rows: 0
 info: Records: 0  Duplicates: 0  Warnings: 0
 DROP TABLE t1;
-DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (id int, c int) character set utf8;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
@@ -1316,7 +1331,6 @@ DROP TABLE t1;
 #
 # Bug#45567: Fast ALTER TABLE broken for enum and set
 #
-DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (a ENUM('a1','a2'));
 INSERT INTO t1 VALUES ('a1'),('a2');
 # No copy: No modification
@@ -1370,7 +1384,7 @@ info: Records: 2  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','a0','xx','a5','a6');
 affected rows: 0
 info: Records: 0  Duplicates: 0  Warnings: 0
-# Copy: Numerical incrase (pack lenght)
+# Copy: Numerical increase (pack length)
 ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','a0','xx','a5','a6','a7','a8','a9','a10');
 affected rows: 2
 info: Records: 2  Duplicates: 0  Warnings: 0
@@ -1378,6 +1392,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (f1 TIMESTAMP NULL DEFAULT NULL,
 f2 INT(11) DEFAULT NULL) ENGINE=MYISAM DEFAULT CHARSET=utf8;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 VALUES (NULL, NULL), ("2009-10-09 11:46:19", 2);
 this should affect no rows as there is no real change
@@ -1396,7 +1411,6 @@ DROP TABLE t1;
 # Test for bug #12652385 - "61493: REORDERING COLUMNS TO POSITION
 #                           FIRST CAN CAUSE DATA TO BE CORRUPTED".
 #
-drop table if exists t1;
 # Use MyISAM engine as the fact that InnoDB doesn't support
 # in-place ALTER TABLE in cases when columns are being renamed
 # hides some bugs.
@@ -1450,7 +1464,6 @@ DROP TABLE t1;
 # Test for bug #53820 "ALTER a MEDIUMINT column table causes full
 #                      table copy".
 #
-DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (a INT, b MEDIUMINT);
 INSERT INTO t1 VALUES (1, 1), (2, 2);
 # The below ALTER should not copy table and so no rows should
@@ -1462,7 +1475,6 @@ DROP TABLE t1;
 #
 # Bug#11754461 CANNOT ALTER TABLE WHEN KEY PREFIX TOO LONG
 #
-DROP DATABASE IF EXISTS db1;
 CREATE DATABASE db1 CHARACTER SET utf8;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
@@ -1476,7 +1488,6 @@ DROP DATABASE db1;
 # to allow temp table operations".
 #
 # At some point the below test case failed on assertion.
-DROP TABLE IF EXISTS t1;
 CREATE TEMPORARY TABLE t1 (i int) ENGINE=MyISAM;
 ALTER TABLE t1 DISCARD TABLESPACE;
 ERROR HY000: Table storage engine for 't1' doesn't have this option
@@ -1485,7 +1496,6 @@ DROP TABLE t1;
 # Bug#11938039 RE-EXECUTION OF FRM-ONLY ALTER TABLE WITH RENAME
 #              CLAUSE FAILS OR ABORTS SERVER.
 #
-drop table if exists t1;
 create table t1 (a int);
 prepare stmt1 from 'alter table t1 alter column a set default 1, rename to t2';
 execute stmt1;
@@ -1513,7 +1523,6 @@ DROP TABLE t1;
 #
 # Single thread tests.
 # See innodb_mysql_sync.test for multi thread tests.
-DROP TABLE IF EXISTS t1;
 CREATE TABLE t1(a INT PRIMARY KEY, b INT) engine=InnoDB;
 CREATE TABLE m1(a INT PRIMARY KEY, b INT) engine=MyISAM;
 INSERT INTO t1 VALUES (1,1), (2,2);
@@ -1687,7 +1696,6 @@ DROP TABLE t1;
 # --enable_info allows us to see how many rows were updated
 # by ALTER TABLE. in-place will show 0 rows, while copy > 0.
 #
-DROP TABLE IF EXISTS ti1, ti2, ti3, tm1, tm2, tm3;
 # Single operation tests
 CREATE TABLE ti1(a INT NOT NULL, b INT, c INT) engine=InnoDB;
 CREATE TABLE tm1(a INT NOT NULL, b INT, c INT) engine=MyISAM;
@@ -2596,39 +2604,39 @@ SET sql_mode = default;
 # index comment or the lack of comment for the indexes.
 CREATE TABLE t1(fld1 int, key key1(fld1));
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'test';
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'test');
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1);
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'test');
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'success';
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		success	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		success	YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'old comment');
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		old comment	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		old comment	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'new comment';
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		new comment	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		new comment	YES	NULL
 DROP TABLE t1;
 #
 # Bug#19635706
@@ -2727,56 +2735,56 @@ SET sql_mode= @orig_sql_mode;
 #comment using INPLACE algorithm reports an error.
 CREATE TABLE t1(fld1 int, key key1(fld1)) ENGINE= INNODB;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'test',
 ALGORITHM= INPLACE;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'test') ENGINE= MyISAM;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		test	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1), ALGORITHM=INPLACE;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE			YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'test') ENGINE= INNODB;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		test	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'success',
 ALGORITHM= INPLACE;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		success	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		success	YES	NULL
 DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'old comment') ENGINE=MyISAM;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		old comment	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		old comment	YES	NULL
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'new comment',
 ALGORITHM= INPLACE;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		new comment	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		new comment	YES	NULL
 DROP TABLE t1;
 #Test cases with merge threshold specified in the index comment.
 CREATE TABLE t1(fld1 int, key key1(fld1)) ENGINE=INNODB;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 50
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT
 'MERGE_THRESHOLD=45';
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=45	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=45	YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 45
@@ -2784,15 +2792,15 @@ DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'MERGE_THRESHOLD=40')
 ENGINE=INNODB;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=40	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=40	YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 40
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1);
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE			YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 50
@@ -2800,16 +2808,16 @@ DROP TABLE t1;
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'MERGE_THRESHOLD=40')
 ENGINE=INNODB;
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=40	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=40	YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 40
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT
 'MERGE_THRESHOLD=45';
 SHOW INDEX FROM t1;
-Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible
-t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=45	YES
+Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment	Visible	Expression
+t1	1	key1	1	fld1	A	0	NULL	NULL	YES	BTREE		MERGE_THRESHOLD=45	YES	NULL
 SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_INDEXES WHERE NAME='key1';
 MERGE_THRESHOLD
 45
@@ -3507,9 +3515,9 @@ t_gen	CREATE TABLE `t_gen` (
   `b` double GENERATED ALWAYS AS (sqrt(`c`)) VIRTUAL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 ALTER TABLE t_gen CHANGE COLUMN c a INT;
-ERROR 42S22: Unknown column 'c' in 'generated column function'
+ERROR HY000: Column 'c' has a generated column dependency.
 ALTER TABLE t_gen RENAME COLUMN c TO a;
-ERROR 42S22: Unknown column 'c' in 'generated column function'
+ERROR HY000: Column 'c' has a generated column dependency.
 DROP TABLE t_gen;
 CREATE TABLE foo (col1 INT);
 INSERT INTO foo VALUES (1), (2);
@@ -3906,3 +3914,486 @@ ERROR HY000: Incorrect prefix key; the used key part isn't a string, the used le
 # Cleanup.
 DROP TABLE t1, t2;
 SET sql_mode= @orig_sql_mode;
+#
+# BUG#27164393: ALTER COLUMN SET DEFAULT DOES NOT RETURN ERROR
+#               ON GENERATED COLUMNS
+CREATE TABLE t1(fld1 INT, fld2 INT GENERATED ALWAYS AS (-fld1) VIRTUAL,
+fld3 INT GENERATED ALWAYS AS (-fld1) STORED);
+# Without patch, does not report an error.
+ALTER TABLE t1 ALTER COLUMN fld2 SET DEFAULT -1;
+ERROR HY000: Incorrect usage of DEFAULT and generated column
+ALTER TABLE t1 ALTER COLUMN fld3 SET DEFAULT -1;
+ERROR HY000: Incorrect usage of DEFAULT and generated column
+# Tests added for coverage
+ALTER TABLE t1 CHANGE fld2 fld2 INT GENERATED ALWAYS AS (-fld1) DEFAULT -1;
+ERROR HY000: Incorrect usage of DEFAULT and generated column
+ALTER TABLE t1 MODIFY fld3 INT GENERATED ALWAYS AS (-fld1) STORED DEFAULT -1;
+ERROR HY000: Incorrect usage of DEFAULT and generated column
+DROP TABLE t1;
+#
+# BUG#27788685: NO WARNING WHEN TRUNCATING A STRING WITH DATA LOSS
+#
+SET GLOBAL max_allowed_packet=17825792;
+CREATE TABLE t1 (t1_fld1 TEXT) ENGINE=InnoDB;
+CREATE TABLE t2 (t2_fld1 MEDIUMTEXT) ENGINE=InnoDB;
+CREATE TABLE t3 (t3_fld1 LONGTEXT) ENGINE=InnoDB;
+INSERT INTO t1 VALUES (REPEAT('a',300));
+INSERT INTO t2 VALUES (REPEAT('b',65680));
+INSERT INTO t3 VALUES (REPEAT('c',16777300));
+SELECT LENGTH(t1_fld1) FROM t1;
+LENGTH(t1_fld1)
+300
+SELECT LENGTH(t2_fld1) FROM t2;
+LENGTH(t2_fld1)
+65680
+SELECT LENGTH(t3_fld1) FROM t3;
+LENGTH(t3_fld1)
+16777300
+# With strict mode
+SET SQL_MODE='STRICT_ALL_TABLES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+ALTER TABLE t1 CHANGE `t1_fld1` `my_t1_fld1` TINYTEXT;
+ERROR 22001: Data too long for column 'my_t1_fld1' at row 1
+ALTER TABLE t2 CHANGE `t2_fld1` `my_t2_fld1` TEXT;
+ERROR 22001: Data too long for column 'my_t2_fld1' at row 1
+ALTER TABLE t3 CHANGE `t3_fld1` `my_t3_fld1` MEDIUMTEXT;
+ERROR 22001: Data too long for column 'my_t3_fld1' at row 1
+# With non-strict mode
+SET SQL_MODE='';
+ALTER TABLE t1 CHANGE `t1_fld1` `my_t1_fld1` TINYTEXT;
+Warnings:
+Warning	1265	Data truncated for column 'my_t1_fld1' at row 1
+ALTER TABLE t2 CHANGE `t2_fld1` `my_t2_fld1` TEXT;
+Warnings:
+Warning	1265	Data truncated for column 'my_t2_fld1' at row 1
+ALTER TABLE t3 CHANGE `t3_fld1` `my_t3_fld1` MEDIUMTEXT;
+Warnings:
+Warning	1265	Data truncated for column 'my_t3_fld1' at row 1
+SELECT LENGTH(my_t1_fld1) FROM t1;
+LENGTH(my_t1_fld1)
+44
+SELECT LENGTH(my_t2_fld1) FROM t2;
+LENGTH(my_t2_fld1)
+144
+SELECT LENGTH(my_t3_fld1) FROM t3;
+LENGTH(my_t3_fld1)
+84
+DROP TABLE t1, t2, t3;
+SET SQL_MODE=default;
+SET GLOBAL max_allowed_packet=default;
+#
+# Testing wl#11605: Alter table with character set conversion as
+# inplace operation, Step 1, NO INDEX
+#
+SET NAMES UTF8MB4;
+# VARCHAR(512): SWE7 -> BINARY
+CREATE TABLE t1(c1 VARCHAR(512) CHARSET SWE7);
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# VARCHAR(512): ASCII -> BINARY
+CREATE TABLE t1(c1 VARCHAR(512) CHARSET ASCII);
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# VARCHAR(512): UTF8MB4 -> BINARY
+# Not allowed because 512 binary chars cannot hold all 512 char
+# utf8mb4 strings
+CREATE TABLE t1(c1 VARCHAR(512) CHARSET UTF8MB4);
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5));
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET BINARY,
+ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# VARCHAR(512) CHARSET UTF8MB4 -> VARCHAR(2048) CHARSET BINARY:
+# Converting to BINARY and increasing the VARCHAR size accordingly is ok
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(2048) CHARSET BINARY,
+ALGORITHM = INPLACE;
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøå
+𐐀
+DROP TABLE t1;
+# Conversions requiring COPY algorithm
+CREATE TABLE t1(c1 VARCHAR(512) CHARSET ASCII);
+INSERT INTO t1 VALUES ('a string');
+# VARCHAR(512): ASCII -> SWE7
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET SWE7, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# VARCHAR(512): ASCII -> UCS2
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET UCS2, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# VARCHAR(512): ASCII -> UTF8MB4
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET UTF8MB4,
+ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+# VARCHAR(512): UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 VARCHAR(512) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 VARCHAR(512) CHARSET UTF8MB4,
+ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# CHAR(1): UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 CHAR(1) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (0xc3a6), (0xc3b8);
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(1) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+SELECT * FROM t1;
+c1
+æ
+ø
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æ
+ø
+𐐀
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c1` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t1;
+# CHAR(31): UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 CHAR(31) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(31) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# Crossing the boundary of 256 bytes usage, cannot be INPLACE.
+# 85*3 -> 85*4 and 64*3 -> 64*4
+CREATE TABLE t1(c1 CHAR(85) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(85) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+CREATE TABLE t1(c1 CHAR(64) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(64) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+SELECT * FROM t1;
+c1
+æøåtext
+DROP TABLE t1;
+# Increase in column size above 256 bytes should be inplace.
+# 86*3 -> 86*4
+CREATE TABLE t1(c1 CHAR(86) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(86) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+DROP TABLE t1;
+# Increase in column size within 256 bytes should be inplace.
+# 63*3 -> 63*4
+CREATE TABLE t1(c1 CHAR(63) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 CHAR(63) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# TINYTEXT: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 TINYTEXT CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 TINYTEXT CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# TEXT: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 TEXT CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 TEXT CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# MEDIUMTEXT: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 MEDIUMTEXT CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 MEDIUMTEXT CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# LONGTEXT: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 LONGTEXT CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT(0xc3a6, 0xc3b8, 0xc3a5, "text"));
+ALTER TABLE t1 MODIFY COLUMN c1 LONGTEXT CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+æøåtext
+𐐀
+DROP TABLE t1;
+# ENUM: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 ENUM('a','b','c') CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES ('a');
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a','b','c', 0xf0909080) CHARSET UTF8MB4,
+ALGORITHM = INPLACE;
+# Insert chars that only can be represented in utf8mb4
+INSERT INTO t1 VALUES (0xf0909080);
+SELECT * FROM t1;
+c1
+a
+𐐀
+DROP TABLE t1;
+# ENUM: UTF8MB3 -> UTF8MB4: Inplace rejected, new value not at the end
+CREATE TABLE t1(c1 ENUM(0xc3a6,0xc3b8,0xc3a5) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM(0xc3a6,0xf0909080,0xc3b8,0xc3a5)
+CHARSET UTF8MB4, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+# ENUM: ASCII -> BINARY
+CREATE TABLE t1(c1 ENUM('a', 'b','c') CHARSET ASCII);
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# ENUM: SWE7 -> BINARY
+CREATE TABLE t1(c1 ENUM('a','b','c') CHARSET SWE7);
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# ENUM: UTF8MB3 -> BINARY
+CREATE TABLE t1(c1 ENUM('a','b','c') CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# ENUM: UTF8MB4 -> BINARY
+CREATE TABLE t1(c1 ENUM('a','b','c') CHARSET UTF8MB4);
+ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# SET: UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 SET('b',0xc3a6,0xc3b8,0xc3a5) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1 VALUES (CONCAT('b,', 0xc3a6));
+ALTER TABLE t1 MODIFY COLUMN c1 SET('b',0xc3a6,0xc3b8,0xc3a5,0xf0909080)
+CHARSET UTF8MB4, ALGORITHM = INPLACE;
+# Insert set value which can only be represented in utf8mb4
+INSERT INTO t1 VALUES (CONCAT('b,', 0xf0909080, ',', 0xc3b8));
+SELECT * FROM t1;
+c1
+b,æ
+b,ø,𐐀
+DROP TABLE t1;
+# SET: UTF8MB3 -> UTF8MB4: Inplace rejected, new value not at the end
+CREATE TABLE t1(c1 SET(0xc3a6,0xc3b8,0xc3a5) CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+ALTER TABLE t1 MODIFY COLUMN c1 SET(0xc3a6,0xf0909080,0xc3b8,0xc3a5)
+CHARSET UTF8MB4, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+# SET: ASCII -> BINARY
+CREATE TABLE t1(c1 SET('a','b','c') CHARSET ASCII);
+ALTER TABLE t1 MODIFY COLUMN c1 SET('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# SET: SWE7 -> BINARY
+CREATE TABLE t1(c1 SET('a','b','c') CHARSET SWE7);
+ALTER TABLE t1 MODIFY COLUMN c1 SET('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# SET: UTF8MB3 -> BINARY
+CREATE TABLE t1(c1 SET('a','b','c') CHARSET UTF8MB3);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+ALTER TABLE t1 MODIFY COLUMN c1 SET('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# SET: UTF8MB4 -> BINARY
+CREATE TABLE t1(c1 SET('a','b','c') CHARSET UTF8MB4);
+ALTER TABLE t1 MODIFY COLUMN c1 SET('a','b','c') CHARSET BINARY,
+ALGORITHM = INPLACE;
+DROP TABLE t1;
+# SET operations
+CREATE TABLE t1 (a SET('a1','a2'));
+INSERT INTO t1 VALUES ('a1'),('a2');
+# No copy: Add new to the end
+ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','a3'), ALGORITHM = INPLACE;
+INSERT INTO t1 VALUES ('a2,a3');
+SELECT a FROM t1;
+a
+a1
+a2
+a2,a3
+# Copy: Modify and add new to the end
+ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','xx','a5'), ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# Copy: Remove from the end
+ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2'), ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# Copy: Add new member in the middle
+ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','a0','a3'), ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+# No copy: Add new to the end
+ALTER TABLE t1 MODIFY COLUMN a SET('a1','a2','a3','a4'), ALGORITHM = INPLACE;
+INSERT INTO t1 VALUES ('a3,a4');
+SELECT a FROM t1;
+a
+a1
+a2
+a2,a3
+a3,a4
+# Numerical increase (pack length), but adding to the end
+# It should be possible to do this inplace, but leads to crash in
+# DML on altered table.
+ALTER TABLE t1 MODIFY COLUMN a
+SET('a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'), ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+# Change charset for Instantly added column
+# UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 int, c2 CHAR(1) CHARSET ASCII);
+INSERT INTO t1 VALUES(1,'a');
+ALTER TABLE t1 ADD COLUMN c3 VARCHAR(1) CHARSET UTF8MB3 DEFAULT 'b', ALGORITHM = INSTANT;
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+SELECT * FROM t1;
+c1	c2	c3
+1	a	b
+ALTER TABLE t1 MODIFY COLUMN c3 VARCHAR(1) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+SELECT * FROM t1;
+c1	c2	c3
+1	a	b
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c1` int(11) DEFAULT NULL,
+  `c2` char(1) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+  `c3` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t1;
+# Change charset of columns used in virtual column
+# UTF8MB3 -> UTF8MB4
+CREATE TABLE t1(c1 int,
+c2 VARCHAR(1) CHARSET UTF8MB3,
+c3 VARCHAR(1) CHARSET UTF8MB3,
+c4 VARCHAR(2) GENERATED ALWAYS AS (CONCAT(c2,c3)) virtual);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+INSERT INTO t1(c1,c2,c3) VALUES(1,'a','b');
+SELECT * FROM t1;
+c1	c2	c3	c4
+1	a	b	ab
+ALTER TABLE t1
+MODIFY COLUMN c2 VARCHAR(1) CHARSET UTF8MB4,
+MODIFY COLUMN c3 VARCHAR(1) CHARSET UTF8MB4, ALGORITHM = INPLACE;
+SELECT * FROM t1;
+c1	c2	c3	c4
+1	a	b	ab
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c1` int(11) DEFAULT NULL,
+  `c2` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `c3` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `c4` varchar(2) GENERATED ALWAYS AS (concat(`c2`,`c3`)) VIRTUAL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t1;
+# There are few negative scenarios
+# char length cannot be changed during inplace
+CREATE TABLE t1(c CHAR(1) CHARSET ASCII);
+INSERT INTO t1 VALUES('a');
+SELECT * FROM t1;
+c
+a
+ALTER TABLE t1 MODIFY COLUMN c CHAR(4) CHARSET BINARY, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+ALTER TABLE t1 MODIFY COLUMN c CHAR(1) CHARSET BINARY, ALGORITHM = INPLACE;
+SELECT * FROM t1;
+c
+a
+DROP TABLE t1;
+# Collation cannot be changed inplace for indexed columns/Fields
+CREATE TABLE t1(c VARCHAR(1) CHARSET ASCII UNIQUE KEY);
+INSERT INTO t1 VALUES('a');
+SELECT * FROM t1;
+c
+a
+ALTER TABLE t1 MODIFY COLUMN c VARCHAR(1) CHARSET BINARY, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+DROP TABLE t1;
+# No change (charset or otherwise) which makes
+# Field::max_display_length exceed 255, can be done inplace
+CREATE TABLE t1(c VARCHAR(1) CHARSET ASCII);
+INSERT INTO t1 VALUES('a');
+SELECT * FROM t1;
+c
+a
+ALTER TABLE t1 MODIFY COLUMN c VARCHAR(256) CHARSET BINARY, ALGORITHM = INPLACE;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+ALTER TABLE t1 MODIFY COLUMN c VARCHAR(255) CHARSET BINARY, ALGORITHM = INPLACE;
+DROP TABLE t1;
+# table level charset change
+CREATE TABLE t1(c VARCHAR(1)) CHARSET ASCII;
+INSERT INTO t1 VALUES('a');
+SELECT * FROM t1;
+c
+a
+ALTER TABLE t1 CONVERT TO CHARSET BINARY, ALGORITHM = INPLACE;
+SELECT * FROM t1;
+c
+a
+DROP TABLE t1;
+SET NAMES default;
+#
+# Bug #29501324	ADD VIRTUAL FIRST + ADD COLUMN CAUSES ASSERTION FAILURE.
+#
+CREATE TABLE t1 (b INT);
+# The below ALTER TABLE causes assertion failure without the fix.
+ALTER TABLE t1 ADD gcol INT AS (b + 1) VIRTUAL FIRST, ADD COLUMN a INT;
+DROP TABLE t1;

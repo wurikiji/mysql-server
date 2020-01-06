@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -44,13 +44,20 @@ class Protocol_monitor : public ngs::Protocol_monitor_interface {
 
   void on_notice_warning_send() override;
   void on_notice_other_send() override;
+  void on_notice_global_send() override;
   void on_error_send() override;
   void on_fatal_error_send() override;
   void on_init_error_send() override;
   void on_row_send() override;
-  void on_send(long bytes_transferred) override;
-  void on_receive(long bytes_transferred) override;
+  void on_send(const uint32_t bytes_transferred) override;
+  void on_send_compressed(const uint32_t bytes_transferred) override;
+  void on_send_before_compression(const uint32_t bytes_transferred) override;
+  void on_receive(const uint32_t bytes_transferred) override;
   void on_error_unknown_msg_type() override;
+  void on_receive_compressed(const uint32_t bytes_transferred) override;
+  void on_receive_after_decompression(
+      const uint32_t bytes_transferred) override;
+  void on_messages_sent(const uint32_t messages) override;
 
  private:
   Client *m_client;
@@ -61,24 +68,16 @@ class Client : public ngs::Client {
   Client(std::shared_ptr<ngs::Vio_interface> connection,
          ngs::Server_interface &server, Client_id client_id,
          Protocol_monitor *pmon, const Global_timeouts &timeouts);
-  virtual ~Client();
-
- public:  // impl ngs::Client_interface
-  void on_session_close(ngs::Session_interface &s) override;
-  void on_session_reset(ngs::Session_interface &s) override;
-
-  void on_server_shutdown() override;
-  void on_auth_timeout() override;
+  ~Client() override;
 
  public:  // impl ngs::Client
-  void on_network_error(int error) override;
   std::string resolve_hostname() override;
-  ngs::Capabilities_configurator *capabilities_configurator() override;
+  Capabilities_configurator *capabilities_configurator() override;
 
   void set_is_interactive(const bool flag) override;
 
  public:
-  bool is_handler_thd(THD *thd);
+  bool is_handler_thd(const THD *thd) const override;
 
   void get_status_ssl_cipher_list(SHOW_VAR *var);
 
@@ -86,11 +85,9 @@ class Client : public ngs::Client {
 
  private:
   bool is_localhost(const char *hostname);
-
-  Protocol_monitor *m_protocol_monitor;
 };
 
-typedef ngs::shared_ptr<Client> Client_ptr;
+typedef std::shared_ptr<Client> Client_ptr;
 
 }  // namespace xpl
 

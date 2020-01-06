@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -158,7 +158,7 @@ DECLARE_METHOD(bool, item_numeric_class, (log_item_class c));
 
 /**
   Set an integer value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -170,7 +170,7 @@ DECLARE_METHOD(bool, item_numeric_class, (log_item_class c));
 DECLARE_METHOD(bool, item_set_int, (log_item_data * lid, longlong i));
 /**
   Set a floating point value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -183,7 +183,7 @@ DECLARE_METHOD(bool, item_set_float, (log_item_data * lid, double f));
 
 /**
   Set a string value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -198,7 +198,7 @@ DECLARE_METHOD(bool, item_set_lexstring,
 
 /**
   Set a string value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -628,7 +628,6 @@ END_SERVICE_DEFINITION(log_builtins_string)
 */
 BEGIN_SERVICE_DEFINITION(log_builtins_tmp)
 // Are we shutting down yet?  Windows EventLog needs to know.
-DECLARE_METHOD(bool, connection_loop_aborted, (void));
 DECLARE_METHOD(size_t, notify_client,
                (void *thd, uint severity, uint code, char *to, size_t n,
                 const char *format, ...))
@@ -679,6 +678,23 @@ extern SERVICE_TYPE(log_builtins_string) * log_bs;
 #define log_set_float log_item_set_float
 #define log_set_lexstring log_item_set_lexstring
 #define log_set_cstring log_item_set_cstring
+
+/**
+  Very long-running functions during server start-up can use this
+  function to check whether the time-out for buffered logging has
+  been reached. If so and we have urgent information, all buffered
+  log events will be flushed to the log using built-in default-logger
+  for the time being.  The information will be kept until start-up
+  completes in case it later turns out the user configured a loadable
+  logger, in which case we'll also flush the buffered information to
+  that logger later once the logger becomes available.
+
+  This function should only be used during start-up; once external
+  components are loaded by the component framework, this function
+  should no longer be called (as log events are no longer buffered,
+  but logged immediately).
+*/
+void log_sink_buffer_check_timeout(void);
 #endif  // LOG_H
 
 #ifndef DISABLE_ERROR_LOGGING
@@ -1207,6 +1223,23 @@ class LogEvent {
     return *this;
   }
 
+  /**
+    Find an error message by its MySQL error code. Substitute the % in that
+    message with the given arguments list, then add the result as the event's
+    message.
+
+    @param  errcode  MySQL error code for the message in question,
+                     e.g. ER_STARTUP
+    @param  args     varargs to satisfy any % in the message
+
+    @retval          the LogEvent, for easy fluent-style chaining.
+  */
+  LogEvent &lookupv(longlong errcode, va_list args) {
+    set_message_by_errcode(errcode, args);
+
+    return *this;
+  }
+
   LogEvent &lookup_quoted(longlong errcode, const char *tag, ...) {
     msg_tag = tag;
 
@@ -1333,8 +1366,14 @@ inline LogEvent &LogEvent::message(const char *fmt, ...) {
 inline void deinit_logging_service_for_plugin(
     SERVICE_TYPE(registry) * *reg_srv, SERVICE_TYPE(log_builtins) * *log_bi,
     SERVICE_TYPE(log_builtins_string) * *log_bs) {
-  if (*log_bi) (*reg_srv)->release((my_h_service)(*log_bi));
-  if (*log_bs) (*reg_srv)->release((my_h_service)(*log_bs));
+  using log_builtins_t = SERVICE_TYPE_NO_CONST(log_builtins);
+  using log_builtins_string_t = SERVICE_TYPE_NO_CONST(log_builtins_string);
+  if (*log_bi)
+    (*reg_srv)->release(
+        reinterpret_cast<my_h_service>(const_cast<log_builtins_t *>(*log_bi)));
+  if (*log_bs)
+    (*reg_srv)->release(reinterpret_cast<my_h_service>(
+        const_cast<log_builtins_string_t *>(*log_bs)));
   mysql_plugin_registry_release(*reg_srv);
   *log_bi = nullptr;
   *log_bs = nullptr;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2.0,
@@ -82,7 +82,7 @@
   rnd_next signals that it has reached the end of its data. Also note that
   the table in question was already opened; had it not been open, a call to
   ha_example::open() would also have been necessary. Calls to
-  ha_example::extra() are hints as to what will be occuring to the request.
+  ha_example::extra() are hints as to what will be occurring to the request.
 
   A Longer Example can be found called the "Skeleton Engine" which can be
   found on TangentOrg. It has both an engine and a full build environment
@@ -113,7 +113,7 @@ static bool example_is_supported_system_table(const char *db,
 Example_share::Example_share() { thr_lock_init(&lock); }
 
 static int example_init_func(void *p) {
-  DBUG_ENTER("example_init_func");
+  DBUG_TRACE;
 
   example_hton = (handlerton *)p;
   example_hton->state = SHOW_OPTION_YES;
@@ -121,7 +121,7 @@ static int example_init_func(void *p) {
   example_hton->flags = HTON_CAN_RECREATE;
   example_hton->is_supported_system_table = example_is_supported_system_table;
 
-  DBUG_RETURN(0);
+  return 0;
 }
 
 /**
@@ -135,7 +135,7 @@ static int example_init_func(void *p) {
 Example_share *ha_example::get_share() {
   Example_share *tmp_share;
 
-  DBUG_ENTER("ha_example::get_share()");
+  DBUG_TRACE;
 
   lock_shared_ha_data();
   if (!(tmp_share = static_cast<Example_share *>(get_ha_share_ptr()))) {
@@ -146,7 +146,7 @@ Example_share *ha_example::get_share() {
   }
 err:
   unlock_shared_ha_data();
-  DBUG_RETURN(tmp_share);
+  return tmp_share;
 }
 
 static handler *example_create_handler(handlerton *hton, TABLE_SHARE *table,
@@ -217,12 +217,12 @@ static bool example_is_supported_system_table(const char *db,
 */
 
 int ha_example::open(const char *, int, uint, const dd::Table *) {
-  DBUG_ENTER("ha_example::open");
+  DBUG_TRACE;
 
-  if (!(share = get_share())) DBUG_RETURN(1);
+  if (!(share = get_share())) return 1;
   thr_lock_data_init(&share->lock, &lock, NULL);
 
-  DBUG_RETURN(0);
+  return 0;
 }
 
 /**
@@ -241,8 +241,8 @@ int ha_example::open(const char *, int, uint, const dd::Table *) {
 */
 
 int ha_example::close(void) {
-  DBUG_ENTER("ha_example::close");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 /**
@@ -276,14 +276,14 @@ int ha_example::close(void) {
 */
 
 int ha_example::write_row(uchar *) {
-  DBUG_ENTER("ha_example::write_row");
+  DBUG_TRACE;
   /*
     Example of a successful write_row. We don't store the data
     anywhere; they are thrown away. A real implementation will
     probably need to do something with 'buf'. We report a success
     here, to pretend that the insert was successful.
   */
-  DBUG_RETURN(0);
+  return 0;
 }
 
 /**
@@ -310,8 +310,8 @@ int ha_example::write_row(uchar *) {
   sql_select.cc, sql_acl.cc, sql_update.cc and sql_insert.cc
 */
 int ha_example::update_row(const uchar *, uchar *) {
-  DBUG_ENTER("ha_example::update_row");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  DBUG_TRACE;
+  return HA_ERR_WRONG_COMMAND;
 }
 
 /**
@@ -335,8 +335,8 @@ int ha_example::update_row(const uchar *, uchar *) {
 */
 
 int ha_example::delete_row(const uchar *) {
-  DBUG_ENTER("ha_example::delete_row");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  DBUG_TRACE;
+  return HA_ERR_WRONG_COMMAND;
 }
 
 /**
@@ -349,9 +349,9 @@ int ha_example::delete_row(const uchar *) {
 int ha_example::index_read_map(uchar *, const uchar *, key_part_map,
                                enum ha_rkey_function) {
   int rc;
-  DBUG_ENTER("ha_example::index_read");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -361,9 +361,9 @@ int ha_example::index_read_map(uchar *, const uchar *, key_part_map,
 
 int ha_example::index_next(uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::index_next");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -373,9 +373,9 @@ int ha_example::index_next(uchar *) {
 
 int ha_example::index_prev(uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::index_prev");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -390,9 +390,9 @@ int ha_example::index_prev(uchar *) {
 */
 int ha_example::index_first(uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::index_first");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -407,9 +407,9 @@ int ha_example::index_first(uchar *) {
 */
 int ha_example::index_last(uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::index_last");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -427,13 +427,13 @@ int ha_example::index_last(uchar *) {
   sql_update.cc
 */
 int ha_example::rnd_init(bool) {
-  DBUG_ENTER("ha_example::rnd_init");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 int ha_example::rnd_end() {
-  DBUG_ENTER("ha_example::rnd_end");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 /**
@@ -453,9 +453,9 @@ int ha_example::rnd_end() {
 */
 int ha_example::rnd_next(uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::rnd_next");
+  DBUG_TRACE;
   rc = HA_ERR_END_OF_FILE;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -479,10 +479,7 @@ int ha_example::rnd_next(uchar *) {
   @see
   filesort.cc, sql_select.cc, sql_delete.cc and sql_update.cc
 */
-void ha_example::position(const uchar *) {
-  DBUG_ENTER("ha_example::position");
-  DBUG_VOID_RETURN;
-}
+void ha_example::position(const uchar *) { DBUG_TRACE; }
 
 /**
   @brief
@@ -500,9 +497,9 @@ void ha_example::position(const uchar *) {
 */
 int ha_example::rnd_pos(uchar *, uchar *) {
   int rc;
-  DBUG_ENTER("ha_example::rnd_pos");
+  DBUG_TRACE;
   rc = HA_ERR_WRONG_COMMAND;
-  DBUG_RETURN(rc);
+  return rc;
 }
 
 /**
@@ -544,8 +541,8 @@ int ha_example::rnd_pos(uchar *, uchar *) {
   sql_show.cc, sql_table.cc, sql_union.cc and sql_update.cc
 */
 int ha_example::info(uint) {
-  DBUG_ENTER("ha_example::info");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 /**
@@ -558,8 +555,8 @@ int ha_example::info(uint) {
   ha_innodb.cc
 */
 int ha_example::extra(enum ha_extra_function) {
-  DBUG_ENTER("ha_example::extra");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 /**
@@ -583,8 +580,8 @@ int ha_example::extra(enum ha_extra_function) {
   st_select_lex_unit::exec() in sql_union.cc.
 */
 int ha_example::delete_all_rows() {
-  DBUG_ENTER("ha_example::delete_all_rows");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  DBUG_TRACE;
+  return HA_ERR_WRONG_COMMAND;
 }
 
 /**
@@ -605,8 +602,8 @@ int ha_example::delete_all_rows() {
   copy_data_between_tables() in sql_table.cc.
 */
 int ha_example::external_lock(THD *, int) {
-  DBUG_ENTER("ha_example::external_lock");
-  DBUG_RETURN(0);
+  DBUG_TRACE;
+  return 0;
 }
 
 /**
@@ -673,9 +670,9 @@ THR_LOCK_DATA **ha_example::store_lock(THD *, THR_LOCK_DATA **to,
   delete_table and ha_create_table() in handler.cc
 */
 int ha_example::delete_table(const char *, const dd::Table *) {
-  DBUG_ENTER("ha_example::delete_table");
+  DBUG_TRACE;
   /* This is not implemented but we want someone to be able that it works. */
-  DBUG_RETURN(0);
+  return 0;
 }
 
 /**
@@ -694,8 +691,8 @@ int ha_example::delete_table(const char *, const dd::Table *) {
 */
 int ha_example::rename_table(const char *, const char *, const dd::Table *,
                              dd::Table *) {
-  DBUG_ENTER("ha_example::rename_table ");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  DBUG_TRACE;
+  return HA_ERR_WRONG_COMMAND;
 }
 
 /**
@@ -712,8 +709,8 @@ int ha_example::rename_table(const char *, const char *, const dd::Table *,
   check_quick_keys() in opt_range.cc
 */
 ha_rows ha_example::records_in_range(uint, key_range *, key_range *) {
-  DBUG_ENTER("ha_example::records_in_range");
-  DBUG_RETURN(10);  // low number to force index usage
+  DBUG_TRACE;
+  return 10;  // low number to force index usage
 }
 
 static MYSQL_THDVAR_STR(last_create_thdvar, PLUGIN_VAR_MEMALLOC, NULL, NULL,
@@ -743,7 +740,7 @@ static MYSQL_THDVAR_UINT(create_count_thdvar, 0, NULL, NULL, NULL, 0, 0, 1000,
 
 int ha_example::create(const char *name, TABLE *, HA_CREATE_INFO *,
                        dd::Table *) {
-  DBUG_ENTER("ha_example::create");
+  DBUG_TRACE;
   /*
     This is not implemented but we want someone to be able to see that it
     works.
@@ -762,7 +759,7 @@ int ha_example::create(const char *name, TABLE *, HA_CREATE_INFO *,
   uint count = THDVAR(thd, create_count_thdvar) + 1;
   THDVAR_SET(thd, create_count_thdvar, &count);
 
-  DBUG_RETURN(0);
+  return 0;
 }
 
 struct st_mysql_storage_engine example_storage_engine = {
@@ -771,6 +768,9 @@ struct st_mysql_storage_engine example_storage_engine = {
 static ulong srv_enum_var = 0;
 static ulong srv_ulong_var = 0;
 static double srv_double_var = 0;
+static int srv_signed_int_var = 0;
+static long srv_signed_long_var = 0;
+static longlong srv_signed_longlong_var = 0;
 
 const char *enum_var_names[] = {"e1", "e2", NullS};
 
@@ -798,13 +798,44 @@ static MYSQL_THDVAR_DOUBLE(double_thdvar, PLUGIN_VAR_RQCMDARG,
                            "0.500000..1000.500000", NULL, NULL, 8.5, 0.5,
                            1000.5, 0);
 
-static SYS_VAR *example_system_variables[] = {MYSQL_SYSVAR(enum_var),
-                                              MYSQL_SYSVAR(ulong_var),
-                                              MYSQL_SYSVAR(double_var),
-                                              MYSQL_SYSVAR(double_thdvar),
-                                              MYSQL_SYSVAR(last_create_thdvar),
-                                              MYSQL_SYSVAR(create_count_thdvar),
-                                              NULL};
+static MYSQL_SYSVAR_INT(signed_int_var, srv_signed_int_var, PLUGIN_VAR_RQCMDARG,
+                        "INT_MIN..INT_MAX", NULL, NULL, -10, INT_MIN, INT_MAX,
+                        0);
+
+static MYSQL_THDVAR_INT(signed_int_thdvar, PLUGIN_VAR_RQCMDARG,
+                        "INT_MIN..INT_MAX", NULL, NULL, -10, INT_MIN, INT_MAX,
+                        0);
+
+static MYSQL_SYSVAR_LONG(signed_long_var, srv_signed_long_var,
+                         PLUGIN_VAR_RQCMDARG, "LONG_MIN..LONG_MAX", NULL, NULL,
+                         -10, LONG_MIN, LONG_MAX, 0);
+
+static MYSQL_THDVAR_LONG(signed_long_thdvar, PLUGIN_VAR_RQCMDARG,
+                         "LONG_MIN..LONG_MAX", NULL, NULL, -10, LONG_MIN,
+                         LONG_MAX, 0);
+
+static MYSQL_SYSVAR_LONGLONG(signed_longlong_var, srv_signed_longlong_var,
+                             PLUGIN_VAR_RQCMDARG, "LLONG_MIN..LLONG_MAX", NULL,
+                             NULL, -10, LLONG_MIN, LLONG_MAX, 0);
+
+static MYSQL_THDVAR_LONGLONG(signed_longlong_thdvar, PLUGIN_VAR_RQCMDARG,
+                             "LLONG_MIN..LLONG_MAX", NULL, NULL, -10, LLONG_MIN,
+                             LLONG_MAX, 0);
+
+static SYS_VAR *example_system_variables[] = {
+    MYSQL_SYSVAR(enum_var),
+    MYSQL_SYSVAR(ulong_var),
+    MYSQL_SYSVAR(double_var),
+    MYSQL_SYSVAR(double_thdvar),
+    MYSQL_SYSVAR(last_create_thdvar),
+    MYSQL_SYSVAR(create_count_thdvar),
+    MYSQL_SYSVAR(signed_int_var),
+    MYSQL_SYSVAR(signed_int_thdvar),
+    MYSQL_SYSVAR(signed_long_var),
+    MYSQL_SYSVAR(signed_long_thdvar),
+    MYSQL_SYSVAR(signed_longlong_var),
+    MYSQL_SYSVAR(signed_longlong_thdvar),
+    NULL};
 
 // this is an example of SHOW_FUNC
 static int show_func_example(MYSQL_THD, SHOW_VAR *var, char *buf) {
@@ -812,8 +843,10 @@ static int show_func_example(MYSQL_THD, SHOW_VAR *var, char *buf) {
   var->value = buf;  // it's of SHOW_VAR_FUNC_BUFF_SIZE bytes
   snprintf(buf, SHOW_VAR_FUNC_BUFF_SIZE,
            "enum_var is %lu, ulong_var is %lu, "
-           "double_var is %f",
-           srv_enum_var, srv_ulong_var, srv_double_var);
+           "double_var is %f, signed_int_var is %d, "
+           "signed_long_var is %ld, signed_longlong_var is %lld",
+           srv_enum_var, srv_ulong_var, srv_double_var, srv_signed_int_var,
+           srv_signed_long_var, srv_signed_longlong_var);
   return 0;
 }
 

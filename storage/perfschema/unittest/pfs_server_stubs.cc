@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2.0,
@@ -47,7 +47,7 @@ void compute_digest_hash(const sql_digest_storage *, unsigned char *) {}
 
 void reset_status_vars() {}
 
-struct System_status_var *get_thd_status_var(THD *) {
+struct System_status_var *get_thd_status_var(THD *, bool *) {
   return NULL;
 }
 
@@ -64,8 +64,3 @@ int log_message(int, ...) {
   /* Do not pollute the unit test output with annoying messages. */
   return 0;
 }
-
-TABLE_SHARE::TABLE_SHARE()
-    : row_type(ROW_TYPE_DEFAULT),
-      real_row_type(ROW_TYPE_DEFAULT),
-      stats_auto_recalc(HA_STATS_AUTO_RECALC_DEFAULT) {}

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 #include <assert.h>
 #include <string.h>
 #include <algorithm>  // std::swap
+#include <atomic>     // std::atomic
 #include <fstream>    // std::ifsteam
 #include <iomanip>
 #include <set>  // std::set
@@ -88,6 +89,11 @@ static char *validate_password_dictionary_file;
 static char *validate_password_dictionary_file_last_parsed = NULL;
 static long long validate_password_dictionary_file_words_count = 0;
 static bool check_user_name;
+/*
+  This variable is used, to make sure the use of component services
+  after the component load/initialization is done.
+*/
+std::atomic<bool> is_initialized(false);
 
 static SHOW_VAR validate_password_status_variables[] = {
     {"validate_password.dictionary_file_last_parsed",
@@ -425,7 +431,8 @@ static void readjust_validate_password_length() {
 */
 static void dictionary_update(MYSQL_THD, SYS_VAR *, void *var_ptr,
                               const void *save) {
-  *(const char **)var_ptr = *(const char **)save;
+  *static_cast<const char **>(var_ptr) =
+      *static_cast<const char **>(const_cast<void *>(save));
   read_dictionary_file();
 }
 
@@ -439,7 +446,8 @@ static void dictionary_update(MYSQL_THD, SYS_VAR *, void *var_ptr,
 static void length_update(MYSQL_THD, SYS_VAR *, void *var_ptr,
                           const void *save) {
   /* check if there is an actual change */
-  if (*((int *)var_ptr) == *((int *)save)) return;
+  if (*(static_cast<int *>(var_ptr)) == *(static_cast<const int *>(save)))
+    return;
 
   /*
     set new value for system variable.
@@ -448,7 +456,7 @@ static void length_update(MYSQL_THD, SYS_VAR *, void *var_ptr,
     to the location at which corresponding static variable is
     declared in this file.
   */
-  *((int *)var_ptr) = *((int *)save);
+  *(static_cast<int *>(var_ptr)) = *(static_cast<const int *>(save));
 
   readjust_validate_password_length();
 }
@@ -524,6 +532,14 @@ DEFINE_BOOL_METHOD(validate_password_imp::get_strength,
 
   *strength = 0;
 
+  if (!is_initialized.load()) {
+    LogEvent()
+        .type(LOG_TYPE_ERROR)
+        .prio(WARNING_LEVEL)
+        .message("validate_password component is not yet initialized");
+    return true;
+  }
+
   if (!is_valid_password_by_user_name(thd, password)) return true;
 
   if (mysql_service_mysql_string_iterator->iterator_create(password, &iter)) {
@@ -565,6 +581,14 @@ DEFINE_BOOL_METHOD(validate_password_imp::get_strength,
 */
 DEFINE_BOOL_METHOD(validate_password_imp::validate,
                    (void *thd, my_h_string password)) {
+  if (!is_initialized.load()) {
+    LogEvent()
+        .type(LOG_TYPE_ERROR)
+        .prio(WARNING_LEVEL)
+        .message("validate_password component is not yet initialized");
+    return true;
+  }
+
   return (validate_password_policy_strength(thd, password,
                                             validate_password_policy) == 0);
 }
@@ -848,6 +872,7 @@ static mysql_service_status_t validate_password_init() {
   read_dictionary_file();
   /* Check if validate_password_length needs readjustment */
   readjust_validate_password_length();
+  is_initialized = true;
   return false;
 }
 

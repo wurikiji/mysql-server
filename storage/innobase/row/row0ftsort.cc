@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2010, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2010, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -39,13 +39,13 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "fts0plugin.h"
 #include "ha_prototypes.h"
 #include "lob0lob.h"
-#include "my_dbug.h"
-#include "my_inttypes.h"
 #include "os0thread-create.h"
 #include "pars0pars.h"
 #include "row0ftsort.h"
 #include "row0merge.h"
 #include "row0row.h"
+
+#include "my_dbug.h"
 
 /** Read the next record to buffer N.
 @param N index into array of merge info structure */
@@ -704,7 +704,6 @@ static void fts_parallel_tokenization_thread(fts_psort_t *psort_info) {
   ulint retried = 0;
   dberr_t error = DB_SUCCESS;
 
-  my_thread_init();
   ut_ad(psort_info->psort_common->trx->mysql_thd != NULL);
   const char *path =
       thd_innodb_tmpdir(psort_info->psort_common->trx->mysql_thd);
@@ -755,8 +754,8 @@ loop:
       if (dfield_is_ext(dfield)) {
         dict_index_t *clust_index = old_table->first_index();
         doc.text.f_str = lob::btr_copy_externally_stored_field(
-            clust_index, &doc.text.f_len, nullptr, data, page_size, data_len,
-            false, blob_heap);
+            nullptr, clust_index, &doc.text.f_len, nullptr, data, page_size,
+            data_len, false, blob_heap);
       } else {
         doc.text.f_str = data;
         doc.text.f_len = data_len;
@@ -968,8 +967,6 @@ func_exit:
   psort_info->child_status = FTS_CHILD_COMPLETE;
   os_event_set(psort_info->psort_common->sort_event);
   psort_info->child_status = FTS_CHILD_EXITING;
-
-  my_thread_end();
 }
 
 /** Start the parallel tokenization and parallel merge sort
@@ -978,8 +975,11 @@ void row_fts_start_psort(fts_psort_t *psort_info) {
   for (ulint i = 0; i < fts_sort_pll_degree; i++) {
     psort_info[i].psort_id = i;
 
-    os_thread_create(fts_parallel_tokenization_thread_key,
-                     fts_parallel_tokenization_thread, &psort_info[i]);
+    auto thread =
+        os_thread_create(fts_parallel_tokenization_thread_key,
+                         fts_parallel_tokenization_thread, &psort_info[i]);
+
+    thread.start();
   }
 }
 
@@ -987,7 +987,6 @@ void row_fts_start_psort(fts_psort_t *psort_info) {
 @param[in]	psort_info		parallel merge info */
 static void fts_parallel_merge_thread(fts_psort_t *psort_info) {
   ulint id = psort_info->psort_id;
-  my_thread_init();
 
   row_fts_merge_insert(psort_info->psort_common->dup->index,
                        psort_info->psort_common->new_table,
@@ -996,8 +995,6 @@ static void fts_parallel_merge_thread(fts_psort_t *psort_info) {
   psort_info->child_status = FTS_CHILD_COMPLETE;
   os_event_set(psort_info->psort_common->merge_event);
   psort_info->child_status = FTS_CHILD_EXITING;
-
-  my_thread_end();
 }
 
 /** Kick off the parallel merge and insert thread
@@ -1008,8 +1005,10 @@ void row_fts_start_parallel_merge(fts_psort_t *merge_info) {
     merge_info[i].psort_id = i;
     merge_info[i].child_status = 0;
 
-    os_thread_create(fts_parallel_merge_thread_key, fts_parallel_merge_thread,
-                     &merge_info[i]);
+    auto thread = os_thread_create(fts_parallel_merge_thread_key,
+                                   fts_parallel_merge_thread, &merge_info[i]);
+
+    thread.start();
   }
 }
 
@@ -1490,7 +1489,13 @@ dberr_t row_fts_merge_insert(dict_index_t *index, dict_table_t *table,
 
   /* Create bulk load instance */
   ins_ctx.btr_bulk = UT_NEW_NOKEY(BtrBulk(aux_index, trx->id, observer));
-  ins_ctx.btr_bulk->init();
+  error = ins_ctx.btr_bulk->init();
+  if (error != DB_SUCCESS) {
+    /* delete immediately so finish() would not be called */
+    UT_DELETE(ins_ctx.btr_bulk);
+    ins_ctx.btr_bulk = nullptr;
+    goto exit;
+  }
 
   /* Create tuple for insert */
   ins_ctx.tuple = dtuple_create(heap, dict_index_get_n_fields(aux_index));
@@ -1600,8 +1605,10 @@ exit:
 
   mem_heap_free(tuple_heap);
 
-  error = ins_ctx.btr_bulk->finish(error);
-  UT_DELETE(ins_ctx.btr_bulk);
+  if (ins_ctx.btr_bulk) {
+    error = ins_ctx.btr_bulk->finish(error);
+    UT_DELETE(ins_ctx.btr_bulk);
+  }
 
   trx_free_for_background(trx);
 

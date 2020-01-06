@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2012, Facebook Inc.
 
 This program is free software; you can redistribute it and/or modify it under
@@ -98,13 +98,14 @@ combination of types */
                          other flags */
 #define DICT_VIRTUAL 128 /* Index on Virtual column */
 
-#define DICT_SDI                                  \
-  256 /* Tablespace dictionary Index. Set only in \
-      in-memory index structure. */
+#define DICT_SDI                                                         \
+  256                        /* Tablespace dictionary Index. Set only in \
+                             in-memory index structure. */
+#define DICT_MULTI_VALUE 512 /* Multi-value index */
 
-#define DICT_IT_BITS             \
-  9 /*!< number of bits used for \
-    SYS_INDEXES.TYPE */
+#define DICT_IT_BITS              \
+  10 /*!< number of bits used for \
+     SYS_INDEXES.TYPE */
 /* @} */
 
 #if 0                         /* not implemented, retained for history */
@@ -272,8 +273,8 @@ FTS, etc.... Intrinsic table has all the properties of the normal table except
 it is not created by user and so not visible to end-user. */
 #define DICT_TF2_INTRINSIC 128
 
-/** Encryption table bit. */
-#define DICT_TF2_ENCRYPTION 256
+/** Encryption table bit for innodb_file-per-table only. */
+#define DICT_TF2_ENCRYPTION_FILE_PER_TABLE 256
 
 /** FTS AUX hidden table bit. */
 #define DICT_TF2_AUX 512
@@ -515,6 +516,10 @@ struct dict_col_t {
   /** Check if a column is a virtual column
   @return true if it is a virtual column, false otherwise */
   bool is_virtual() const { return (prtype & DATA_VIRTUAL); }
+
+  /** Check if a column is a multi-value virtual column
+  @return true if it is a multi-value virtual column, false otherwise */
+  bool is_multi_value() const { return ((prtype & DATA_MULTI_VALUE) != 0); }
 
   /** Check if a column is nullable
   @return true if it is nullable, otherwise false */
@@ -1072,6 +1077,14 @@ struct dict_index_t {
     return (type & DICT_CLUSTERED);
   }
 
+  /** Check whether the index is the multi-value index
+  @return nonzero for multi-value index, zero for other indexes */
+  bool is_multi_value() const {
+    ut_ad(magic_n == DICT_INDEX_MAGIC_N);
+
+    return (type & DICT_MULTI_VALUE);
+  }
+
   /** Returns the minimum data size of an index record.
   @return minimum data size in bytes */
   ulint get_min_size() const {
@@ -1096,7 +1109,7 @@ struct dict_index_t {
   nth field
   @param[in]	nth	nth field to check */
   uint32_t get_n_nullable_before(uint32_t nth) const {
-    ulint nullable = n_nullable;
+    uint32_t nullable = n_nullable;
 
     ut_ad(nth <= n_fields);
 
@@ -1172,7 +1185,7 @@ struct dict_index_t {
   @param[in]	nth	nth field to get
   @param[in,out]	length	length of the default value
   @return	the default value data of nth field */
-  const byte *get_nth_default(uint16_t nth, ulint *length) const {
+  const byte *get_nth_default(ulint nth, ulint *length) const {
     ut_ad(nth < n_fields);
     ut_ad(get_instant_fields() <= nth);
     const dict_col_t *col = get_col(nth);
@@ -1194,6 +1207,34 @@ struct dict_index_t {
   void fill_srid_value(uint32_t srid_value, bool srid_is_valid_value) {
     srid_is_valid = srid_is_valid_value;
     srid = srid_value;
+  }
+
+  /** Check if the underlying table is compressed.
+  @return true if compressed, false otherwise. */
+  bool is_compressed() const;
+
+  /** Check if a multi-value index is built on specified multi-value
+  virtual column. Please note that there could be only one multi-value
+  virtual column on the multi-value index, but not necessary the first
+  field of the index.
+  @param[in]	mv_col	multi-value virtual column
+  @return non-zero means the column is on the index and this is the
+  nth position of the column, zero means it's not on the index */
+  uint32_t has_multi_value_col(const dict_v_col_t *mv_col) const {
+    ut_ad(is_multi_value());
+    for (uint32_t i = 0; i < n_fields; ++i) {
+      const dict_col_t *col = get_col(i);
+      if (mv_col->m_col.ind == col->ind) {
+        return (i + 1);
+      }
+
+      /* Only one multi-value field, if not match then no match. */
+      if (col->is_multi_value()) {
+        break;
+      }
+    }
+
+    return (0);
   }
 };
 
@@ -1482,6 +1523,10 @@ typedef std::vector<row_prebuilt_t *> temp_prebuilt_vec;
 /** Data structure for a database table.  Most fields will be
 initialized to 0, NULL or FALSE in dict_mem_table_create(). */
 struct dict_table_t {
+  /** Check if the table is compressed.
+  @return true if compressed, false otherwise. */
+  bool is_compressed() const { return (DICT_TF_GET_ZIP_SSIZE(flags) != 0); }
+
   /** Get reference count.
   @return current value of n_ref_count */
   inline uint64_t get_ref_count() const;
@@ -1610,6 +1655,9 @@ struct dict_table_t {
 
   /** Number of virtual columns. */
   unsigned n_v_cols : 10;
+
+  /** Number of multi-value virtual columns. */
+  unsigned n_m_v_cols : 10;
 
   /** TRUE if this table is expected to be kept in memory. This table
   could be a table that has FK relationships or is undergoing DDL */
@@ -1746,7 +1794,7 @@ struct dict_table_t {
   unsigned stat_initialized : 1;
 
   /** Timestamp of last recalc of the stats. */
-  ib_time_t stats_last_recalc;
+  ib_time_monotonic_t stats_last_recalc;
 
 /** The two bits below are set in the 'stat_persistent' member. They
 have the following meaning:
@@ -2021,7 +2069,7 @@ detect this and will eventually quit sooner. */
   happens.
   @return	the number of user columns as described above */
   uint16_t get_instant_cols() const {
-    return (n_instant_cols - get_n_sys_cols());
+    return static_cast<uint16_t>(n_instant_cols - get_n_sys_cols());
   }
 
   /** Check whether the table is corrupted.
@@ -2072,17 +2120,17 @@ detect this and will eventually quit sooner. */
   in the dictionary cache.
   @return number of user-defined (e.g., not ROW_ID) non-virtual columns
   of a table */
-  ulint get_n_user_cols() const {
+  uint16_t get_n_user_cols() const {
     ut_ad(magic_n == DICT_TABLE_MAGIC_N);
 
-    return (n_cols - get_n_sys_cols());
+    return (static_cast<uint16_t>(n_cols) - get_n_sys_cols());
   }
 
   /** Gets the number of system columns in a table.
   For intrinsic table on ROW_ID column is added for all other
   tables TRX_ID and ROLL_PTR are all also appeneded.
   @return number of system (e.g., ROW_ID) columns of a table */
-  ulint get_n_sys_cols() const {
+  uint16_t get_n_sys_cols() const {
     ut_ad(magic_n == DICT_TABLE_MAGIC_N);
 
     return (is_intrinsic() ? DATA_ITT_N_SYS_COLS : DATA_N_SYS_COLS);
@@ -2151,6 +2199,10 @@ detect this and will eventually quit sooner. */
   /** Determine if the table can support instant ADD COLUMN */
   inline bool support_instant_add() const;
 };
+
+inline bool dict_index_t::is_compressed() const {
+  return (table->is_compressed());
+}
 
 /** Persistent dynamic metadata type, there should be 1 to 1
 relationship between the metadata and the type. Please keep them in order

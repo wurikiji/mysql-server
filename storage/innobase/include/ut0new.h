@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2014, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2014, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -158,8 +158,7 @@ extern const size_t alloc_max_retries;
 /** Keys for registering allocations with performance schema.
 Pointers to these variables are supplied to PFS code via the pfs_info[]
 array and the PFS code initializes them via PSI_MEMORY_CALL(register_memory)().
-mem_key_other and mem_key_std are special in the following way (see also
-ut_allocator::get_mem_key()):
+mem_key_other and mem_key_std are special in the following way.
 * If the caller has not provided a key and the file name of the caller is
   unknown, then mem_key_std will be used. This happens only when called from
   within std::* containers.
@@ -177,6 +176,7 @@ extern PSI_memory_key mem_key_clone;
 extern PSI_memory_key mem_key_dict_stats_bg_recalc_pool_t;
 extern PSI_memory_key mem_key_dict_stats_index_map_t;
 extern PSI_memory_key mem_key_dict_stats_n_diff_on_level;
+extern PSI_memory_key mem_key_redo_log_archive_queue_element;
 extern PSI_memory_key mem_key_other;
 extern PSI_memory_key mem_key_partitioning;
 extern PSI_memory_key mem_key_row_log_buf;
@@ -351,6 +351,7 @@ static constexpr const char *auto_event_names[] = {
     "srv0mon",
     "srv0srv",
     "srv0start",
+    "srv0tmp",
     "sync0arr",
     "sync0debug",
     "sync0policy",
@@ -397,9 +398,10 @@ static constexpr size_t n_auto = UT_ARR_SIZE(auto_event_names);
 extern PSI_memory_key auto_event_keys[n_auto];
 extern PSI_memory_info pfs_info_auto[n_auto];
 
+/** gcc 5 fails to evalutate costexprs at compile time. */
+#if defined(__GNUG__) && (__GNUG__ == 5)
+
 /** Compute whether a string begins with a given prefix, compile-time.
-Has to work recursively due to C++11 constexpr constraints (C++14 is
-more flexible).
 @param[in]	a	first string, taken to be zero-terminated
 @param[in]	b	second string (prefix to search for)
 @param[in]	b_len	length in bytes of second string
@@ -412,8 +414,6 @@ constexpr bool ut_string_begins_with(const char *a, const char *b, size_t b_len,
 }
 
 /** Find the length of the filename without its file extension.
-Has to work recursively due to C++11 constexpr constraints (C++14 is
-more flexible).
 @param[in]	file	filename, with extension but without directory
 @param[in]	index	character index to start scanning for extension
                         separator at
@@ -426,8 +426,6 @@ constexpr size_t ut_len_without_extension(const char *file, size_t index = 0) {
 
 /** Retrieve a memory key (registered with PFS), given the file name of the
 caller.
-Has to work recursively due to C++11 constexpr constraints (C++14 is
-more flexible).
 @param[in]	file	portion of the filename - basename, with extension
 @param[in]	len	length of the filename to check for
 @param[in]	index	index of first PSI key to check
@@ -451,6 +449,74 @@ constexpr PSI_memory_key ut_new_get_key_by_file(const char *file) {
 }
 
 #define UT_NEW_THIS_FILE_PSI_KEY ut_new_get_key_by_file(MY_BASENAME)
+
+#else /* __GNUG__ == 5 */
+
+/** Compute whether a string begins with a given prefix, compile-time.
+@param[in]	a	first string, taken to be zero-terminated
+@param[in]	b	second string (prefix to search for)
+@param[in]	b_len	length in bytes of second string
+@return whether b is a prefix of a */
+constexpr bool ut_string_begins_with(const char *a, const char *b,
+                                     size_t b_len) {
+  for (size_t i = 0; i < b_len; ++i) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Find the length of the filename without its file extension.
+@param[in]	file	filename, with extension but without directory
+@return length, in bytes */
+constexpr size_t ut_len_without_extension(const char *file) {
+  for (size_t i = 0;; ++i) {
+    if (file[i] == '\0' || file[i] == '.') {
+      return i;
+    }
+  }
+}
+
+/** Retrieve a memory key (registered with PFS), given the file name of the
+caller.
+@param[in]	file	portion of the filename - basename, with extension
+@param[in]	len	length of the filename to check for
+@return index to registered memory key or -1 if not found */
+constexpr int ut_new_get_key_by_base_file(const char *file, size_t len) {
+  for (size_t i = 0; i < n_auto; ++i) {
+    if (ut_string_begins_with(auto_event_names[i], file, len)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/** Retrieve a memory key (registered with PFS), given the file name of
+the caller.
+@param[in]	file	portion of the filename - basename, with extension
+@return index to memory key or -1 if not found */
+constexpr int ut_new_get_key_by_file(const char *file) {
+  return ut_new_get_key_by_base_file(file, ut_len_without_extension(file));
+}
+
+// Sending an expression through a template variable forces the compiler to
+// evaluate the expression at compile time (constexpr in itself has no such
+// guarantee, only that the compiler is allowed).
+template <int Value>
+struct force_constexpr {
+  static constexpr int value = Value;
+};
+
+#define UT_NEW_THIS_FILE_PSI_INDEX \
+  (force_constexpr<ut_new_get_key_by_file(MY_BASENAME)>::value)
+
+#define UT_NEW_THIS_FILE_PSI_KEY    \
+  (UT_NEW_THIS_FILE_PSI_INDEX == -1 \
+       ? PSI_NOT_INSTRUMENTED       \
+       : auto_event_keys[UT_NEW_THIS_FILE_PSI_INDEX])
+
+#endif /* __GNUG__ == 5 */
 
 #endif /* UNIV_PFS_MEMORY */
 
@@ -508,7 +574,8 @@ class ut_allocator {
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
 
-  /** Default constructor. */
+  /** Default constructor.
+  @param[in] key  performance schema key. */
   explicit ut_allocator(PSI_memory_key key = PSI_NOT_INSTRUMENTED)
       :
 #ifdef UNIV_PFS_MEMORY
@@ -517,15 +584,15 @@ class ut_allocator {
         m_oom_fatal(true) {
   }
 
-  /** Constructor from allocator of another type. */
+  /** Constructor from allocator of another type.
+  @param[in] other  the allocator to copy. */
   template <class U>
   ut_allocator(const ut_allocator<U> &other)
-      : m_oom_fatal(other.is_oom_fatal()) {
+      :
 #ifdef UNIV_PFS_MEMORY
-    const PSI_memory_key other_key = other.get_mem_key();
-
-    m_key = (other_key != mem_key_std) ? other_key : PSI_NOT_INSTRUMENTED;
+        m_key(other.get_mem_key()),
 #endif /* UNIV_PFS_MEMORY */
+        m_oom_fatal(other.is_oom_fatal()) {
   }
 
   /** When out of memory (OOM) happens, report error and do not
@@ -539,6 +606,15 @@ class ut_allocator {
   /** Check if allocation failure is a fatal error.
   @return true if allocation failure is fatal, false otherwise. */
   bool is_oom_fatal() const { return (m_oom_fatal); }
+
+#ifdef UNIV_PFS_MEMORY
+  /** Get the performance schema key to use for tracing allocations.
+  @return performance schema key */
+  PSI_memory_key get_mem_key() const {
+    /* note: keep this as simple getter as is used by copy constructor */
+    return (m_key);
+  }
+#endif /* UNIV_PFS_MEMORY */
 
   /** Return the maximum number of objects that can be allocated by
   this allocator. */
@@ -557,15 +633,16 @@ class ut_allocator {
   If the allocation fails this method may throw an exception. This
   is mandated by the standard and if it returns NULL instead, then
   STL containers that use it (e.g. std::vector) may get confused.
-  After successfull allocation the returned pointer must be passed
+  After successful allocation the returned pointer must be passed
   to ut_allocator::deallocate() when no longer needed.
-  @param[in]	n_elements	number of elements
-  @param[in]	hint		pointer to a nearby memory location,
-                                  unused by this implementation
-  @param[in]	key		Performance schema key
-  @param[in]	set_to_zero	if true, then the returned memory is
-                                  initialized with 0x0 bytes.
-  @param[in]	throw_on_error	error
+  @param[in]  n_elements      number of elements
+  @param[in]  hint            pointer to a nearby memory location,
+                              unused by this implementation
+  @param[in]  key             performance schema key
+  @param[in]  set_to_zero     if true, then the returned memory is
+                              initialized with 0x0 bytes.
+  @param[in]  throw_on_error  if true, then exception is throw on
+                              allocation failure
   @return pointer to the allocated memory */
   pointer allocate(size_type n_elements, const_pointer hint = NULL,
                    PSI_memory_key key = PSI_NOT_INSTRUMENTED,
@@ -835,13 +912,9 @@ class ut_allocator {
     os_mem_free_large(ptr, pfx->m_size);
   }
 
+ private:
 #ifdef UNIV_PFS_MEMORY
 
-  /** Get the performance schema key to use for tracing allocations.
-  @return performance schema key */
-  PSI_memory_key get_mem_key() const { return (m_key); }
-
- private:
   /** Retrieve the size of a memory block allocated by new_array().
   @param[in]	ptr	pointer returned by new_array().
   @return size of memory block */
@@ -861,6 +934,10 @@ class ut_allocator {
   @param[out]	pfx	placeholder to store the info which will be
                           needed when freeing the memory */
   void allocate_trace(size_t size, PSI_memory_key key, ut_new_pfx_t *pfx) {
+    if (m_key != PSI_NOT_INSTRUMENTED) {
+      key = m_key;
+    }
+
     pfx->m_key = PSI_MEMORY_CALL(memory_alloc)(key, size, &pfx->m_owner);
 
     pfx->m_size = size;
@@ -871,16 +948,16 @@ class ut_allocator {
   void deallocate_trace(const ut_new_pfx_t *pfx) {
     PSI_MEMORY_CALL(memory_free)(pfx->m_key, pfx->m_size, pfx->m_owner);
   }
-
-  /** Performance schema key. */
-  PSI_memory_key m_key;
-
 #endif /* UNIV_PFS_MEMORY */
 
- private:
-  /** Assignment operator, not used, thus disabled (private). */
+  /* Assignment operator, not used, thus disabled (private. */
   template <class U>
   void operator=(const ut_allocator<U> &);
+
+#ifdef UNIV_PFS_MEMORY
+  /** Performance schema key. */
+  PSI_memory_key m_key;
+#endif /* UNIV_PFS_MEMORY */
 
   /** A flag to indicate whether out of memory (OOM) error is considered
   fatal.  If true, it is fatal. */
@@ -1023,7 +1100,7 @@ inline void ut_delete_array(T *ptr) {
 
 #else /* UNIV_PFS_MEMORY */
 
-  /* Fallbacks when memory tracing is disabled at compile time. */
+/* Fallbacks when memory tracing is disabled at compile time. */
 
 #define UT_NEW(expr, key) ::new (std::nothrow) expr
 #define UT_NEW_NOKEY(expr) ::new (std::nothrow) expr
@@ -1190,4 +1267,18 @@ class aligned_array_pointer : public aligned_memory<T_Type, T_Align_to> {
   size_t m_size;
 };
 
+namespace ut {
+
+/** Specialization of basic_ostringstream which uses ut_allocator. Please note
+that it's .str() method returns std::basic_string which is not std::string, so
+it has similar API (in particular .c_str()), but you can't assign it to regular,
+std::string. */
+using ostringstream =
+    std::basic_ostringstream<char, std::char_traits<char>, ut_allocator<char>>;
+
+/** Specialization of vector which uses ut_allocator. */
+template <typename T>
+using vector = std::vector<T, ut_allocator<T>>;
+
+}  // namespace ut
 #endif /* ut0new_h */

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -46,7 +46,73 @@
 #include "plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_networking.h"
 #include "plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_state_exchange.h"
 #include "plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_statistics_interface.h"
-#include "plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_utils.h"
+
+/**
+ * Keep track of the most recent XCom configuration the node will deliver
+ * upwards.
+ */
+class Gcs_xcom_config {
+ public:
+  Gcs_xcom_config();
+  /**
+   * Resets the object to its initial state.
+   */
+  void reset();
+  /**
+   * Updates this configuration's information.
+   *
+   * @param config_id the synod of the configuration
+   * @param xcom_nodes the XCom configuration's membership
+   * @param event_horizon the XCom configuration's event horizon
+   */
+  void update(synode_no config_id, Gcs_xcom_nodes const &xcom_nodes,
+              xcom_event_horizon event_horizon);
+  /**
+   * Checks whether this configuration pertains to a received XCom view, i.e.
+   * the configuration object is not in its initial state.
+   *
+   * @returns true if the configuration pertains to a received XCom view, false
+   * otherwise
+   */
+  bool has_view() const;
+  /**
+   * Checks whether this configuration's synod matches the the given synod.
+   *
+   * @param config_id the synod to compare against
+   * @returns true if the synods are the same, false otherwise
+   */
+  bool same_view(synode_no config_id) const;
+  /**
+   * Checks whether this configuration's membership matches the given
+   * membership.
+   *
+   * @param xcom_nodes the membership to compare against
+   * @returns true if the memberships are the same, false otherwise
+   */
+  bool same_xcom_nodes(Gcs_xcom_nodes const &xcom_nodes) const;
+  /**
+   * Checks whether this configuration's event horizon matches the given event
+   * horizon.
+   *
+   * @param event_horizon the event horizon to compare against
+   * @returns true if the event horizons are the same, false otherwise
+   */
+  bool same_event_horizon(xcom_event_horizon const &event_horizon) const;
+  /*
+   * This class will have a singleton object, so we delete the {copy,move}
+   * {constructor,assignment}. This way the compiler slaps us on the wrist if we
+   * attempt to copy or move the singleton.
+   */
+  Gcs_xcom_config(Gcs_xcom_config const &) = delete;
+  Gcs_xcom_config(Gcs_xcom_config &&) = delete;
+  Gcs_xcom_config &operator=(Gcs_xcom_config const &) = delete;
+  Gcs_xcom_config &operator=(Gcs_xcom_config &&) = delete;
+
+ private:
+  synode_no config_id_;
+  Gcs_xcom_nodes xcom_nodes_;
+  xcom_event_horizon event_horizon_;
+};
 
 class Gcs_suspicions_manager;
 
@@ -133,8 +199,7 @@ class Gcs_xcom_interface : public Gcs_interface {
   Gcs_group_management_interface *get_management_session(
       const Gcs_group_identifier &group_identifier);
 
-  enum_gcs_error configure_msg_stages(const Gcs_interface_parameters &p,
-                                      const Gcs_group_identifier &gid);
+  enum_gcs_error configure_message_stages(const Gcs_group_identifier &gid);
 
   enum_gcs_error configure_suspicions_mgr(Gcs_interface_parameters &p,
                                           Gcs_suspicions_manager *mgr);
@@ -146,6 +211,8 @@ class Gcs_xcom_interface : public Gcs_interface {
   Gcs_group_identifier *get_xcom_group_information(const u_long group_id);
 
   Gcs_xcom_node_address *get_node_address();
+
+  void set_node_address(std::string const &address);
 
   /**
    This member function shall return the set of parameters that configure
@@ -180,10 +247,27 @@ class Gcs_xcom_interface : public Gcs_interface {
   void finalize_xcom();
 
   /**
+    Makes GCS leave the group when an error has caused XCom to terminate
+    unexpectedly.
+   */
+  void make_gcs_leave_group_on_error();
+
+  /**
     Used to initialize SSL assuming that the necessary parameters have already
     been read.
   */
   void initialize_ssl();
+
+  /**
+   Used to initialize the unique identifier of the XCom instance.
+
+   @param node_information Information about the XCom node
+   @param xcom_proxy XCom proxy
+   @retval true if there was an error initialising the XCom identity
+   @retval false if operation was successful
+   */
+  bool set_xcom_identity(Gcs_xcom_node_information const &node_information,
+                         Gcs_xcom_proxy &xcom_proxy);
 
  private:
   /**
@@ -317,7 +401,7 @@ class Gcs_xcom_interface : public Gcs_interface {
 
   /**
     Indicates whether SSL has been initialized and if that initialization was
-    successfull.
+    successful.
   */
   int m_ssl_init_state;
 

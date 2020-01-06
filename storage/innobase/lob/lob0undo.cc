@@ -1,18 +1,26 @@
 /*****************************************************************************
 
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2017, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; version 2 of the License.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License, version 2.0,
+as published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is also distributed with certain software (including
+but not limited to OpenSSL) that is licensed under separate terms,
+as designated in a particular file or component or in included license
+documentation.  The authors of MySQL hereby grant you an additional
+permission to link the program and your derivative works with the
+separately licensed software that they have included with MySQL.
 
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License, version 2.0, for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 *****************************************************************************/
 
@@ -31,7 +39,7 @@ namespace lob {
 @param[in]    first_page_no   the first page number of lob */
 void undo_data_t::apply(dict_index_t *index, byte *lob_mem, size_t len,
                         size_t lob_version, page_no_t first_page_no) {
-  DBUG_ENTER("undo_data_t::apply");
+  DBUG_TRACE;
 
   DBUG_LOG("undo_data_t", "lob_version=" << lob_version);
 
@@ -50,8 +58,6 @@ void undo_data_t::apply(dict_index_t *index, byte *lob_mem, size_t len,
     ut_ad((m_offset + m_length) <= len);
     memcpy(ptr, m_old_data, m_length);
   }
-
-  DBUG_VOID_RETURN;
 }
 
 std::ostream &undo_data_t::print(std::ostream &out) const {

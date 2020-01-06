@@ -1,4 +1,4 @@
-/**
+/****************************************************************************
  Copyright (c) 2007, 2018, Oracle and/or its affiliates. All Rights Reserved.
 
  This program is free software; you can redistribute it and/or modify it under
@@ -30,7 +30,6 @@
  ***********************************************************************/
 
 #include "ut0rbt.h"
-#include "my_inttypes.h"
 #include "univ.i"
 #include "ut0new.h"
 
@@ -727,11 +726,10 @@ const ib_rbt_node_t *rbt_insert(
 
 /** Add a new node to the tree, useful for data that is pre-sorted.
  @return appended node */
-const ib_rbt_node_t *rbt_add_node(
-    ib_rbt_t *tree,         /*!< in: rb tree */
-    ib_rbt_bound_t *parent, /*!< in: bounds */
-    const void *value)      /*!< in: this value is copied
-                            to the node */
+const ib_rbt_node_t *rbt_add_node(ib_rbt_t *tree,         /*!< in: rb tree */
+                                  ib_rbt_bound_t *parent, /*!< in: bounds */
+                                  const void *value)      /*!< in: this value is
+                                                          copied      to the node */
 {
   ib_rbt_node_t *node;
 

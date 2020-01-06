@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -92,6 +92,16 @@ struct st_row_worker {
   ulonglong applying_trx_original_commit_timestamp;
   ulonglong applying_trx_immediate_commit_timestamp;
   ulonglong applying_trx_start_apply_timestamp;
+  ulong last_applied_trx_retries_count;
+  uint last_applied_trx_last_retry_err_number;
+  char last_applied_trx_last_retry_err_msg[MAX_SLAVE_ERRMSG];
+  uint last_applied_trx_last_retry_err_msg_length;
+  ulonglong last_applied_trx_last_retry_timestamp;
+  ulong applying_trx_retries_count;
+  uint applying_trx_last_retry_err_number;
+  char applying_trx_last_retry_err_msg[MAX_SLAVE_ERRMSG];
+  uint applying_trx_last_retry_err_msg_length;
+  ulonglong applying_trx_last_retry_timestamp;
 };
 
 /**

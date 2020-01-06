@@ -8,14 +8,8 @@ connect (ddl,localhost,root,,test);
 
 select @@session.optimizer_switch;
 
---disable_warnings
-connection ddl;
-drop table if exists t1,t2,t3,t4;
---enable_warnings
-
 connection spj;
 # Save old mysqld counter values.
---disable_warnings ONCE
 create temporary table server_counts_at_startup
        select * from performance_schema.global_status 
        where variable_name in 
@@ -412,6 +406,27 @@ from t1_myisam as t1
 join t1 as t2 on t2.a = t1.c and t2.b = t1.d
 join t1 as t3 on t3.a = t2.a and t3.b = t2.b
 where t1.a=2 and t1.b=2;
+
+## Bug#28898811 INCORRECTLY REJECT JOIN TO BE PUSHED DOWN
+##
+## .. also served to detect (also see ndb_endian.test):
+## Bug#29010641 FAILS TO HANDLE DIFFERENT ENDIANNESS FORMATS IN PUSHED JOIN KEYS
+##
+## Tables not beings considered in the join pushdown analysis,
+## e.g. a table not being a ndb table, where also incorrectly
+## excluded as a table which could be referred in the join conditions
+## from a pushed child table (on .. t3.b = t1.b <-, below)
+##
+explain
+select *
+from t1_myisam as t1
+join t1 as t2 on t2.a = t1.c
+join t1 as t3 on t3.a = t2.b and t3.b = t1.b;
+--sorted_result
+select *
+from t1_myisam as t1
+join t1 as t2 on t2.a = t1.c
+join t1 as t3 on t3.a = t2.b and t3.b = t1.b;
 
 connection ddl;
 drop table t1_myisam;
@@ -2952,7 +2967,6 @@ select * from t1 t1, t1 t2
 
 # Save old counter values.
 # Save old mysqld counter values.
---disable_warnings ONCE
 create temporary table server_counts
        select * from performance_schema.global_status 
        where variable_name in 
@@ -2981,7 +2995,6 @@ select count(*) from t1 t1, t1 t2
        	     t2.a = t1.c and t2.b = t1.c; 
 
 # Calculate the change in mysqld counters.
---disable_warnings ONCE
 select new.variable_name, new.variable_value - old.variable_value
        from server_counts as old,
          performance_schema.global_status as new
@@ -3593,6 +3606,123 @@ set global debug=@save_debug;
 #Undo update
 update t1 set u=u-100;
 
+#############
+# Additional testcase added as part of WL introducing equi-join
+# non-matching row elimination optimizations into the SPJ block
+# Test query topology which lacked coverage. (Found to fail
+# in manual or RQG testing)
+
+# Modify rows to force null rows from outer joined lookup below
+update t1 set a=a+pk;
+
+set ndb_join_pushdown=on;
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y on y.pk = x.a
+  join t1 as z on z.b = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y on y.pk = x.a
+  join t1 as z on z.b = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  join t1 as y2 on y2.pk = x.a
+  join t1 as z on z.b = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  left join (t1 as y join t1 as yy on yy.pk=y.u) on y.pk = x.a
+  join t1 as z on z.b = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join (t1 as y join t1 as yy on yy.pk=y.u) on y.pk = x.a
+  join t1 as z on z.b = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  join t1 as z on z.b = x.b
+  left join t1 as y on y.pk = x.a;
+--sorted_result
+select straight_join count(*) from t1 as x
+  join t1 as z on z.b = x.b
+  left join t1 as y on y.pk = x.a;
+
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  left join t1 as y3 on y3.pk = x.a;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  left join t1 as y2 on y2.pk = x.a
+  left join t1 as y3 on y3.pk = x.a;
+
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y on y.pk = x.a
+  left join t1 as z on z.pk = x.a
+    left join t1 as y1 on y1.pk = y.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y on y.pk = x.a
+  left join t1 as z on z.pk = x.a
+    left join t1 as y1 on y1.pk = y.b;
+
+explain
+select straight_join count(*) from t1 as x
+  join t1 as y on y.pk = x.a
+    left join t1 as y1 on y1.pk = y.b
+  left join t1 as z on z.pk = x.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  join t1 as y on y.pk = x.a
+    left join t1 as y1 on y1.pk = y.b
+  left join t1 as z on z.pk = x.b;
+
+explain
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  join t1 as y2 on y2.pk = x.b
+    join t1 as z on z.b = y2.b;
+--sorted_result
+select straight_join count(*) from t1 as x
+  left join t1 as y1 on y1.pk = x.a
+  join t1 as y2 on y2.pk = x.b
+    join t1 as z on z.b = y2.b;
+
+#undo update
+update t1 set a=a-pk;
+
 ##############
 
 connection ddl;
@@ -3614,6 +3744,7 @@ t1 as table1 join
  (t1 as table2 join t1 as table3 on table3.a = table2.a)
  on table3.u = table1.u
  where table2.pk = 3;
+
 
 ##############
 connection ddl;
@@ -4379,8 +4510,10 @@ insert into t1 values (4, 4, 'row# 999');
 # range optimizer on 64 bit but not on 32 bit, thus cauing different result.
 # Fix by setting a fairly low value in order to get consistent behaviour
 set @save_range_opt_max = @@session.range_optimizer_max_mem_size;
-set range_optimizer_max_mem_size = 512*512;
+set range_optimizer_max_mem_size = 64*1024;
 
+echo ------------------------------------------------------------------;
+echo;
 # Build SPJ query with 2000 IN values
 # This used to result in buffer overflow, but will now
 # pass as buffer size is incresed from 32K -> 64K
@@ -4397,11 +4530,13 @@ let $query = $query );
 eval explain $query;
 eval $query;
 
+echo ------------------------------------------------------------------;
+echo;
 # Same SPJ query with 4000 IN values
 # This will hit the actuall limit of 64K and will be
 # detected by API which will drop this pushed condition.
 #   'Warning 4294 Scan filter is too large, discarded'
-# (Evaluated by mysql instead)
+# (Pushed condition evaluated by ha_ndbcluster handler instead)
 #
 let $query = select * from t1 x, t1 y where y.k1=x.i and x.name in ('foo';
 let $values = 0;
@@ -4415,6 +4550,8 @@ let $query = $query );
 eval explain $query;
 eval $query;
 
+echo ------------------------------------------------------------------;
+echo;
 # Build single table (non-SPJ) query with 4000 IN values
 # Should give same 'Warning 4294' as above
 let $query = select * from t1 x where x.name in ('foo';
@@ -4425,6 +4562,73 @@ while ($values < 4000)
   inc $values;
 }
 let $query = $query );
+
+eval explain $query;
+eval $query;
+
+
+############################################################
+# Bug #27397802 ENTIRE CLUSTER CRASHES WITH "MESSAGE TO BIG
+#               IN SENDSIGNAL" WITH BIG IN CLAUSE.
+#
+# Similar problem as Bug#13990924; This time with a pushed
+# condition as part of an EQ_REF child node
+#
+############################################################
+
+insert into t1 values (5, 4, 'row# 1');
+insert into t1 values (6, 4, 'row# 2');
+insert into t1 values (7, 4, 'row# 3');
+insert into t1 values (8, 4, 'row# 4');
+
+echo ------------------------------------------------------------------;
+echo;
+# A 'small' 1000 valued IN-list is handled OK
+#
+let $query = select straight_join * from t1 x, t1 y where y.k1=x.i and y.name in ('foo';
+let $values = 0;
+while ($values < 1000)
+{
+  let $query = $query , 'row# $values';
+  inc $values;
+}
+let $query = $query ) order by x.k1;
+
+eval explain $query;
+eval $query;
+
+echo ------------------------------------------------------------------;
+echo;
+# Also a sufficient HUGE IN value list is ok as the pushed
+# condition code is > 64K and catched by other 'Too large'
+# checks.
+#
+let $query = select straight_join * from t1 x, t1 y where y.k1=x.i and y.name in ('foo';
+let $values = 0;
+while ($values < 4000)
+{
+  let $query = $query , 'row# $values';
+  inc $values;
+}
+let $query = $query ) order by x.k1;
+
+eval explain $query;
+eval $query;
+
+
+echo ------------------------------------------------------------------;
+echo;
+# A pushed condition with size between 32K - 64K was not not 'Too large',
+# but would require fragmented sending in order to work -> Crashed.
+#
+let $query = select straight_join * from t1 x, t1 y where y.k1=x.i and y.name in ('foo';
+let $values = 0;
+while ($values < 2000)
+{
+  let $query = $query , 'row# $values';
+  inc $values;
+}
+let $query = $query ) order by x.k1;
 
 eval explain $query;
 eval $query;
@@ -4524,7 +4728,6 @@ insert into t1 values (1,NULL,1,1);
 explain select * from t1 as x1 left join (t1 as x2 join t1 as x3 on x2.d=x3.c) on x1.b=x3.b;
 
 # Record value before query.
---disable_warnings ONCE
 create temporary table scan_count
        select * from performance_schema.global_status 
        where variable_name = 'Ndb_scan_count';
@@ -4534,7 +4737,6 @@ create temporary table scan_count
 select * from t1 as x1 left join (t1 as x2 join t1 as x3 on x2.d=x3.c) on x1.b=x3.b; 
 
 # Bug causes value to increase by 3 rather than 2.
---disable_warnings ONCE
 select scan_count.VARIABLE_NAME,
        old.VARIABLE_VALUE - scan_count.VARIABLE_VALUE  
        from scan_count, performance_schema.global_status as old 
@@ -4692,6 +4894,43 @@ select count(*) from t1 where
   t1.c in (select subq1.c from t1 as subq1 straight_join t1 as subq2 on subq1.a = subq2.c);
 
 set optimizer_switch=@save_optimizer_switch;
+
+--error 0,1193
+set global debug=@save_debug;
+
+####################################
+--echo #
+--echo # Bug#29860378
+--echo #   RESULTS NOT SORTED AS SPECIFIED WHEN QUERY IS A 'PUSHED JOIN'
+--echo #
+
+# Force a small batch size in order to reproduce bug without needing
+# a large test table.
+--error 0,1193
+set global debug='+d,max_4rows_in_spj_batches';
+
+explain
+select straight_join t1.* from
+  t1 join t1 as t2 on t2.d = t1.a
+  where t1.a > 0
+  order by t1.a,t1.b;
+
+select straight_join t1.* from
+  t1 join t1 as t2 on t2.d = t1.a
+  where t1.a > 0
+  order by t1.a,t1.b;
+
+explain
+select straight_join t1.a,t1.b,count(*) from
+  t1 join t1 as t2 on t2.d = t1.a
+  where t1.a > 0
+  group by t1.a,t1.b;
+
+--sorted_result
+select straight_join t1.a,t1.b,count(*) from
+  t1 join t1 as t2 on t2.d = t1.a
+  where t1.a > 0
+  group by t1.a,t1.b;
 
 --error 0,1193
 set global debug=@save_debug;
@@ -5053,6 +5292,41 @@ SELECT *
 connection ddl;
 DROP TABLE ndb_order_test, ndb_user_test;
 
+
+--echo ##################
+--echo #
+--echo # Bug #29501263 CRASH IN SPJ BLOCK, ILLEGAL ACCESS
+--echo #               TO ARRAYPOOL<T>::GETPTR
+--echo #
+--echo ##################
+
+create table t1 (
+  pk int primary key,
+  i1 int
+) engine = ndb;
+
+insert into t1 values (1,1),(2,2),(3,3);
+
+alter table t1 add column (i2 int, i3 int, i4 int, i5 int);
+update t1 set i2=i1, i3=i1, i4=i1, i5=i1;
+
+alter table t1 add index ix1(i1);
+alter table t1 add index ix2(i2);
+alter table t1 add index ix3(i3);
+alter table t1 add index ix4(i4);
+alter table t1 add index ix5(i5);
+alter table t1 add unique index uix(i4,i5);
+
+--sorted_result
+select straight_join * from
+  t1
+    join t1 as t2 on t2.i1 = t1.i1
+      join t1 as t3 on t3.pk = t2.i2
+        left join t1 as t4 on t4.pk = t3.i3
+        left join t1 as t5 on t5.i4 = t2.i4 and t5.i5 = t1.i5;
+
+drop table t1;
+
 ########################################
 # Verify counters for entire test:
 # Note: These tables are 'temporary' withing 'connection spj'
@@ -5060,7 +5334,6 @@ DROP TABLE ndb_order_test, ndb_user_test;
 connection spj;
 
 # Calculate the change in mysqld counters.
---disable_warnings ONCE
 select new.variable_name, new.variable_value - old.variable_value
        from server_counts_at_startup as old,
          performance_schema.global_status as new

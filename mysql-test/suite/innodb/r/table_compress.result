@@ -95,10 +95,14 @@ CREATE TABLE `t1` (
   `c1` int(11) NOT NULL,
   PRIMARY KEY (`c1`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMPRESSION='ZLIB';
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 CREATE TABLE `t2` (
   `c1` int(11) NOT NULL,
   PRIMARY KEY (`c1`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMPRESSION='LZ4';
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -321,6 +325,7 @@ CREATE TEMPORARY TABLE t1(c1 INT PRIMARY KEY) COMPRESSION="ZLIB" TABLESPACE=inno
 ERROR HY000: Table storage engine for 't1' doesn't have this option
 SHOW WARNINGS;
 Level	Code	Message
+Warning	1478	InnoDB: TABLESPACE=innodb_temporary option is ignored. All temporary tables are created in a session temporary tablespace. This option is deprecated and will be removed in a future release.
 Warning	138	InnoDB: Page Compression is not supported for temporary tables
 Error	1031	Table storage engine for 't1' doesn't have this option
 # CREATE TABLE: COMPRESSION + implicit System Tablespace
@@ -474,6 +479,7 @@ CREATE TEMPORARY TABLE t1(c1 INT PRIMARY KEY) COMPRESSION="ZLIB" TABLESPACE=inno
 ERROR HY000: Table storage engine for 't1' doesn't have this option
 SHOW WARNINGS;
 Level	Code	Message
+Warning	1478	InnoDB: TABLESPACE=innodb_temporary option is ignored. All temporary tables are created in a session temporary tablespace. This option is deprecated and will be removed in a future release.
 Warning	138	InnoDB: Page Compression is not supported for temporary tables
 Error	1031	Table storage engine for 't1' doesn't have this option
 # CREATE TABLE: COMPRESSION + implicit System Tablespace

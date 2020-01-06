@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -134,6 +134,8 @@ Pgman::Pgman(Block_context& ctx, Uint32 instanceNumber) :
 
   // Indicator of extra PGMAN worker block
   m_extra_pgman = false;
+  m_extra_pgman_reserve_pages = 0;
+
   // should be a factor larger than number of pool pages
   m_data_buffer_pool.setSize(16);
   
@@ -306,9 +308,14 @@ Pgman::execSTTOR(Signal* signal)
 }
 
 void
-Pgman::set_extra_pgman()
+Pgman::init_extra_pgman()
 {
   m_extra_pgman = true;
+
+  // Reserve 1MB of extra pgman's disk page buffer memory for
+  // undo log execution (in number of pages)
+  m_extra_pgman_reserve_pages =
+    Uint32((1*1024*1024+ GLOBAL_PAGE_SIZE - 1)/GLOBAL_PAGE_SIZE);
 }
 
 void
@@ -348,8 +355,7 @@ Pgman::execCONTINUEB(Signal* signal)
     return;
   }
   default:
-    ndbrequire(false);
-    break;
+    ndbabort();
   }
 }
 
@@ -468,6 +474,21 @@ Pgman::set_page_state(EmulatedJamBuffer* jamBuf, Ptr<Page_entry> ptr,
       ndbrequire(m_stats.m_num_hot_pages != 0);
       m_stats.m_num_hot_pages--;
     }
+
+    {
+      const bool old_locked = (old_state & Page_entry::LOCKED);
+      const bool new_locked = (new_state & Page_entry::LOCKED);
+      if (!old_locked && new_locked)
+      {
+        thrjam(jamBuf);
+        m_stats.m_num_locked_pages++;
+      }
+      if (old_locked && !new_locked)
+      {
+        thrjam(jamBuf);
+        m_stats.m_num_locked_pages--;
+      }
+    }
   }
 
   D(ptr << ": after");
@@ -569,11 +590,11 @@ Pgman::get_page_entry(EmulatedJamBuffer* jamBuf,
 {
   if (m_extra_pgman && tableId != RNIL)
   {
-    ndbrequire(false);
+    ndbabort();
   }
   else if (!m_extra_pgman && isNdbMtLqh() && tableId == RNIL)
   {
-    ndbrequire(false);
+    ndbabort();
   }
 
   if (find_page_entry(ptr, file_no, page_no))
@@ -693,7 +714,7 @@ Pgman::get_page_entry(EmulatedJamBuffer* jamBuf,
     return true;
   }
 
-  ndbrequire(false);
+  ndbabort();
   
   return false;
 }
@@ -947,7 +968,7 @@ Pgman::lirs_reference(EmulatedJamBuffer *jamBuf,
 void
 Pgman::do_stats_loop(Signal* signal)
 {
-  D("do_stats_loop");
+  //D("do_stats_loop");
 #ifdef VM_TRACE
   verify_all();
 #endif
@@ -1017,7 +1038,7 @@ Pgman::do_busy_loop(Signal* signal, bool direct, EmulatedJamBuffer *jamBuf)
 void
 Pgman::do_cleanup_loop(Signal* signal)
 {
-  D("do_cleanup_loop");
+  //D("do_cleanup_loop");
   process_cleanup(signal);
 
   Uint32 delay = m_param.m_cleanup_loop_delay;
@@ -1288,7 +1309,7 @@ Pgman::process_callback(Signal* signal,
 bool
 Pgman::process_cleanup(Signal* signal)
 {
-  D(">process_cleanup");
+  //D(">process_cleanup");
   Page_queue& pl_queue = m_page_queue;
 
   // XXX for now start always from beginning
@@ -1297,7 +1318,7 @@ Pgman::process_cleanup(Signal* signal)
   if (m_cleanup_ptr.i == RNIL && ! pl_queue.first(m_cleanup_ptr))
   {
     jam();
-    D("<process_cleanup: empty queue");
+    //D("<process_cleanup: empty queue");
     return false;
   }
 
@@ -1570,6 +1591,11 @@ Pgman::finish_lcp(Signal *signal,
   m_lcp_fragment_id = 0;
   ndbrequire(m_dirty_list_lcp.isEmpty());
   ndbrequire(m_dirty_list_lcp_out.isEmpty());
+  DEB_PGMAN(("(%u)finish_lcp tab(%u,%u), ref: %x",
+             instance(),
+             m_sync_page_cache_req.tableId,
+             m_sync_page_cache_req.fragmentId,
+             m_sync_page_cache_req.senderRef));
   sendSignal(m_sync_page_cache_req.senderRef,
              GSN_SYNC_PAGE_CACHE_CONF,
              signal,
@@ -1791,7 +1817,7 @@ Pgman::handle_lcp(Signal *signal, Uint32 tableId, Uint32 fragmentId)
         (! (state & Page_entry::BOUND)))
     {
       ndbout << ptr << endl;
-      ndbrequire(false);
+      ndbabort();
     }
 
     if (state & Page_entry::PAGEOUT)
@@ -2328,7 +2354,7 @@ Pgman::execFSREADREF(Signal* signal)
 {
   jamEntry();
   SimulatedBlock::execFSREADREF(signal);
-  ndbrequire(false);
+  ndbabort();
 }
 
 void
@@ -2337,8 +2363,8 @@ Pgman::fswritereq(Signal* signal, Ptr<Page_entry> ptr)
   Ptr<File_entry> file_ptr;
   Ptr<GlobalPage> gptr;
   File_map::ConstDataBufferIterator it;
-  m_file_map.first(it);
-  m_file_map.next(it, ptr.p->m_file_no);
+  ndbrequire(m_file_map.first(it));
+  ndbrequire(m_file_map.next(it, ptr.p->m_file_no));
   m_file_entry_pool.getPtr(file_ptr, *it.data);
   Uint32 fd = file_ptr.p->m_fd;
 
@@ -2363,10 +2389,13 @@ Pgman::fswritereq(Signal* signal, Ptr<Page_entry> ptr)
     {
       Tup_page* tup_page_v2 = (Tup_page*)gptr.p;
       tup_page_v2->m_ndb_version = NDB_DISK_V2;
-      tup_page_v2->unused_ph[0] = 0;
-      tup_page_v2->unused_ph[1] = 0;
-      tup_page_v2->unused_ph[2] = 0;
-      tup_page_v2->unused_ph[3] = 0;
+      tup_page_v2->unused_cluster_page[0] = 0;
+      tup_page_v2->unused_cluster_page[1] = 0;
+      tup_page_v2->unused_cluster_page[2] = 0;
+      tup_page_v2->m_change_map[0] = 0;
+      tup_page_v2->m_change_map[1] = 0;
+      tup_page_v2->m_change_map[2] = 0;
+      tup_page_v2->m_change_map[3] = 0;
     }
     else if (page_header->m_page_type == File_formats::PT_Extent_page)
     {
@@ -2381,7 +2410,7 @@ Pgman::fswritereq(Signal* signal, Ptr<Page_entry> ptr)
     }
     else
     {
-      ndbrequire(false);
+      ndbabort();
     }
   }
 
@@ -2422,7 +2451,7 @@ Pgman::execFSWRITEREF(Signal* signal)
 {
   jamEntry();
   SimulatedBlock::execFSWRITEREF(signal);
-  ndbrequire(false);
+  ndbabort();
 }
 
 // client methods
@@ -2826,8 +2855,8 @@ Pgman::alloc_data_file(Uint32 file_no, Uint32 version)
   }
 
   File_map::DataBufferIterator it;
-  m_file_map.first(it);
-  m_file_map.next(it, file_no);
+  ndbrequire(m_file_map.first(it));
+  ndbrequire(m_file_map.next(it, file_no));
   if (* it.data != RNIL)
   {
     D("alloc_data_file: RNIL");
@@ -2848,8 +2877,8 @@ Pgman::map_file_no(Uint32 file_no, Uint32 fd)
 {
   Ptr<File_entry> file_ptr;
   File_map::DataBufferIterator it;
-  m_file_map.first(it);
-  m_file_map.next(it, file_no);
+  ndbrequire(m_file_map.first(it));
+  ndbrequire(m_file_map.next(it, file_no));
   D("map_file_no:" << V(file_no) << V(fd));
 
   m_file_entry_pool.getPtr(file_ptr, *it.data);
@@ -2862,8 +2891,8 @@ Pgman::free_data_file(Uint32 file_no, Uint32 fd)
 {
   Ptr<File_entry> file_ptr;
   File_map::DataBufferIterator it;
-  m_file_map.first(it);
-  m_file_map.next(it, file_no);
+  ndbrequire(m_file_map.first(it));
+  ndbrequire(m_file_map.next(it, file_no));
   m_file_entry_pool.getPtr(file_ptr, *it.data);
   
   if (fd == RNIL)
@@ -2900,8 +2929,7 @@ Pgman::execDATA_FILE_ORD(Signal* signal)
     free_data_file(ord->file_no, ord->fd);
     break;
   default:
-    ndbrequire(false);
-    break;
+    ndbabort();
   }
 }
 
@@ -2999,8 +3027,76 @@ Pgman::drop_page(Ptr<Page_entry> ptr, EmulatedJamBuffer *jamBuf)
     return 1;
   }
   
-  ndbrequire(false);
+  ndbabort();
   return -1;
+}
+
+bool
+Pgman::extent_pages_available(Uint32 pages_needed)
+{
+  Uint32 locked_pages = m_stats.m_num_locked_pages;
+  Uint32 max_pages = m_param.m_max_pages;
+
+  Uint32 reserved = m_extra_pgman_reserve_pages;
+  if (ERROR_INSERTED(11009))
+  {
+    // 11009 sets max_pages to 25 which is less than reserved 32
+    reserved = 0;
+  }
+
+  if (m_extra_pgman)
+  {
+    /**
+     * ndbmtd :
+     * Extra pgman uses disk page buffer primarily for extent pages.
+     * Extent pages are locked in the buffer during a data file's
+     * lifetime.
+     * In addition, it reserves 'm_extra_pgman_reserve_pages' slots
+     * for undo log execution during restart.
+     */
+    ndbrequire(max_pages > reserved);
+    max_pages -= reserved; // Don't use pages reserved for restart
+  }
+  else
+  {
+    // ndbd
+    max_pages = (Uint32)((NDBD_EXTENT_PAGE_PERCENT * (Uint64)max_pages)/100);
+  }
+
+  if ((locked_pages + pages_needed) > max_pages)
+  {
+    char tmp[90];
+    if (m_extra_pgman)
+    {
+      BaseString::snprintf(tmp, sizeof(tmp),
+                           "Reserved pages for restart %u. "
+                           "Pages that can be allocated for extent pages %u.",
+                           reserved,
+                           m_param.m_max_pages - reserved);
+    }
+    else
+    {
+      BaseString::snprintf(tmp, sizeof(tmp),
+                           "Pages that can be allocated for extent"
+                           "pages (25 percent of total pages) %u.",
+                           max_pages);
+    }
+
+    g_eventLogger->warning("pgman(%u): Cannot allocate %u "
+                           "extent pages requested by the "
+                           "data file being created. "
+                           "Total pages in disk page buffer %u. "
+                           "%s "
+                           "Already locked pages %u. ",
+                           instance(),
+                           pages_needed,
+                           m_param.m_max_pages,
+                           tmp,
+                           m_stats.m_num_locked_pages);
+    return false;
+  }
+
+  return true;
 }
 
 void
@@ -3839,6 +3935,16 @@ Page_cache_client::create_data_file(Signal* signal, Uint32 version)
   return m_pgman->create_data_file(version);
 }
 
+bool
+Page_cache_client::extent_pages_available(Uint32 pages_needed)
+{
+  if (m_pgman_proxy != 0)
+  {
+    return m_pgman_proxy->extent_pages_available(pages_needed, *this);
+  }
+  return m_pgman->extent_pages_available(pages_needed);
+}
+
 Uint32
 Page_cache_client::alloc_data_file(Signal* signal,
                                    Uint32 file_no,
@@ -4084,7 +4190,7 @@ Pgman::remove_fragment_dirty_list(Signal *signal,
   }
   else
   {
-    ndbrequire(false);
+    ndbabort();
     return; /* Silence compiler warning */
   }
   ptr.p->m_dirty_state = Pgman::IN_NO_DIRTY_LIST;
@@ -4185,6 +4291,7 @@ Pgman::verify_page_entry(Ptr<Page_entry> ptr)
 void
 Pgman::verify_page_lists()
 {
+#ifdef VERIFY_PAGE_LISTS
   EmulatedJamBuffer *jamBuf = getThrJamBuf();
   const Stats& stats = m_stats;
   const Param& param = m_param;
@@ -4293,7 +4400,6 @@ Pgman::verify_page_lists()
             " %s:%u", get_sublist_name(k), pl.getCount());
   }
   ndbrequire(entry_count == pl_hash.getCount() || dump_page_lists());
-
   Uint32 hit_pct = 0;
   char hit_pct_str[20];
   if (stats.m_page_hits + stats.m_page_faults != 0)
@@ -4321,6 +4427,7 @@ Pgman::verify_page_lists()
     << " to queue:" << to_queue);
 
   D(sublist_info);
+#endif
 }
 
 void
@@ -4598,17 +4705,37 @@ Pgman::execDUMP_STATE_ORD(Signal* signal)
 
   if (signal->theData[0] == 11100)
   {
-    int pages = m_param.m_max_pages;
-    int size = m_page_entry_pool.getSize();
-    int used = m_page_entry_pool.getUsed();
-    int usedpct = size ? ((100 * used) / size) : 0;
-    int high = m_stats.m_entries_high;
-    int highpct = size ? ((100 * high) / size) : 0;
-    ndbout << "pgman(" << instance() << ")";
-    ndbout << " pages: " << pages << " entries: " << size;
-    ndbout << " used: " << used << " (" << usedpct << "%)";
-    ndbout << " high: " << high << " (" << highpct << "%)";
-    ndbout << endl;
+    Uint32 max_pages = m_param.m_max_pages;
+    Uint32 size = m_page_entry_pool.getSize();
+    Uint32 used = m_page_entry_pool.getUsed();
+    Uint32 usedpct = size ? ((100 * used) / size) : 0;
+    Uint32 high = m_stats.m_entries_high;
+    Uint32 highpct = size ? ((100 * high) / size) : 0;
+    Uint32 locked = m_stats.m_num_locked_pages;
+    Uint32 reserved = m_extra_pgman_reserve_pages;
+    Uint32 lockedpct = size ? ((100 * locked) / size) : 0;
+    Uint32 avail_for_extent_pages = (m_extra_pgman) ?
+      max_pages - reserved :
+      (Uint32)((NDBD_EXTENT_PAGE_PERCENT * (Uint64)max_pages)/100);
+    Uint32 lockedpct2 =
+      (avail_for_extent_pages > 0) ?
+      ((100 * locked) / avail_for_extent_pages) : 0;
+    Uint32 lockedpct3 = (max_pages > 0) ? ((100 * locked) / max_pages) : 0;
+
+    ndbout_c("pgman(%u)\n"
+             " page_entry_pool: size %u used: %u (%u %%)\n"
+             " high: %u (%u %%)\n"
+             " locked pages: %u\n"
+             " \t related to entries %u (%u %%)\n"
+             " \t related to available pages for extent pages %u (%u %%)\n"
+             " \t related to Total pages in disk page buffer memory %u (%u %%)\n",
+             instance(),
+             size, used, usedpct,
+             high, highpct,
+             locked,
+             size, lockedpct,
+             avail_for_extent_pages, lockedpct2,
+             max_pages, lockedpct3);
   }
 
   if (signal->theData[0] == 11101)

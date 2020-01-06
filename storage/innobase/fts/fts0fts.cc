@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2011, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2011, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -33,7 +33,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include <new>
 
 #include "btr0pcur.h"
-#include "dict0dd.h"
 #include "dict0priv.h"
 #include "dict0stats.h"
 #include "dict0types.h"
@@ -45,9 +44,11 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "fts0vlc.ic"
 #include "ha_prototypes.h"
 #include "lob0lob.h"
-#include "my_compiler.h"
+
 #include "my_dbug.h"
-#include "my_inttypes.h"
+
+#include "dict0dd.h"
+#include "lob0lob.h"
 #include "row0mysql.h"
 #include "row0sel.h"
 #include "row0upd.h"
@@ -1330,7 +1331,8 @@ static dberr_t fts_drop_table(trx_t *trx, const char *table_name,
 static MY_ATTRIBUTE((warn_unused_result)) dberr_t fts_rename_one_aux_table(
     const char *new_name,           /*!< in: new parent tbl name */
     const char *fts_table_old_name, /*!< in: old aux tbl name */
-    trx_t *trx)                     /*!< in: transaction */
+    trx_t *trx,                     /*!< in: transaction */
+    bool replay)                    /*!< Whether in replay stage */
 {
   char fts_table_new_name[MAX_TABLE_NAME_LEN];
   ulint new_db_name_len = dict_get_db_name_len(new_name);
@@ -1352,7 +1354,7 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t fts_rename_one_aux_table(
 
   dberr_t error;
   error = row_rename_table_for_mysql(fts_table_old_name, fts_table_new_name,
-                                     nullptr, trx, true);
+                                     nullptr, trx, replay);
 
   if (error == DB_SUCCESS) {
     /* Update dd tablespace filename. */
@@ -1364,7 +1366,7 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t fts_rename_one_aux_table(
     table->acquire();
     mutex_exit(&dict_sys->mutex);
 
-    if (!dd_rename_fts_table(table, fts_table_old_name)) {
+    if (!replay && !dd_rename_fts_table(table, fts_table_old_name)) {
       ut_ad(0);
     }
 
@@ -1380,7 +1382,9 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t fts_rename_one_aux_table(
  @return DB_SUCCESS or error code */
 dberr_t fts_rename_aux_tables(dict_table_t *table,  /*!< in: user Table */
                               const char *new_name, /*!< in: new table name */
-                              trx_t *trx)           /*!< in: transaction */
+                              trx_t *trx,           /*!< in: transaction */
+                              bool replay)          /*!< in: Whether in replay
+                                                        stage */
 {
   ulint i;
   fts_table_t fts_table;
@@ -1396,7 +1400,7 @@ dberr_t fts_rename_aux_tables(dict_table_t *table,  /*!< in: user Table */
 
     fts_get_table_name(&fts_table, old_table_name);
 
-    err = fts_rename_one_aux_table(new_name, old_table_name, trx);
+    err = fts_rename_one_aux_table(new_name, old_table_name, trx, replay);
 
     if (err != DB_SUCCESS) {
       return (err);
@@ -1421,7 +1425,7 @@ dberr_t fts_rename_aux_tables(dict_table_t *table,  /*!< in: user Table */
 
       fts_get_table_name(&fts_table, old_table_name);
 
-      err = fts_rename_one_aux_table(new_name, old_table_name, trx);
+      err = fts_rename_one_aux_table(new_name, old_table_name, trx, replay);
 
       DBUG_EXECUTE_IF("fts_rename_failure", err = DB_DEADLOCK;);
 
@@ -1754,7 +1758,7 @@ dberr_t fts_lock_all_aux_tables(THD *thd, dict_table_t *table) {
 tables.
 @param[in]	flags2	Table flags2
 @return extracted flags2 for FTS aux tables */
-static inline ulint fts_get_table_flags2_for_aux_tables(ulint flags2) {
+static inline uint32_t fts_get_table_flags2_for_aux_tables(uint32_t flags2) {
   /* Extract the file_per_table flag & temporary file flag
   from the main FTS table flags2 */
   return ((flags2 & DICT_TF2_USE_FILE_PER_TABLE) |
@@ -1770,7 +1774,7 @@ static dict_table_t *fts_create_in_mem_aux_table(const char *aux_table_name,
                                                  const dict_table_t *table,
                                                  ulint n_cols) {
   dict_table_t *new_table = dict_mem_table_create(
-      aux_table_name, table->space, n_cols, 0, table->flags,
+      aux_table_name, table->space, n_cols, 0, 0, table->flags,
       fts_get_table_flags2_for_aux_tables(table->flags2));
 
   if (DICT_TF_HAS_SHARED_SPACE(table->flags)) {
@@ -1932,12 +1936,13 @@ dberr_t fts_create_common_tables(trx_t *trx, const dict_table_t *table,
       goto func_exit;
     }
 
-    DBUG_EXECUTE_IF("ib_fts_aux_table_error",
-                    /* Return error after creating FTS_AUX_CONFIG table. */
-                    if (i == 4) {
-                      error = DB_ERROR;
-                      goto func_exit;
-                    });
+    DBUG_EXECUTE_IF(
+        "ib_fts_aux_table_error",
+        /* Return error after creating FTS_AUX_CONFIG table. */
+        if (i == 4) {
+          error = DB_ERROR;
+          goto func_exit;
+        });
   }
 
   /* Write the default settings to the config table. */
@@ -2288,13 +2293,14 @@ dberr_t fts_create_index_tables_low(trx_t *trx, dict_index_t *index,
       break;
     }
 
-    DBUG_EXECUTE_IF("ib_fts_index_table_error",
-                    /* Return error after creating FTS_INDEX_5
-                    aux table. */
-                    if (i == 4) {
-                      error = DB_FAIL;
-                      break;
-                    });
+    DBUG_EXECUTE_IF(
+        "ib_fts_index_table_error",
+        /* Return error after creating FTS_INDEX_5
+        aux table. */
+        if (i == 4) {
+          error = DB_FAIL;
+          break;
+        });
   }
 
   if (error == DB_SUCCESS) {
@@ -3364,7 +3370,7 @@ static void fts_fetch_doc_from_rec(
   ulint num_field;
   const dict_field_t *ifield;
   const dict_col_t *col;
-  ulint clust_pos;
+  uint16_t clust_pos;
   ulint i;
   ulint doc_len = 0;
   ulint processed_doc = 0;
@@ -3385,7 +3391,7 @@ static void fts_fetch_doc_from_rec(
   for (i = 0; i < num_field; i++) {
     ifield = index->get_field(i);
     col = ifield->col;
-    clust_pos = dict_col_get_clust_pos(col, clust_index);
+    clust_pos = static_cast<uint16_t>(dict_col_get_clust_pos(col, clust_index));
 
     if (!get_doc->index_cache->charset) {
       get_doc->index_cache->charset = fts_get_charset(ifield->col->prtype);
@@ -3393,7 +3399,7 @@ static void fts_fetch_doc_from_rec(
 
     if (rec_offs_nth_extern(offsets, clust_pos)) {
       doc->text.f_str = lob::btr_rec_copy_externally_stored_field(
-          clust_index, clust_rec, offsets, dict_table_page_size(table),
+          nullptr, clust_index, clust_rec, offsets, dict_table_page_size(table),
           clust_pos, &doc->text.f_len, nullptr, false,
           static_cast<mem_heap_t *>(doc->self_heap->arg));
     } else {
@@ -3666,6 +3672,7 @@ static ulint fts_add_doc_by_id(fts_trx_table_t *ftt, doc_id_t doc_id,
         btr_pcur_store_position(doc_pcur, &mtr);
         mtr_commit(&mtr);
 
+        DEBUG_SYNC_C("fts_instrument_sync_cache_wait");
         rw_lock_x_lock(&table->fts->cache->lock);
 
         if (table->fts->cache->stopword_info.status & STOPWORD_NOT_INIT) {
@@ -3682,6 +3689,11 @@ static ulint fts_add_doc_by_id(fts_trx_table_t *ftt, doc_id_t doc_id,
         }
 
         rw_lock_x_unlock(&table->fts->cache->lock);
+
+        DBUG_EXECUTE_IF("fts_instrument_sync_cache_wait",
+                        srv_fatal_semaphore_wait_threshold = 25;
+                        fts_max_cache_size = 100;
+                        fts_sync(cache->sync, true, true, false););
 
         DBUG_EXECUTE_IF("fts_instrument_sync",
                         fts_optimize_request_sync_table(table);
@@ -3935,7 +3947,6 @@ dberr_t fts_write_node(trx_t *trx,             /*!< in: transaction */
   pars_info_t *info;
   dberr_t error;
   ib_uint32_t doc_count;
-  ib_time_t start_time;
   doc_id_t last_doc_id;
   doc_id_t first_doc_id;
   char table_name[MAX_FULL_NAME_LEN];
@@ -3980,9 +3991,9 @@ dberr_t fts_write_node(trx_t *trx,             /*!< in: transaction */
                            "  :last_doc_id, :doc_count, :ilist);");
   }
 
-  start_time = ut_time();
+  const auto start_time = ut_time_monotonic();
   error = fts_eval_sql(trx, *graph);
-  elapsed_time += ut_time() - start_time;
+  elapsed_time += ut_time_monotonic() - start_time;
   ++n_nodes;
 
   return (error);
@@ -4042,10 +4053,12 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t
 @param[in,out]	trx		transaction
 @param[in]	index_cache	index cache
 @param[in]	unlock_cache	whether unlock cache when write node
+@param[in]      sync_start_time Holds the timestamp of start of sync
+                                for deducing the length of sync time
 @return DB_SUCCESS if all went well else error code */
 static MY_ATTRIBUTE((nonnull, warn_unused_result)) dberr_t
     fts_sync_write_words(trx_t *trx, fts_index_cache_t *index_cache,
-                         bool unlock_cache) {
+                         bool unlock_cache, ib_time_t sync_start_time) {
   fts_table_t fts_table;
   ulint n_nodes = 0;
   ulint n_words = 0;
@@ -4053,6 +4066,11 @@ static MY_ATTRIBUTE((nonnull, warn_unused_result)) dberr_t
   dberr_t error = DB_SUCCESS;
   ibool print_error = FALSE;
   dict_table_t *table = index_cache->index->table;
+  const float cutoff = 0.98;
+  ulint lock_threshold =
+      (srv_fatal_semaphore_wait_threshold % SRV_SEMAPHORE_WAIT_EXTENSION) *
+      cutoff;
+  bool timeout_extended = false;
 
   FTS_INIT_INDEX_TABLE(&fts_table, NULL, FTS_INDEX_TABLE, index_cache->index);
 
@@ -4086,12 +4104,34 @@ static MY_ATTRIBUTE((nonnull, warn_unused_result)) dberr_t
 
       /*FIXME: we need to handle the error properly. */
       if (error == DB_SUCCESS) {
+        DBUG_EXECUTE_IF("fts_instrument_sync_write",
+                        os_thread_sleep(10000000););
+        if (!unlock_cache) {
+          ulint cache_lock_time = ut_time_monotonic() - sync_start_time;
+          if (cache_lock_time > lock_threshold) {
+            if (!timeout_extended) {
+              os_atomic_increment_ulint(&srv_fatal_semaphore_wait_threshold,
+                                        SRV_SEMAPHORE_WAIT_EXTENSION);
+              timeout_extended = true;
+              lock_threshold += SRV_SEMAPHORE_WAIT_EXTENSION;
+            } else {
+              unlock_cache = true;
+              os_atomic_decrement_ulint(&srv_fatal_semaphore_wait_threshold,
+                                        SRV_SEMAPHORE_WAIT_EXTENSION);
+              timeout_extended = false;
+            }
+          }
+        }
+
         if (unlock_cache) {
           rw_lock_x_unlock(&table->fts->cache->lock);
         }
 
         error = fts_write_node(trx, &index_cache->ins_graph[selected],
                                &fts_table, &word->text, fts_node);
+
+        DBUG_EXECUTE_IF("fts_instrument_sync_write",
+                        os_thread_sleep(10000000););
 
         DEBUG_SYNC_C("fts_write_node");
         DBUG_EXECUTE_IF("fts_write_node_crash", DBUG_SUICIDE(););
@@ -4130,7 +4170,7 @@ static void fts_sync_begin(fts_sync_t *sync) /*!< in: sync state */
   n_nodes = 0;
   elapsed_time = 0;
 
-  sync->start_time = ut_time();
+  sync->start_time = ut_time_monotonic();
 
   sync->trx = trx_allocate_for_background();
 
@@ -4159,7 +4199,8 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t
 
   ut_ad(rbt_validate(index_cache->words));
 
-  return (fts_sync_write_words(trx, index_cache, sync->unlock_cache));
+  return (fts_sync_write_words(trx, index_cache, sync->unlock_cache,
+                               sync->start_time));
 }
 
 /** Check if index cache has been synced completely
@@ -4245,7 +4286,7 @@ static MY_ATTRIBUTE((warn_unused_result)) dberr_t
   if (fts_enable_diag_print && elapsed_time) {
     ib::info(ER_IB_MSG_477)
         << "SYNC for table " << sync->table->name
-        << ": SYNC time: " << (ut_time() - sync->start_time)
+        << ": SYNC time: " << (ut_time_monotonic() - sync->start_time)
         << " secs: elapsed " << (double)n_nodes / elapsed_time << " ins/sec";
   }
 
@@ -4326,7 +4367,6 @@ static dberr_t fts_sync(fts_sync_t *sync, bool unlock_cache, bool wait,
 
     rw_lock_x_lock(&cache->lock);
   }
-
   sync->unlock_cache = unlock_cache;
   sync->in_progress = true;
 
@@ -4347,6 +4387,7 @@ begin_sync:
     sync->unlock_cache = false;
   }
 
+  DEBUG_SYNC_C("fts_instrument_sync1");
   for (i = 0; i < ib_vector_size(cache->indexes); ++i) {
     fts_index_cache_t *index_cache;
 
@@ -5784,7 +5825,7 @@ bool fts_is_aux_table_name(fts_aux_table_t *table, const char *name,
     /* Could be obsolete common tables. */
     if (native_strncasecmp(ptr, "ADDED", len) == 0 ||
         native_strncasecmp(ptr, "STOPWORDS", len) == 0) {
-      table->type = FTS_OBSELETED_TABLE;
+      table->type = FTS_OBSOLETED_TABLE;
       return (true);
     }
 
@@ -5816,7 +5857,7 @@ bool fts_is_aux_table_name(fts_aux_table_t *table, const char *name,
 
     /* Other FT index specific table(s). */
     if (native_strncasecmp(ptr, "DOC_ID", len) == 0) {
-      table->type = FTS_OBSELETED_TABLE;
+      table->type = FTS_OBSOLETED_TABLE;
       return (true);
     }
   }
@@ -6097,7 +6138,7 @@ static ibool fts_init_recover_doc(void *row,      /*!< in: sel_node_t* */
       /** When a nullptr is passed for trx, it means we will
       fetch the latest LOB (and no MVCC will be done). */
       doc.text.f_str = lob::btr_copy_externally_stored_field(
-          get_doc->index_cache->index, &doc.text.f_len, nullptr,
+          nullptr, get_doc->index_cache->index, &doc.text.f_len, nullptr,
           static_cast<byte *>(dfield_get_data(dfield)),
           dict_table_page_size(table), len, false,
           static_cast<mem_heap_t *>(doc.self_heap->arg));

@@ -1,4 +1,4 @@
-# Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -25,7 +25,9 @@ INCLUDE(CheckIncludeFile)
 include(CheckFunctionExists)
 CHECK_INCLUDE_FILES(term.h HAVE_TERM_H)
 
-SET(CMAKE_REQUIRED_LIBRARIES ${CURSES_LIBRARY})
+CMAKE_PUSH_CHECK_STATE()
+LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${CURSES_LIBRARY})
+
 CHECK_CXX_SOURCE_COMPILES("
 #include <term.h>
 int main()
@@ -48,19 +50,14 @@ IF(NOT HAVE_DECL_TGOTO)
   ENDIF()
 ENDIF()
 
-SET(CMAKE_REQUIRED_LIBRARIES)
+CMAKE_POP_CHECK_STATE()
 
 
 
-IF(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+IF(SOLARIS)
   #On Solaris, default awk is next to unusable while the xpg4 one is ok.
   IF(EXISTS /usr/xpg4/bin/awk)
     SET(AWK_EXECUTABLE /usr/xpg4/bin/awk)
-  ENDIF()
-ELSEIF(CMAKE_SYSTEM_NAME STREQUAL "OS400")
-  #Workaround for cases, where /usr/bin/gawk is not executable
-  IF(EXISTS /QOpenSys/usr/bin/awk)
-    SET(AWK_EXECUTABLE /QOpenSys/usr/bin/awk)
   ENDIF()
 ENDIF()
 
@@ -192,6 +189,10 @@ SET(LIBEDIT_SOURCES
   ${AHDR} 
   ${LIBEDIT_EXTRA_SOURCES}
 )
-ADD_CONVENIENCE_LIBRARY(edit ${LIBEDIT_SOURCES})
+ADD_LIBRARY(edit STATIC ${LIBEDIT_SOURCES})
 TARGET_LINK_LIBRARIES(edit ${CURSES_LIBRARY})
 
+MY_CHECK_C_COMPILER_FLAG("-Wstringop-overflow" HAVE_STRINGOP_OVERFLOW)
+IF(HAVE_STRINGOP_OVERFLOW)
+  TARGET_COMPILE_OPTIONS(edit PRIVATE "-Wno-stringop-overflow")
+ENDIF()

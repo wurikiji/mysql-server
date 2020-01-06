@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2012, Facebook Inc.
 
 This program is free software; you can redistribute it and/or modify it under
@@ -49,7 +49,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #endif /* !UNIV_HOTBACKUP */
 #include "ha_prototypes.h"
 #include "my_dbug.h"
-#include "my_inttypes.h"
+
 #ifndef UNIV_HOTBACKUP
 #include "clone0api.h"
 #include "mysqld.h"  // system_charset_info
@@ -122,6 +122,13 @@ extern uint ibuf_debug;
 #include "ut0new.h"
 #endif /* !UNIV_HOTBACKUP */
 
+static_assert(DATA_ROW_ID == 0, "DATA_ROW_ID != 0");
+static_assert(DATA_TRX_ID == 1, "DATA_TRX_ID != 1");
+static_assert(DATA_ROLL_PTR == 2, "DATA_ROLL_PTR != 2");
+static_assert(DATA_N_SYS_COLS == 3, "DATA_N_SYS_COLS != 3");
+static_assert(DATA_TRX_ID_LEN == 6, "DATA_TRX_ID_LEN != 6");
+static_assert(DATA_ITT_N_SYS_COLS == 2, "DATA_ITT_N_SYS_COLS != 2");
+
 /** the dictionary system */
 dict_sys_t *dict_sys = NULL;
 
@@ -147,6 +154,10 @@ const char *dict_sys_t::s_temp_space_file_name = "ibtmp1";
 
 /** The hard-coded tablespace name innodb_file_per_table. */
 const char *dict_sys_t::s_file_per_table_name = "innodb_file_per_table";
+
+/** These two undo tablespaces cannot be dropped. */
+const char *dict_sys_t::s_default_undo_space_name_1 = "innodb_undo_001";
+const char *dict_sys_t::s_default_undo_space_name_2 = "innodb_undo_002";
 
 /** the dictionary persisting structure */
 dict_persist_t *dict_persist = NULL;
@@ -186,9 +197,9 @@ index.
 @param[in]	index	index
 @param[in]	add_v	new virtual columns added along with an add index call
 @return true if the column names were found */
-static ibool dict_index_find_cols(const dict_table_t *table,
-                                  dict_index_t *index,
-                                  const dict_add_v_col_t *add_v);
+static ibool dict_index_find_and_set_cols(const dict_table_t *table,
+                                          dict_index_t *index,
+                                          const dict_add_v_col_t *add_v);
 /** Builds the internal dictionary cache representation for a clustered
  index, containing also system fields not defined by the user.
  @return own: the internal representation of the clustered index */
@@ -220,7 +231,7 @@ static void dict_index_remove_from_cache_low(
 have some changed dynamic metadata in memory and have not been written
 back to mysql.innodb_dynamic_metadata. Update LSN limit, which is used
 to stop user threads when redo log is running out of space and they
-do not hold latches (log.sn_limit_for_start). */
+do not hold latches (log.free_check_limit_sn). */
 static void dict_persist_update_log_margin(void);
 
 /** Removes a table object from the dictionary cache. */
@@ -250,11 +261,10 @@ ib_mutex_t dict_foreign_err_mutex;
 
 /** Checks if the database name in two table names is the same.
  @return true if same db name */
-ibool dict_tables_have_same_db(
-    const char *name1, /*!< in: table name in the form
-                       dbname '/' tablename */
-    const char *name2) /*!< in: table name in the form
-                       dbname '/' tablename */
+ibool dict_tables_have_same_db(const char *name1, /*!< in: table name in the
+                                                  form dbname '/' tablename */
+                               const char *name2) /*!< in: table name in the
+                                                  form dbname '/' tablename */
 {
   for (; *name1 == *name2; name1++, name2++) {
     if (*name1 == '/') {
@@ -267,9 +277,8 @@ ibool dict_tables_have_same_db(
 
 /** Return the end of table name where we have removed dbname and '/'.
  @return table name */
-const char *dict_remove_db_name(
-    const char *name) /*!< in: table name in the form
-                      dbname '/' tablename */
+const char *dict_remove_db_name(const char *name) /*!< in: table name in the
+                                                  form dbname '/' tablename */
 {
   const char *s = strchr(name, '/');
   ut_a(s);
@@ -538,8 +547,6 @@ void dict_table_close(dict_table_t *table, /*!< in/out: table */
     dict_stats_deinit(table);
   }
 
-  MONITOR_DEC(MONITOR_TABLE_REFERENCE);
-
   if (!dict_locked) {
     table_id_t table_id = table->id;
 
@@ -773,8 +780,8 @@ void dict_table_autoinc_log(dict_table_t *table, uint64_t value, mtr_t *mtr) {
     dict_persist->mutex. Above update to AUTOINC would be either
     written back to DDTableBuffer or not. But the redo logs for
     current change won't be counted into current checkpoint.
-    See how log_sys->dict_suggest_checkpoint_lsn is set. So
-    even a crash after below redo log flushed, no change lost.
+    See how log_sys->dict_max_allowed_checkpoint_lsn is set.
+    So even a crash after below redo log flushed, no change lost.
 
     If that function sets the dirty_status after below checking,
     which means current change would be written back to
@@ -1069,7 +1076,7 @@ dict_table_t *dict_table_open_on_name(
                                   loading a table definition */
 {
   dict_table_t *table;
-  DBUG_ENTER("dict_table_open_on_name");
+  DBUG_TRACE;
   DBUG_PRINT("dict_table_open_on_name", ("table: '%s'", table_name));
 
   if (!dict_locked) {
@@ -1099,7 +1106,7 @@ dict_table_t *dict_table_open_on_name(
       ib::info(ER_IB_MSG_175) << "Table " << table->name
                               << " is corrupted. Please drop the table"
                                  " and recreate it";
-      DBUG_RETURN(NULL);
+      return NULL;
     }
 
     if (table->can_be_evicted) {
@@ -1107,8 +1114,6 @@ dict_table_t *dict_table_open_on_name(
     }
 
     table->acquire();
-
-    MONITOR_INC(MONITOR_TABLE_REFERENCE);
   }
 
   ut_ad(dict_lru_validate());
@@ -1117,7 +1122,7 @@ dict_table_t *dict_table_open_on_name(
     dict_table_try_drop_aborted_and_mutex_exit(table, try_drop);
   }
 
-  DBUG_RETURN(table);
+  return table;
 }
 #endif /* !UNIV_HOTBACKUP */
 
@@ -1141,31 +1146,15 @@ void dict_table_add_system_columns(dict_table_t *table, /*!< in/out: table */
   dict_mem_table_add_col(table, heap, "DB_ROW_ID", DATA_SYS,
                          DATA_ROW_ID | DATA_NOT_NULL, DATA_ROW_ID_LEN);
 
-#if (DATA_ITT_N_SYS_COLS != 2)
-#error "DATA_ITT_N_SYS_COLS != 2"
-#endif
-
-#if DATA_ROW_ID != 0
-#error "DATA_ROW_ID != 0"
-#endif
   dict_mem_table_add_col(table, heap, "DB_TRX_ID", DATA_SYS,
                          DATA_TRX_ID | DATA_NOT_NULL, DATA_TRX_ID_LEN);
-#if DATA_TRX_ID != 1
-#error "DATA_TRX_ID != 1"
-#endif
 
   if (!table->is_intrinsic()) {
     dict_mem_table_add_col(table, heap, "DB_ROLL_PTR", DATA_SYS,
                            DATA_ROLL_PTR | DATA_NOT_NULL, DATA_ROLL_PTR_LEN);
-#if DATA_ROLL_PTR != 2
-#error "DATA_ROLL_PTR != 2"
-#endif
 
     /* This check reminds that if a new system column is added to
     the program, it should be dealt with here */
-#if DATA_N_SYS_COLS != 3
-#error "DATA_N_SYS_COLS != 3"
-#endif
   }
 }
 
@@ -1509,8 +1498,9 @@ dberr_t dict_table_rename_in_cache(
               ut_ad(table2->cached),
               (ut_strcmp(table2->name.m_name, new_name) == 0));
 
-  DBUG_EXECUTE_IF("dict_table_rename_in_cache_failure",
-                  if (table2 == NULL) { table2 = (dict_table_t *)-1; });
+  DBUG_EXECUTE_IF(
+      "dict_table_rename_in_cache_failure",
+      if (table2 == NULL) { table2 = (dict_table_t *)-1; });
 
   if (table2 != nullptr) {
     ib::error(ER_IB_MSG_178)
@@ -1574,6 +1564,16 @@ dberr_t dict_table_rename_in_cache(
 
       new_path = mem_strdup(new_ibd.c_str());
 
+      /* InnoDB adds the db directory to the data directory.
+      If the RENAME changes database, then it is possible that
+      the a directory named for the new db does not exist
+      in this remote location. */
+      err = os_file_create_subdirs_if_needed(new_path);
+      if (err != DB_SUCCESS) {
+        ut_free(old_path);
+        ut_free(new_path);
+        return (err);
+      }
     } else {
       new_path = Fil_path::make_ibd_from_table_name(new_name);
     }
@@ -1591,20 +1591,23 @@ dberr_t dict_table_rename_in_cache(
     std::string new_tablespace_name;
     dd_filename_to_spacename(new_name, &new_tablespace_name);
 
-    bool success = fil_rename_tablespace(table->space, old_path,
-                                         new_tablespace_name.c_str(), new_path);
+    dberr_t err = fil_rename_tablespace(table->space, old_path,
+                                        new_tablespace_name.c_str(), new_path);
 
     clone_mark_active();
 
     ut_free(old_path);
     ut_free(new_path);
 
-    if (!success) {
-      return (DB_ERROR);
+    if (err != DB_SUCCESS) {
+      return (err);
     }
   }
 
-  log_ddl->write_rename_table_log(table, new_name, table->name.m_name);
+  err = log_ddl->write_rename_table_log(table, new_name, table->name.m_name);
+  if (err != DB_SUCCESS) {
+    return (err);
+  }
 
   /* Remove table from the hash tables of tables */
   HASH_DELETE(dict_table_t, name_hash, dict_sys->table_hash,
@@ -2348,7 +2351,7 @@ dberr_t dict_index_add_to_cache_w_vcol(dict_table_t *table, dict_index_t *index,
   ut_d(mem_heap_validate(index->heap));
   ut_a(!index->is_clustered() || UT_LIST_GET_LEN(table->indexes) == 0);
 
-  if (!dict_index_find_cols(table, index, add_v)) {
+  if (!dict_index_find_and_set_cols(table, index, add_v)) {
     dict_mem_index_free(index);
     return (DB_CORRUPTION);
   }
@@ -2590,7 +2593,7 @@ static void dict_index_remove_from_cache_low(
     if (retries >= 60000) {
       ut_error;
     }
-  } while (srv_shutdown_state == SRV_SHUTDOWN_NONE || !lru_evict);
+  } while (srv_shutdown_state.load() == SRV_SHUTDOWN_NONE || !lru_evict);
 
   rw_lock_free(&index->lock);
 
@@ -2654,20 +2657,39 @@ void dict_index_remove_from_cache(dict_table_t *table, /*!< in/out: table */
   dict_index_remove_from_cache_low(table, index, FALSE);
 }
 
+/** Duplicate a virtual column information
+@param[in]	v_col	virtual column information to duplicate
+@param[in,out]	heap	memory heap
+@return the duplicated virtual column */
+static dict_v_col_t *dict_duplicate_v_col(const dict_v_col_t *v_col,
+                                          mem_heap_t *heap) {
+  dict_v_col_t *new_v_col =
+      static_cast<dict_v_col_t *>(mem_heap_zalloc(heap, sizeof(*v_col)));
+
+  ut_ad(v_col->v_indexes == nullptr);
+
+  /* Currently, only m_col and v_indexes would be cared in future use,
+  and v_indexes is always nullptr. So the memcpy can work for it */
+  memcpy(new_v_col, v_col, sizeof(*v_col));
+
+  return (new_v_col);
+}
+
 /** Tries to find column names for the index and sets the col field of the
 index.
 @param[in]	table	table
 @param[in,out]	index	index
 @param[in]	add_v	new virtual columns added along with an add index call
 @return true if the column names were found */
-static ibool dict_index_find_cols(const dict_table_t *table,
-                                  dict_index_t *index,
-                                  const dict_add_v_col_t *add_v) {
+static ibool dict_index_find_and_set_cols(const dict_table_t *table,
+                                          dict_index_t *index,
+                                          const dict_add_v_col_t *add_v) {
   std::vector<ulint, ut_allocator<ulint>> col_added;
   std::vector<ulint, ut_allocator<ulint>> v_col_added;
 
   ut_ad(table != NULL && index != NULL);
   ut_ad(table->magic_n == DICT_TABLE_MAGIC_N);
+  ut_ad(!mutex_own(&dict_sys->mutex));
 
   for (ulint i = 0; i < index->n_fields; i++) {
     ulint j;
@@ -2718,7 +2740,20 @@ static ibool dict_index_find_cols(const dict_table_t *table,
     if (add_v) {
       for (j = 0; j < add_v->n_v_col; j++) {
         if (!strcmp(add_v->v_col_name[j], field->name)) {
-          field->col = const_cast<dict_col_t *>(&add_v->v_col[j].m_col);
+          /* Once add_v is not nullptr, it comes from ALTER TABLE.
+          To make sure the index can work after ALTER TABLE path,
+          which may happen when the ALTER TABLE gets rolled back,
+          it is a must to duplicate the virtual column information,
+          in case the passed in object would be freed after ALTER TABLE. */
+
+          mutex_enter(&dict_sys->mutex);
+          uint64_t old_size = mem_heap_get_size(table->heap);
+          dict_v_col_t *vcol =
+              dict_duplicate_v_col(&add_v->v_col[j], table->heap);
+          field->col = &vcol->m_col;
+          dict_sys->size += mem_heap_get_size(table->heap) - old_size;
+          mutex_exit(&dict_sys->mutex);
+
           goto found;
         }
       }
@@ -2900,16 +2935,6 @@ static dict_index_t *dict_index_build_internal_clust(
   /* Add system columns, trx id first */
 
   trx_id_pos = new_index->n_def;
-
-#if DATA_ROW_ID != 0
-#error "DATA_ROW_ID != 0"
-#endif
-#if DATA_TRX_ID != 1
-#error "DATA_TRX_ID != 1"
-#endif
-#if DATA_ROLL_PTR != 2
-#error "DATA_ROLL_PTR != 2"
-#endif
 
   if (!dict_index_is_unique(index)) {
     dict_index_add_col(new_index, table, table->get_sys_col(DATA_ROW_ID), 0,
@@ -3295,7 +3320,7 @@ dberr_t dict_foreign_add_to_cache(dict_foreign_t *foreign,
   ibool added_to_referenced_list = FALSE;
   FILE *ef = dict_foreign_err_file;
 
-  DBUG_ENTER("dict_foreign_add_to_cache");
+  DBUG_TRACE;
   DBUG_PRINT("dict_foreign_add_to_cache", ("id: %s", foreign->id));
 
   ut_ad(mutex_own(&dict_sys->mutex));
@@ -3341,7 +3366,7 @@ dberr_t dict_foreign_add_to_cache(dict_foreign_t *foreign,
         mem_heap_free(foreign->heap);
       }
 
-      DBUG_RETURN(DB_CANNOT_ADD_CONSTRAINT);
+      return DB_CANNOT_ADD_CONSTRAINT;
     }
 
     for_in_cache->referenced_table = ref_table;
@@ -3385,7 +3410,7 @@ dberr_t dict_foreign_add_to_cache(dict_foreign_t *foreign,
         mem_heap_free(foreign->heap);
       }
 
-      DBUG_RETURN(DB_CANNOT_ADD_CONSTRAINT);
+      return DB_CANNOT_ADD_CONSTRAINT;
     }
 
     for_in_cache->foreign_table = for_table;
@@ -3410,7 +3435,7 @@ dberr_t dict_foreign_add_to_cache(dict_foreign_t *foreign,
   }
 
   ut_ad(dict_lru_validate());
-  DBUG_RETURN(DB_SUCCESS);
+  return DB_SUCCESS;
 }
 
 /** Scans from pointer onwards. Stops if is at the start of a copy of
@@ -3816,7 +3841,7 @@ static char *dict_strip_comments(
   char quote = 0;
   bool escape = false;
 
-  DBUG_ENTER("dict_strip_comments");
+  DBUG_TRACE;
 
   DBUG_PRINT("dict_strip_comments", ("%s", sql_string));
 
@@ -3834,7 +3859,7 @@ static char *dict_strip_comments(
       ut_a(ptr <= str + sql_length);
 
       DBUG_PRINT("dict_strip_comments", ("%s", str));
-      DBUG_RETURN(str);
+      return str;
     }
 
     if (*sptr == quote) {
@@ -3917,7 +3942,7 @@ ulint dict_table_get_highest_foreign_id(
   ulint id;
   ulint len;
 
-  DBUG_ENTER("dict_table_get_highest_foreign_id");
+  DBUG_TRACE;
 
   ut_a(table);
 
@@ -3950,7 +3975,7 @@ ulint dict_table_get_highest_foreign_id(
 
   DBUG_PRINT("dict_table_get_highest_foreign_id", ("id: %lu", biggest_id));
 
-  DBUG_RETURN(biggest_id);
+  return biggest_id;
 }
 
 /** Reports a simple foreign key create clause syntax error. */
@@ -4242,13 +4267,21 @@ col_loop1:
     if (success && my_isspace(cs, *ptr1)) {
       ptr2 = dict_accept(cs, ptr1, "BY", &success);
       if (success) {
-        my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
+        /*
+          SQL-layer disallows foreign keys on partitioned tables
+          unless storage engine supports such FKs explicitly.
+        */
+        ut_ad(0);
         return (DB_CANNOT_ADD_CONSTRAINT);
       }
     }
   }
   if (dict_table_is_partition(table)) {
-    my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
+    /*
+      This is ALTER TABLE which adds foreign key to partitioned table.
+      SQL-layer should have blocked this already.
+    */
+    ut_ad(0);
     return (DB_CANNOT_ADD_CONSTRAINT);
   }
 
@@ -4332,7 +4365,6 @@ col_loop1:
   if (referenced_table && dict_table_is_partition(referenced_table)) {
     /* How could one make a referenced table to be a partition? */
     ut_ad(0);
-    my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
     return (DB_CANNOT_ADD_CONSTRAINT);
   }
 
@@ -4483,21 +4515,12 @@ scan_on_conditions:
   for (j = 0; j < foreign->n_fields; j++) {
     if ((foreign->foreign_index->get_col(j)->prtype) & DATA_NOT_NULL) {
       /* It is not sensible to define SET NULL
-      if the column is not allowed to be NULL! */
+      if the column is not allowed to be NULL!
+      SQL-layer already enforces this. */
+      ut_ad(0);
       if (referenced_table) {
         dd_table_close(referenced_table, current_thd, &mdl, true);
       }
-
-      mutex_enter(&dict_foreign_err_mutex);
-      dict_foreign_error_report_low(ef, name);
-      fprintf(ef,
-              "%s:\n"
-              "You have defined a SET NULL condition"
-              " though some of the\n"
-              "columns are defined as NOT NULL.\n",
-              start_of_latest_foreign);
-      mutex_exit(&dict_foreign_err_mutex);
-
       return (DB_CANNOT_ADD_CONSTRAINT);
     }
   }
@@ -4754,7 +4777,7 @@ syntax_error:
   return (DB_CANNOT_DROP_CONSTRAINT);
 }
 
-  /*==================== END OF FOREIGN KEY PROCESSING ====================*/
+/*==================== END OF FOREIGN KEY PROCESSING ====================*/
 
 #ifdef UNIV_DEBUG
 /** Checks that a tuple has n_fields_cmp value in a sensible range, so that
@@ -4777,16 +4800,15 @@ ibool dict_index_check_search_tuple(
 
 /** Builds a node pointer out of a physical record and a page number.
  @return own: node pointer */
-dtuple_t *dict_index_build_node_ptr(
-    const dict_index_t *index, /*!< in: index */
-    const rec_t *rec,          /*!< in: record for which to build node
-                               pointer */
-    page_no_t page_no,         /*!< in: page number to put in node
-                               pointer */
-    mem_heap_t *heap,          /*!< in: memory heap where pointer
-                               created */
-    ulint level)               /*!< in: level of rec in tree:
-                               0 means leaf level */
+dtuple_t *dict_index_build_node_ptr(const dict_index_t *index, /*!< in: index */
+                                    const rec_t *rec,  /*!< in: record for which
+                                                       to build node  pointer */
+                                    page_no_t page_no, /*!< in: page number to
+                                                       put in node pointer */
+                                    mem_heap_t *heap, /*!< in: memory heap where
+                                                      pointer created */
+                                    ulint level) /*!< in: level of rec in tree:
+                                                 0 means leaf level */
 {
   dtuple_t *tuple;
   dfield_t *field;
@@ -4840,18 +4862,10 @@ dtuple_t *dict_index_build_node_ptr(
   return (tuple);
 }
 
-/** Copies an initial segment of a physical record, long enough to specify an
- index entry uniquely.
- @return pointer to the prefix record */
-rec_t *dict_index_copy_rec_order_prefix(
-    const dict_index_t *index, /*!< in: index */
-    const rec_t *rec,          /*!< in: record for which to
-                               copy prefix */
-    ulint *n_fields,           /*!< out: number of fields copied */
-    byte **buf,                /*!< in/out: memory buffer for the
-                               copied prefix, or NULL */
-    ulint *buf_size)           /*!< in/out: buffer size */
-{
+rec_t *dict_index_copy_rec_order_prefix(const dict_index_t *index,
+                                        const rec_t *rec, ulint *n_fields,
+
+                                        byte **buf, size_t *buf_size) {
   ulint n;
 
   UNIV_PREFETCH_R(rec);
@@ -5018,11 +5032,11 @@ void dict_print_info_on_foreign_key_in_create_format(
     fputs(" ON DELETE SET NULL", file);
   }
 
-#ifdef HAS_RUNTIME_WL6049
-  if (foreign->type & DICT_FOREIGN_ON_DELETE_NO_ACTION) {
-    fputs(" ON DELETE NO ACTION", file);
+  if (!(foreign->type & DICT_FOREIGN_ON_DELETE_NO_ACTION) &&
+      !(foreign->type & DICT_FOREIGN_ON_DELETE_CASCADE) &&
+      !(foreign->type & DICT_FOREIGN_ON_DELETE_SET_NULL)) {
+    fputs(" ON DELETE RESTRICT", file);
   }
-#endif /* HAS_RUNTIME_WL6049 */
 
   if (foreign->type & DICT_FOREIGN_ON_UPDATE_CASCADE) {
     fputs(" ON UPDATE CASCADE", file);
@@ -5032,11 +5046,11 @@ void dict_print_info_on_foreign_key_in_create_format(
     fputs(" ON UPDATE SET NULL", file);
   }
 
-#ifdef HAS_RUNTIME_WL6049
-  if (foreign->type & DICT_FOREIGN_ON_UPDATE_NO_ACTION) {
-    fputs(" ON UPDATE NO ACTION", file);
+  if (!(foreign->type & DICT_FOREIGN_ON_UPDATE_NO_ACTION) &&
+      !(foreign->type & DICT_FOREIGN_ON_UPDATE_CASCADE) &&
+      !(foreign->type & DICT_FOREIGN_ON_UPDATE_SET_NULL)) {
+    fputs(" ON UPDATE RESTRICT", file);
   }
-#endif /* HAS_RUNTIME_WL6049 */
 }
 
 /** Outputs info on foreign keys of a table. */
@@ -5469,17 +5483,11 @@ void dict_persist_to_dd_table_buffer() {
   bool persisted = false;
 
   if (dict_sys == nullptr) {
-    log_sys->dict_suggest_checkpoint_lsn = 0;
+    log_set_dict_max_allowed_checkpoint_lsn(*log_sys, 0);
     return;
   }
 
   mutex_enter(&dict_persist->mutex);
-
-  if (UT_LIST_GET_LEN(dict_persist->dirty_dict_tables) == 0) {
-    mutex_exit(&dict_persist->mutex);
-    log_sys->dict_suggest_checkpoint_lsn = 0;
-    return;
-  }
 
   for (dict_table_t *table = UT_LIST_GET_FIRST(dict_persist->dirty_dict_tables);
        table != NULL;) {
@@ -5499,17 +5507,23 @@ void dict_persist_to_dd_table_buffer() {
 
   ut_ad(dict_persist->num_dirty_tables == 0);
 
-  if (persisted) {
-    /* Get this lsn with dict_persist->mutex held,
-    so no other concurrent dynamic metadata change logs
-    would be before this lsn. */
-    log_sys->dict_suggest_checkpoint_lsn = log_get_lsn(*log_sys);
-  }
+  /* Get this lsn with dict_persist->mutex held,
+  so no other concurrent dynamic metadata change logs
+  would be before this lsn. */
+  const lsn_t persisted_lsn = log_get_lsn(*log_sys);
+
+  /* As soon as we release the dict_persist->mutex, new dynamic
+  metadata changes could happen. They would be not persisted
+  until next call to dict_persist_to_dd_table_buffer.
+  We must not remove redo which could allow to deduce them.
+  Therefore the maximum allowed lsn for checkpoint is the
+  current lsn. */
+  log_set_dict_max_allowed_checkpoint_lsn(*log_sys, persisted_lsn);
 
   mutex_exit(&dict_persist->mutex);
 
   if (persisted) {
-    log_buffer_flush_to_disk();
+    log_write_up_to(*log_sys, persisted_lsn, true);
   }
 }
 
@@ -5519,7 +5533,7 @@ void dict_persist_to_dd_table_buffer() {
 have some changed dynamic metadata in memory and have not been written
 back to mysql.innodb_dynamic_metadata. Update LSN limit, which is used
 to stop user threads when redo log is running out of space and they
-do not hold latches (log.sn_limit_for_start). */
+do not hold latches (log.free_check_limit_sn). */
 static void dict_persist_update_log_margin() {
   /* Below variables basically considers only the AUTO_INCREMENT counter
   and a small margin for corrupted indexes. */
@@ -5560,10 +5574,7 @@ static void dict_persist_update_log_margin() {
 
   if (log_sys != nullptr) {
     /* Update margin for redo log */
-    log_sys->dict_persist_margin.store(margin);
-
-    /* Update log.sn_limit_for_start. */
-    log_update_limits(*log_sys);
+    log_set_dict_persist_margin(*log_sys, margin);
   }
 }
 #endif /* !UNIV_HOTBACKUP */
@@ -5604,7 +5615,7 @@ void dict_ind_init(void) {
   dict_table_t *table;
 
   /* create dummy table and index for REDUNDANT infimum and supremum */
-  table = dict_mem_table_create("SYS_DUMMY1", DICT_HDR_SPACE, 1, 0, 0, 0);
+  table = dict_mem_table_create("SYS_DUMMY1", DICT_HDR_SPACE, 1, 0, 0, 0, 0);
   dict_mem_table_add_col(table, NULL, NULL, DATA_CHAR,
                          DATA_ENGLISH | DATA_NOT_NULL, 8);
 
@@ -5862,6 +5873,7 @@ void dict_resize() {
 
   mutex_exit(&dict_sys->mutex);
 }
+#endif /* !UNIV_HOTBACKUP */
 
 /** Closes the data dictionary module. */
 void dict_close(void) {
@@ -5887,6 +5899,7 @@ void dict_close(void) {
     dict_table_close(dict_sys->ddl_log, true, false);
   }
 
+#ifndef UNIV_HOTBACKUP
   /* Free the hash elements. We don't remove them from the table
   because we are going to destroy the table anyway. */
   for (ulint i = 0; i < hash_get_n_cells(dict_sys->table_id_hash); i++) {
@@ -5903,6 +5916,7 @@ void dict_close(void) {
       dict_table_remove_from_cache(prev_table);
     }
   }
+#endif /* !UNIV_HOTBACKUP */
 
   hash_table_free(dict_sys->table_hash);
 
@@ -5910,7 +5924,9 @@ void dict_close(void) {
   therefore we don't delete the individual elements. */
   hash_table_free(dict_sys->table_id_hash);
 
+#ifndef UNIV_HOTBACKUP
   dict_ind_free();
+#endif /* !UNIV_HOTBACKUP */
 
   mutex_exit(&dict_sys->mutex);
   mutex_free(&dict_sys->mutex);
@@ -5922,10 +5938,12 @@ void dict_close(void) {
 
   mutex_free(&dict_foreign_err_mutex);
 
+#ifndef UNIV_HOTBACKUP
   if (dict_foreign_err_file != NULL) {
     fclose(dict_foreign_err_file);
     dict_foreign_err_file = NULL;
   }
+#endif /* !UNIV_HOTBACKUP */
 
   ut_ad(dict_sys->size == 0);
 
@@ -5933,6 +5951,7 @@ void dict_close(void) {
   dict_sys = NULL;
 }
 
+#ifndef UNIV_HOTBACKUP
 #ifdef UNIV_DEBUG
 /** Validate the dictionary table LRU list.
  @return true if valid */
@@ -6217,10 +6236,9 @@ Other bits are the same.
 dict_table_t::flags |     0     |    1    |     1      |    1
 fil_space_t::flags  |     0     |    0    |     1      |    1
 @param[in]	table_flags	dict_table_t::flags
-@param[in]	is_encrypted	if it's an encrypted table
 @return tablespace flags (fil_space_t::flags) */
-ulint dict_tf_to_fsp_flags(ulint table_flags, bool is_encrypted) {
-  DBUG_EXECUTE_IF("dict_tf_to_fsp_flags_failure", return (ULINT_UNDEFINED););
+uint32_t dict_tf_to_fsp_flags(uint32_t table_flags) {
+  DBUG_EXECUTE_IF("dict_tf_to_fsp_flags_failure", return (UINT32_UNDEFINED););
 
   bool has_atomic_blobs = DICT_TF_HAS_ATOMIC_BLOBS(table_flags);
   page_size_t page_size = dict_tf_get_page_size(table_flags);
@@ -6235,8 +6253,8 @@ ulint dict_tf_to_fsp_flags(ulint table_flags, bool is_encrypted) {
     has_atomic_blobs = false;
   }
 
-  ulint fsp_flags = fsp_flags_init(page_size, has_atomic_blobs, has_data_dir,
-                                   is_shared, false, is_encrypted);
+  uint32_t fsp_flags = fsp_flags_init(page_size, has_atomic_blobs, has_data_dir,
+                                      is_shared, false);
 
   return (fsp_flags);
 }
@@ -6416,7 +6434,7 @@ void DDTableBuffer::open() {
   }
 
   table = dict_mem_table_create(table_name, dict_sys_t::s_space_id, N_USER_COLS,
-                                0, 0, 0);
+                                0, 0, 0, 0);
 
   table->id = dict_sys_t::s_dynamic_meta_table_id;
   table->is_dd_table = true;
@@ -6715,13 +6733,14 @@ void Persister::write_log(table_id_t id,
                           mtr_t *mtr) const {
   byte *log_ptr;
   ulint size = get_write_size(metadata);
+  /* Both table id and version would be written in a compressed format,
+  each of which would cost 1..11 bytes, and MLOG_TABLE_DYNAMIC_META costs
+  1 byte. Refer to mlog_write_initial_dict_log_record() as well */
+  static constexpr uint8_t metadata_log_header_size = 23;
 
   ut_ad(size > 0);
 
-  /* We will write the id in a much compressed format, which costs
-  1..11 bytes, and the MLOG_TABLE_DYNAMIC_META costs 1 byte,
-  refer to mlog_write_initial_dict_log_record() as well */
-  log_ptr = mlog_open_metadata(mtr, 12 + size);
+  log_ptr = mlog_open_metadata(mtr, metadata_log_header_size + size);
   ut_ad(log_ptr != NULL);
 
   log_ptr = mlog_write_initial_dict_log_record(
@@ -7214,7 +7233,7 @@ Acquistion order of SDI MDL and SDI table has to be in same
 order:
 
 1. dd_sdi_acquire_exclusive_mdl
-2. row_drop_table_from_cache()/innobase_drop_tablespace()
+2. row_drop_table_from_cache()/innodb_drop_tablespace()
    ->dict_sdi_remove_from_cache()->dd_table_open_on_id()
 
 In purge:
@@ -7243,7 +7262,7 @@ dberr_t dd_sdi_acquire_exclusive_mdl(THD *thd, space_id_t space_id,
   snprintf(tbl_buf, sizeof(tbl_buf), "SDI_" SPACE_ID_PF, space_id);
 
   /* Submit a higher than default lock wait timeout */
-  unsigned long int lock_wait_timeout = thd_lock_wait_timeout(thd);
+  auto lock_wait_timeout = thd_lock_wait_timeout(thd);
   if (lock_wait_timeout < 100000) {
     lock_wait_timeout += 100000;
   }
@@ -7271,7 +7290,7 @@ Acquistion order of SDI MDL and SDI table has to be in same
 order:
 
 1. dd_sdi_acquire_exclusive_mdl
-2. row_drop_table_from_cache()/innobase_drop_tablespace()
+2. row_drop_table_from_cache()/innodb_drop_tablespace()
    ->dict_sdi_remove_from_cache()->dd_table_open_on_id()
 
 In purge:

@@ -168,7 +168,7 @@ let $slave_sync_timeout = 7200;
 
 connection master;
 
-# --exec rm -rf $MYSQL_TMP_DIR/load_generator
+--exec rm -rf $MYSQL_TMP_DIR/load_generator
 
 --connection slave
 # Restore the value of variable on slave
@@ -181,3 +181,13 @@ connection master;
 --disable_query_log
 #eval SET GLOBAL innodb_prefix_index_cluster_optimization = $innodb_index_cluster_optimization_save_master;
 --enable_query_log
+
+# Reconnect client in case master had been killed
+if ($kill_db_after)
+{
+  --let $rpl_server_number = 1
+  --source include/rpl_reconnect.inc
+}
+
+--let $rpl_only_running_threads= 1
+--source include/rpl_end.inc

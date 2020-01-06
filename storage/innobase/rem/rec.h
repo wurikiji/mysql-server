@@ -24,9 +24,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 *****************************************************************************/
 
-#include "my_compiler.h"
-#include "my_inttypes.h"
-
 /** @file rem/rec.h
  Record manager
 
@@ -233,7 +230,7 @@ ulint rec_get_bit_field_1(
 
 /** Gets a bit field from within 2 bytes. */
 UNIV_INLINE
-ulint rec_get_bit_field_2(
+uint16_t rec_get_bit_field_2(
     const rec_t *rec, /*!< in: pointer to record origin */
     ulint offs,       /*!< in: offset from the origin down */
     ulint mask,       /*!< in: mask used to filter bits */
@@ -298,10 +295,10 @@ ulint rec_get_info_bits_temp(const rec_t *rec) {
 /** The following function is used to get the number of fields
  in an old-style record, which is stored in the rec
  @return number of data fields */
-UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) ulint
+UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) uint16_t
     rec_get_n_fields_old_raw(const rec_t *rec) /*!< in: physical record */
 {
-  ulint ret;
+  uint16_t ret;
 
   ut_ad(rec);
 
@@ -341,14 +338,14 @@ UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) uint16_t
     ut_ad(static_cast<uint16_t>(dict_index_get_n_fields(index)) > n_uniq + 1);
     if (n > n_uniq + 1) {
 #ifdef UNIV_DEBUG
-      uint16_t rec_diff = dict_index_get_n_fields(index) - n;
-      uint16_t col_diff = index->table->n_cols - index->table->n_instant_cols;
+      ulint rec_diff = dict_index_get_n_fields(index) - n;
+      ulint col_diff = index->table->n_cols - index->table->n_instant_cols;
       ut_ad(rec_diff <= col_diff);
       if (n != dict_index_get_n_fields(index)) {
         ut_ad(index->has_instant_cols());
       }
 #endif /* UNIV_DEBUG */
-      n = dict_index_get_n_fields(index);
+      n = static_cast<uint16_t>(dict_index_get_n_fields(index));
     }
   }
 
@@ -462,7 +459,7 @@ field is a field added after an instant ADD COLUMN
 @param[in]	offs	Last offset before current field
 @return The offset of the specified field */
 UNIV_INLINE
-uint64_t rec_get_instant_offset(const dict_index_t *index, uint16_t n,
+uint64_t rec_get_instant_offset(const dict_index_t *index, ulint n,
                                 uint64_t offs) {
   ut_ad(index->has_instant_cols());
 
@@ -516,8 +513,9 @@ UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) ibool rec_offs_validate(
   if (index) {
     ulint max_n_fields;
     ut_ad((ulint)index == offsets[3]);
-    max_n_fields = ut_max(dict_index_get_n_fields(index),
-                          dict_index_get_n_unique_in_tree(index) + 1);
+    ulint n_fields = dict_index_get_n_fields(index);
+    ulint n_unique_in_tree = dict_index_get_n_unique_in_tree(index) + 1;
+    max_n_fields = ut_max(n_fields, n_unique_in_tree);
     if (!comp && rec != nullptr && rec_get_n_fields_old_raw(rec) < i) {
       ut_a(index->has_instant_cols());
     }
@@ -565,6 +563,18 @@ void rec_offs_make_valid(
   offsets[2] = (ulint)rec;
   offsets[3] = (ulint)index;
 }
+
+/** Check if the given two record offsets are identical.
+@param[in]  offsets1  field offsets of a record
+@param[in]  offsets2  field offsets of a record
+@return true if they are identical, false otherwise. */
+bool rec_offs_cmp(ulint *offsets1, ulint *offsets2);
+
+/** Print the record offsets.
+@param[in]    out         the output stream to which offsets are printed.
+@param[in]    offsets     the field offsets of the record.
+@return the output stream. */
+std::ostream &rec_offs_print(std::ostream &out, const ulint *offsets);
 #else
 #define rec_offs_make_valid(rec, index, offsets) ((void)0)
 #endif /* UNIV_DEBUG */
@@ -628,7 +638,8 @@ UNIV_INLINE
 uint16_t rec_init_null_and_len_temp(const rec_t *rec, const dict_index_t *index,
                                     const byte **nulls, const byte **lens,
                                     uint16_t *n_null) {
-  uint16_t non_default_fields = dict_index_get_n_fields(index);
+  uint16_t non_default_fields =
+      static_cast<uint16_t>(dict_index_get_n_fields(index));
 
   *nulls = rec - 1;
 
@@ -670,7 +681,8 @@ UNIV_INLINE
 uint16_t rec_init_null_and_len_comp(const rec_t *rec, const dict_index_t *index,
                                     const byte **nulls, const byte **lens,
                                     uint16_t *n_null) {
-  uint16_t non_default_fields = dict_index_get_n_fields(index);
+  uint16_t non_default_fields =
+      static_cast<uint16_t>(dict_index_get_n_fields(index));
 
   *nulls = rec - (REC_N_NEW_EXTRA_BYTES + 1);
 
@@ -710,7 +722,7 @@ void rec_init_offsets_comp_ordinary(
     ulint *offsets)            /*!< in/out: array of offsets;
                                in: n=rec_offs_n_fields(offsets) */
 {
-  ulint i = 0;
+  uint16_t i = 0;
   ulint offs = 0;
   ulint any_ext = 0;
   uint16_t n_null = 0;
@@ -747,7 +759,7 @@ void rec_init_offsets_comp_ordinary(
   do {
     const dict_field_t *field = index->get_field(i);
     const dict_col_t *col = field->col;
-    ulint len;
+    uint64_t len;
 
     if (i >= non_default_fields) {
       ut_ad(index->has_instant_cols());
@@ -861,4 +873,5 @@ UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) ulint
 
   return (mach_read_from_2(rec - (REC_N_OLD_EXTRA_BYTES + 2 * n + 2)));
 }
+
 #endif

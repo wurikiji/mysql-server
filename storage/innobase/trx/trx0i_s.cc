@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2007, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2007, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -53,7 +53,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "lock0iter.h"
 #include "lock0lock.h"
 #include "mem0mem.h"
-#include "my_inttypes.h"
+#include "mysql/plugin.h"
 #include "page0page.h"
 #include "rem0rec.h"
 #include "row0row.h"
@@ -66,6 +66,18 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "ut0mem.h"
 
 #include "storage/perfschema/pfs_data_lock.h"
+static_assert(sizeof(pk_pos_data_lock::m_engine_lock_id) >
+                  TRX_I_S_LOCK_ID_MAX_LEN,
+              "pk_pos_data_lock::m_engine_lock_id must be able to hold "
+              "engine_lock_id which has TRX_I_S_LOCK_ID_MAX_LEN chars");
+static_assert(sizeof(pk_pos_data_lock_wait::m_requesting_engine_lock_id) >
+                  TRX_I_S_LOCK_ID_MAX_LEN,
+              "pk_pos_data_lock_wait::m_requesting_engine_lock_id must be able "
+              "to hold engine_lock_id which has TRX_I_S_LOCK_ID_MAX_LEN chars");
+static_assert(sizeof(pk_pos_data_lock_wait::m_blocking_engine_lock_id) >
+                  TRX_I_S_LOCK_ID_MAX_LEN,
+              "pk_pos_data_lock_wait::m_blocking_engine_lock_id must be able "
+              "to hold engine_lock_id which has TRX_I_S_LOCK_ID_MAX_LEN chars");
 
 /** Initial number of rows in the table cache */
 #define TABLE_CACHE_INITIAL_ROWSNUM 1024
@@ -155,17 +167,17 @@ struct i_s_table_cache_t {
 
 /** This structure describes the intermediate buffer */
 struct trx_i_s_cache_t {
-  rw_lock_t *rw_lock;             /*!< read-write lock protecting
-                                  the rest of this structure */
-  uintmax_t last_read;            /*!< last time the cache was read;
-                                  measured in microseconds since
-                                  epoch */
-  ib_mutex_t last_read_mutex;     /*!< mutex protecting the
-                          last_read member - it is updated
-                          inside a shared lock of the
-                          rw_lock member */
-  i_s_table_cache_t innodb_trx;   /*!< innodb_trx table */
-  i_s_table_cache_t innodb_locks; /*!< innodb_locks table */
+  rw_lock_t *rw_lock;               /*!< read-write lock protecting
+                                    the rest of this structure */
+  ib_time_monotonic_us_t last_read; /*!< last time the cache was read;
+                                    measured in microseconds since
+                                    epoch */
+  ib_mutex_t last_read_mutex;       /*!< mutex protecting the
+                            last_read member - it is updated
+                            inside a shared lock of the
+                            rw_lock member */
+  i_s_table_cache_t innodb_trx;     /*!< innodb_trx table */
+  i_s_table_cache_t innodb_locks;   /*!< innodb_locks table */
 /** the hash table size is LOCKS_HASH_CELLS_NUM * sizeof(void*) bytes */
 #define LOCKS_HASH_CELLS_NUM 10000
   hash_table_t *locks_hash; /*!< hash table used to eliminate
@@ -385,6 +397,8 @@ static void *table_cache_create_empty_row(
 static ibool i_s_locks_row_validate(
     const i_s_locks_row_t *row) /*!< in: row to validate */
 {
+  ut_ad(row->lock_immutable_id != 0);
+  ut_ad(row->lock_trx_immutable_id != 0);
   ut_ad(row->lock_table_id != 0);
 
   if (row->lock_space == SPACE_UNKNOWN) {
@@ -419,6 +433,8 @@ static ibool fill_trx_row(
   size_t stmt_len;
   const char *s;
 
+  /* We are going to read various trx->lock fields protected by trx->mutex */
+  ut_ad(trx_mutex_own(trx));
   ut_ad(lock_mutex_own());
 
   row->trx_id = trx_get_id_for_print(trx);
@@ -481,11 +497,7 @@ thd_done:
 
   row->trx_tables_in_use = trx->n_mysql_tables_in_use;
 
-  row->trx_tables_locked = lock_number_of_tables_locked(&trx->lock);
-
-  /* These are protected by both trx->mutex or lock_sys->mutex,
-  or just lock_sys->mutex. For reading, it suffices to hold
-  lock_sys->mutex. */
+  row->trx_tables_locked = lock_number_of_tables_locked(trx);
 
   row->trx_lock_structs = UT_LIST_GET_LEN(trx->lock.trx_locks);
 
@@ -656,7 +668,7 @@ void p_s_fill_lock_data(const char **lock_data, const lock_t *lock,
 
   index = lock_rec_get_index(lock);
 
-  n_fields = dict_index_get_n_unique(index);
+  n_fields = dict_index_get_n_unique_in_tree(index);
 
   ut_a(n_fields > 0);
 
@@ -685,20 +697,9 @@ void p_s_fill_lock_data(const char **lock_data, const lock_t *lock,
   mtr_commit(&mtr);
 }
 
-/** Fills i_s_locks_row_t object. Returns its first argument.
- If memory can not be allocated then FALSE is returned.
- @return false if allocation fails */
-static ibool fill_locks_row(
-    i_s_locks_row_t *row,   /*!< out: result object that's filled */
-    const lock_t *lock,     /*!< in: lock to get data from */
-    ulint heap_no,          /*!< in: lock's record number
-                            or ULINT_UNDEFINED if the lock
-                            is a table lock */
-    trx_i_s_cache_t *cache) /*!< in/out: cache into which to copy
-                            volatile strings */
-{
-  row->lock_trx_id = lock_get_trx_id(lock);
-
+void fill_locks_row(i_s_locks_row_t *row, const lock_t *lock, ulint heap_no) {
+  row->lock_immutable_id = lock_get_immutable_id(lock);
+  row->lock_trx_immutable_id = lock_get_trx_immutable_id(lock);
   switch (lock_get_type(lock)) {
     case LOCK_REC:
 
@@ -721,8 +722,6 @@ static ibool fill_locks_row(
   row->lock_table_id = lock_get_table_id(lock);
 
   ut_ad(i_s_locks_row_validate(row));
-
-  return (TRUE);
 }
 
 /** Adds new element to the locks cache, enlarging it if necessary.
@@ -747,11 +746,7 @@ static i_s_locks_row_t *add_lock_to_cache(
     return (NULL);
   }
 
-  if (!fill_locks_row(dst_row, lock, heap_no, cache)) {
-    /* memory could not be allocated */
-    cache->innodb_locks.rows_used--;
-    return (NULL);
-  }
+  fill_locks_row(dst_row, lock, heap_no);
 
   ut_ad(i_s_locks_row_validate(dst_row));
   return (dst_row);
@@ -833,8 +828,6 @@ the same version of the cache. */
  @return true if can be updated */
 static ibool can_cache_be_updated(trx_i_s_cache_t *cache) /*!< in: cache */
 {
-  uintmax_t now;
-
   /* Here we read cache->last_read without acquiring its mutex
   because last_read is only updated when a shared rw lock on the
   whole cache is being held (see trx_i_s_cache_end_read()) and
@@ -844,7 +837,7 @@ static ibool can_cache_be_updated(trx_i_s_cache_t *cache) /*!< in: cache */
 
   ut_ad(rw_lock_own(cache->rw_lock, RW_LOCK_X));
 
-  now = ut_time_us(NULL);
+  const auto now = ut_time_monotonic_us();
   if (now - cache->last_read > CACHE_MIN_IDLE_TIME_US) {
     return (TRUE);
   }
@@ -1042,12 +1035,10 @@ void trx_i_s_cache_start_read(trx_i_s_cache_t *cache) /*!< in: cache */
 /** Release a shared/read lock on the tables cache. */
 void trx_i_s_cache_end_read(trx_i_s_cache_t *cache) /*!< in: cache */
 {
-  uintmax_t now;
-
   ut_ad(rw_lock_own(cache->rw_lock, RW_LOCK_S));
 
   /* update cache last read time */
-  now = ut_time_us(NULL);
+  const auto now = ut_time_monotonic_us();
   mutex_enter(&cache->last_read_mutex);
   cache->last_read = now;
   mutex_exit(&cache->last_read_mutex);
@@ -1134,7 +1125,9 @@ void *trx_i_s_cache_get_nth_row(trx_i_s_cache_t *cache, /*!< in: cache */
 
   return (row);
 }
-
+constexpr const char *LOCK_RECORD_ID_FORMAT =
+    UINT64PF ":" SPACE_ID_PF ":" PAGE_NO_PF ":" ULINTPF ":" UINT64PF;
+constexpr const char *LOCK_TABLE_ID_FORMAT = UINT64PF ":" UINT64PF ":" UINT64PF;
 /** Crafts a lock id string from a i_s_locks_row_t object. Returns its
  second argument. This function aborts if there is not enough space in
  lock_id. Be sure to provide at least TRX_I_S_LOCK_ID_MAX_LEN + 1 if you
@@ -1152,14 +1145,14 @@ char *trx_i_s_create_lock_id(
 
   if (row->lock_space != SPACE_UNKNOWN) {
     /* record lock */
-    res_len = snprintf(lock_id, lock_id_size,
-                       TRX_ID_FMT ":" SPACE_ID_PF ":" PAGE_NO_PF ":" ULINTPF,
-                       row->lock_trx_id, row->lock_space, row->lock_page,
-                       row->lock_rec);
+    res_len = snprintf(lock_id, lock_id_size, LOCK_RECORD_ID_FORMAT,
+                       row->lock_trx_immutable_id, row->lock_space,
+                       row->lock_page, row->lock_rec, row->lock_immutable_id);
   } else {
     /* table lock */
-    res_len = snprintf(lock_id, lock_id_size, TRX_ID_FMT ":" UINT64PF,
-                       row->lock_trx_id, row->lock_table_id);
+    res_len = snprintf(lock_id, lock_id_size, LOCK_TABLE_ID_FORMAT,
+                       row->lock_trx_immutable_id, row->lock_table_id,
+                       row->lock_immutable_id);
   }
 
   /* the typecast is safe because snprintf(3) never returns
@@ -1168,4 +1161,18 @@ char *trx_i_s_create_lock_id(
   ut_a((ulint)res_len < lock_id_size);
 
   return (lock_id);
+}
+
+int trx_i_s_parse_lock_id(const char *lock_id, i_s_locks_row_t *row) {
+  if (sscanf(lock_id, LOCK_RECORD_ID_FORMAT, &row->lock_trx_immutable_id,
+             &row->lock_space, &row->lock_page, &row->lock_rec,
+             &row->lock_immutable_id) == 5) {
+    return LOCK_REC;
+  }
+  if (sscanf(lock_id, LOCK_TABLE_ID_FORMAT, &row->lock_trx_immutable_id,
+             &row->lock_table_id, &row->lock_immutable_id) == 3) {
+    return LOCK_TABLE;
+  }
+  ut_ad(LOCK_TABLE != 0 && LOCK_REC != 0);
+  return 0;
 }

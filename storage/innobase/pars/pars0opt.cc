@@ -37,7 +37,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "dict0boot.h"
 #include "dict0dict.h"
 #include "dict0mem.h"
-#include "my_inttypes.h"
+#include "lock0lock.h"
 #include "pars0grm.h"
 #include "pars0pars.h"
 #include "que0que.h"
@@ -639,11 +639,10 @@ static ulint opt_classify_comparison(
 }
 
 /** Recursively looks for test conditions for a table in a join. */
-static void opt_find_test_conds(
-    sel_node_t *sel_node, /*!< in: select node */
-    ulint i,              /*!< in: ith table in the join */
-    func_node_t *cond)    /*!< in: conjunction of search
-                          conditions or NULL */
+static void opt_find_test_conds(sel_node_t *sel_node, /*!< in: select node */
+                                ulint i, /*!< in: ith table in the join */
+                                func_node_t *cond) /*!< in: conjunction of
+                                                   search conditions or NULL */
 {
   func_node_t *new_cond;
   ulint fclass;

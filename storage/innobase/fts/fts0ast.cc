@@ -37,7 +37,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "fts0fts.h"
 #include "fts0pars.h"
 #include "ha_prototypes.h"
-#include "my_inttypes.h"
 
 /* The FTS ast visit pass. */
 enum fts_ast_visit_pass_t {
@@ -357,9 +356,8 @@ fts_ast_node_t *fts_ast_add_node(
 }
 
 /** Set the wildcard attribute of a term. */
-void fts_ast_term_set_wildcard(
-    fts_ast_node_t *node) /*!< in/out: set attribute of
-                          a term node */
+void fts_ast_term_set_wildcard(fts_ast_node_t *node) /*!< in/out: set attribute
+                                                     of a term node */
 {
   if (!node) {
     return;

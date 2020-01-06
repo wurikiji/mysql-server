@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -29,6 +29,7 @@
 #include "sql/gis/srid.h"
 #include "sql/gstream.h"
 #include "sql/spatial.h"
+#include "unittest/gunit/test_utils.h"  // Server_initializer
 
 namespace gis_algo_unittest {
 
@@ -40,6 +41,11 @@ class SetRingOrderTest : public ::testing::Test {
   SetRingOrderTest() : my_flags(Geometry::wkb_linestring, 0) {
     latincc = &my_charset_latin1;
   }
+
+  void SetUp() { m_init.SetUp(); }
+
+  void TearDown() { m_init.TearDown(); }
+
   Geometry *geometry_from_text(const String &wkt, String *wkb,
                                Geometry_buffer *geobuf);
   void set_order_and_compare(const std::string &str, const std::string &str2,
@@ -50,11 +56,12 @@ class SetRingOrderTest : public ::testing::Test {
   String str, str2, wkt, wkt2;
   Geometry_buffer buffer, buffer2;
   Geometry::Flags_t my_flags;
+  my_testing::Server_initializer m_init;
 };
 
 Geometry *SetRingOrderTest::geometry_from_text(const String &wkt, String *wkb,
                                                Geometry_buffer *geobuf) {
-  Gis_read_stream trs(wkt.charset(), wkt.ptr(), wkt.length());
+  Gis_read_stream trs(m_init.thd(), wkt.charset(), wkt.ptr(), wkt.length());
 
   wkb->set_charset(&my_charset_bin);
   wkb->length(0);
@@ -191,15 +198,13 @@ TEST_F(GeometryManipulationTest, PolygonCopyTest) {
   plgn3.to_wkb_unparsed();
   plgn3.as_wkb(&wkb5, true);
   EXPECT_EQ(wkb3.length(), wkb5.length());
-  EXPECT_EQ(memcmp(((char *)wkb3.ptr()) + WKB_HEADER_SIZE,
-                   ((char *)wkb5.ptr()) + WKB_HEADER_SIZE,
+  EXPECT_EQ(memcmp(wkb3.ptr() + WKB_HEADER_SIZE, wkb5.ptr() + WKB_HEADER_SIZE,
                    wkb5.length() - WKB_HEADER_SIZE),
             0);
 
   plgn2.as_geometry(&wkb4, false);
   EXPECT_EQ(wkb3.length() + 4, wkb4.length());
-  EXPECT_EQ(memcmp(GEOM_HEADER_SIZE + ((char *)wkb4.ptr()),
-                   ((char *)wkb3.ptr()) + WKB_HEADER_SIZE,
+  EXPECT_EQ(memcmp(GEOM_HEADER_SIZE + wkb4.ptr(), wkb3.ptr() + WKB_HEADER_SIZE,
                    wkb3.length() - WKB_HEADER_SIZE),
             0);
 
@@ -241,10 +246,6 @@ TEST_F(GeometryManipulationTest, PolygonManipulationTest) {
   Gis_line_string ls(ls0->get_data_ptr(), ls0->get_data_size(),
                      ls0->get_flags(), ls0->get_srid());
   Gis_line_string ls00(*ls0);
-
-  ls = ls;
-  ls00 = ls00;
-  plgn = plgn;
 
   Geometry_buffer buffer3;
   String wkt3, str3;

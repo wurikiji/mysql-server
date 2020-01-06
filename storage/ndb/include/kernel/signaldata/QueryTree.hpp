@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -127,6 +127,19 @@ struct DABits
      * the same parent scan.
      */
     NI_REPEAT_SCAN_RESULT = 0x200,
+
+    /**
+     * If INNER_JOIN is set, we need only to return rows if there
+     * is a (equality-) match on both tables.
+     * For non-matches the parent tuple will eventually be removed from the
+     * result set. This implies that other join-siblings of this parent
+     * tuple also will effectively be eliminated. Thus, producing further
+     * results having this tuple as a parent could be skipped.
+     *
+     * In Sql terms this is an INNER JOIN. Not setting an INNER_JOIN 
+     * is similar to 'LEFT OUTER JOIN' result being produced.
+     */ 
+    NI_INNER_JOIN = 0x400,
 
     NI_END = 0
   };
@@ -388,6 +401,13 @@ struct QN_ScanFragParameters
      *   with (partial) ordering
      */
     SFP_PARALLEL = 0x20000,
+
+    /**
+     * Should it produce result rows strictly in
+     *   the order defined by the ordered index being used.
+     *   (Also require SFP_PARALLEL)
+     */
+    SFP_SORTED_ORDER = 0x40000,
 
     SFP_END = 0
   };

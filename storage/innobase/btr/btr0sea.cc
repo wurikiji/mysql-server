@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2008, Google Inc.
 
 Portions of this file contain modifications contributed and copyrighted by
@@ -46,8 +46,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "btr0pcur.h"
 #include "buf0buf.h"
 #include "ha0ha.h"
-#include "my_compiler.h"
-#include "my_inttypes.h"
+
 #include "page0cur.h"
 #include "page0page.h"
 #include "srv0mon.h"
@@ -545,7 +544,7 @@ static ibool btr_search_update_block_hash_info(btr_search_t *info,
   if ((block->n_hash_helps > 0) && (info->n_hash_potential > 0) &&
       (block->n_fields == info->n_fields) &&
       (block->n_bytes == info->n_bytes) &&
-      (block->left_side == info->left_side)) {
+      (block->left_side == !!info->left_side)) {
     if ((block->index) && (block->curr_n_fields == info->n_fields) &&
         (block->curr_n_bytes == info->n_bytes) &&
         (block->curr_left_side == info->left_side)) {
@@ -675,7 +674,7 @@ void btr_search_info_update_slow(btr_search_t *info, btr_cur_t *cursor) {
   }
 
   if (cursor->flag == BTR_CUR_HASH_FAIL) {
-  /* Update the hash node reference, if appropriate */
+    /* Update the hash node reference, if appropriate */
 
 #ifdef UNIV_SEARCH_PERF_STAT
     btr_search_n_hash_fail++;
@@ -735,7 +734,7 @@ static ibool btr_search_check_guess(btr_cur_t *cursor,
   match = 0;
 
   offsets = rec_get_offsets(rec, cursor->index, offsets, n_unique, &heap);
-  cmp = cmp_dtuple_rec_with_match(tuple, rec, cursor->index, offsets, &match);
+  cmp = tuple->compare(rec, cursor->index, offsets, &match);
 
   if (mode == PAGE_CUR_GE) {
     if (cmp > 0) {
@@ -788,8 +787,7 @@ static ibool btr_search_check_guess(btr_cur_t *cursor,
 
     offsets =
         rec_get_offsets(prev_rec, cursor->index, offsets, n_unique, &heap);
-    cmp = cmp_dtuple_rec_with_match(tuple, prev_rec, cursor->index, offsets,
-                                    &match);
+    cmp = tuple->compare(prev_rec, cursor->index, offsets, &match);
     if (mode == PAGE_CUR_GE) {
       success = cmp > 0;
     } else {
@@ -815,8 +813,7 @@ static ibool btr_search_check_guess(btr_cur_t *cursor,
 
     offsets =
         rec_get_offsets(next_rec, cursor->index, offsets, n_unique, &heap);
-    cmp = cmp_dtuple_rec_with_match(tuple, next_rec, cursor->index, offsets,
-                                    &match);
+    cmp = tuple->compare(next_rec, cursor->index, offsets, &match);
     if (mode == PAGE_CUR_LE) {
       success = cmp < 0;
       cursor->up_match = match;
@@ -939,8 +936,8 @@ ibool btr_search_guess_on_hash(dict_index_t *index, btr_search_t *info,
   buf_block_t *block = buf_block_from_ahi(rec);
 
   if (!has_search_latch) {
-    if (!buf_page_get_known_nowait(latch_mode, block, BUF_MAKE_YOUNG, __FILE__,
-                                   __LINE__, mtr)) {
+    if (!buf_page_get_known_nowait(latch_mode, block, Cache_hint::MAKE_YOUNG,
+                                   __FILE__, __LINE__, mtr)) {
       if (!has_search_latch) {
         btr_search_s_unlock(index);
       }
@@ -1022,9 +1019,9 @@ ibool btr_search_guess_on_hash(dict_index_t *index, btr_search_t *info,
     ut_ad(btr_cur_get_rec(&cursor2) == btr_cur_get_rec(cursor));
   }
 
-    /* NOTE that it is theoretically possible that the above assertions
-    fail if the page of the cursor gets removed from the buffer pool
-    meanwhile! Thus it might not be a bug. */
+  /* NOTE that it is theoretically possible that the above assertions
+  fail if the page of the cursor gets removed from the buffer pool
+  meanwhile! Thus it might not be a bug. */
 #endif
   info->last_hash_succ = TRUE;
 
@@ -1258,8 +1255,9 @@ void btr_search_drop_page_hash_when_freed(const page_id_t &page_id,
   are possibly holding, we cannot s-latch the page, but must
   (recursively) x-latch it, even though we are only reading. */
 
-  block = buf_page_get_gen(page_id, page_size, RW_X_LATCH, NULL,
-                           BUF_PEEK_IF_IN_POOL, __FILE__, __LINE__, &mtr);
+  block =
+      buf_page_get_gen(page_id, page_size, RW_X_LATCH, NULL,
+                       Page_fetch::PEEK_IF_IN_POOL, __FILE__, __LINE__, &mtr);
 
   if (block) {
     /* If AHI is still valid, page can't be in free state.

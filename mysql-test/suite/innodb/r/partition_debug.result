@@ -1,18 +1,95 @@
 #
+# Test that INFORMATION_SCHEMA.INNODB_COLUMNS shows warning
+# if the table is dropped while filling metadata
+#
+CREATE TABLE t_part (a INT PRIMARY KEY, b INT, c VARCHAR(64))
+PARTITION BY HASH (a) PARTITIONS 5;
+SELECT lower(t.name), lower(c.name) FROM
+INFORMATION_SCHEMA.INNODB_COLUMNS c
+JOIN INFORMATION_SCHEMA.INNODB_TABLES t
+WHERE t.table_id = c.table_id AND t.name LIKE '%t_part%'
+  ORDER BY t.name, c.name;
+lower(t.name)	lower(c.name)
+test/t_part#p#p0	a
+test/t_part#p#p0	b
+test/t_part#p#p0	c
+test/t_part#p#p1	a
+test/t_part#p#p1	b
+test/t_part#p#p1	c
+test/t_part#p#p2	a
+test/t_part#p#p2	b
+test/t_part#p#p2	c
+test/t_part#p#p3	a
+test/t_part#p#p3	b
+test/t_part#p#p3	c
+test/t_part#p#p4	a
+test/t_part#p#p4	b
+test/t_part#p#p4	c
+SET DEBUG_SYNC = 'RESET';
+SET DEBUG='+d,do_before_filling_i_s_innodb_columns';
+SET DEBUG_SYNC='wait_before_filling_i_s_innodb_columns SIGNAL parked WAIT_FOR go';
+SELECT lower(t.name), lower(c.name) FROM
+INFORMATION_SCHEMA.INNODB_COLUMNS c
+JOIN INFORMATION_SCHEMA.INNODB_TABLES t
+WHERE t.table_id = c.table_id AND t.name LIKE '%t_part%'
+  ORDER BY t.name, c.name;
+SET DEBUG_SYNC='now WAIT_FOR parked';
+SELECT COUNT(*) FROM INFORMATION_SCHEMA.PROCESSLIST;
+COUNT(*)
+3
+DROP TABLE t_part;
+SET DEBUG_SYNC='now SIGNAL go';
+lower(t.name)	lower(c.name)
+SHOW WARNINGS;
+Level	Code	Message
+Pattern "Unable to open innodb table with id = .* in the data dictionary." found
+SET DEBUG_SYNC='RESET';
+SET DEBUG='-d,do_before_filling_i_s_innodb_columns';
+#
+# Test that INFORMATION_SCHEMA.INNODB_COLUMNS shows warning
+# if the table is locked while filling metadata
+#
+CREATE TABLE t_nopart (a INT PRIMARY KEY, b INT, c VARCHAR(64));
+INSERT INTO t_nopart VALUES (1, 1, 'v');
+SET DEBUG='+d,do_before_filling_i_s_innodb_columns';
+SET DEBUG_SYNC='wait_before_filling_i_s_innodb_columns SIGNAL parked1 WAIT_FOR go1';
+SET SESSION lock_wait_timeout=1;
+SELECT lower(t.name), lower(c.name) FROM
+INFORMATION_SCHEMA.INNODB_COLUMNS c
+JOIN INFORMATION_SCHEMA.INNODB_TABLES t
+WHERE t.table_id = c.table_id AND t.name LIKE '%t_nopart%'
+  ORDER BY t.name, c.name;
+SET DEBUG_SYNC='now WAIT_FOR parked1';
+SELECT COUNT(*) FROM INFORMATION_SCHEMA.PROCESSLIST;
+COUNT(*)
+3
+SET DEBUG_SYNC='mysql_rm_table_after_lock_table_names SIGNAL parked2 WAIT_FOR go2';
+DROP TABLE t_nopart;
+SET DEBUG_SYNC='now WAIT_FOR parked2';
+SELECT COUNT(*) FROM INFORMATION_SCHEMA.PROCESSLIST;
+COUNT(*)
+4
+SET DEBUG_SYNC='now SIGNAL go1';
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+SHOW WARNINGS;
+Level	Code	Message
+Error	1205	Lock wait timeout exceeded; try restarting transaction
+Warning	1205	Lock wait timeout exceeded; try restarting transaction
+SET DEBUG_SYNC='now SIGNAL go2';
+SET SESSION lock_wait_timeout=default;
+SET DEBUG='-d,do_before_filling_i_s_innodb_columns';
 # Different partitions can have different row format
 # Case one: between dynamic and redundant
 #
 SET GLOBAL innodb_default_row_format = REDUNDANT;
-CREATE TABLESPACE tbs01 ADD DATAFILE './tbs01.ibd';
-CREATE TABLE t1 (a INT NOT NULL, d INT NOT NULL, index(a, d)) ENGINE=InnoDB TABLESPACE tbs01 PARTITION BY LIST COLUMNS (a,d)  (PARTITION p36_1 VALUES IN ((10,5),(10,6)), PARTITION p36_2 VALUES IN ((11,5),(11,6)));
+CREATE TABLE t1 (a INT NOT NULL, d INT NOT NULL, index(a, d)) ENGINE=InnoDB PARTITION BY LIST COLUMNS (a,d)  (PARTITION p36_1 VALUES IN ((10,5),(10,6)), PARTITION p36_2 VALUES IN ((11,5),(11,6)));
 SET SESSION debug= '+d,skip_dd_table_access_check';
 SELECT name, se_private_data FROM mysql.table_partitions;
 name	se_private_data
 p36_1	NULL
 p36_2	NULL
 # restart
-CREATE TABLESPACE tbs02 ADD DATAFILE './tbs02.ibd';
-ALTER TABLE t1 ADD PARTITION (PARTITION p_r13 VALUES IN ((741,377), (21,728)), PARTITION p_r23 VALUES IN ((102,337), (453,337), (-9,179)) TABLESPACE=tbs02);
+ALTER TABLE t1 ADD PARTITION (PARTITION p_r13 VALUES IN ((741,377), (21,728)), PARTITION p_r23 VALUES IN ((102,337), (453,337), (-9,179)));
 SET SESSION debug= '+d,skip_dd_table_access_check';
 SELECT name, se_private_data FROM mysql.table_partitions;
 name	se_private_data
@@ -29,12 +106,12 @@ t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   `d` int(11) NOT NULL,
   KEY `a` (`a`,`d`)
-) /*!50100 TABLESPACE `tbs01` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 /*!50500 PARTITION BY LIST  COLUMNS(a,d)
-(PARTITION p36_1 VALUES IN ((10,5),(10,6)) TABLESPACE = `tbs01` ENGINE = InnoDB,
- PARTITION p36_2 VALUES IN ((11,5),(11,6)) TABLESPACE = `tbs01` ENGINE = InnoDB,
- PARTITION p_r13 VALUES IN ((741,377),(21,728)) TABLESPACE = `tbs01` ENGINE = InnoDB,
- PARTITION p_r23 VALUES IN ((102,337),(453,337),(-9,179)) TABLESPACE = `tbs02` ENGINE = InnoDB) */
+(PARTITION p36_1 VALUES IN ((10,5),(10,6)) ENGINE = InnoDB,
+ PARTITION p36_2 VALUES IN ((11,5),(11,6)) ENGINE = InnoDB,
+ PARTITION p_r13 VALUES IN ((741,377),(21,728)) ENGINE = InnoDB,
+ PARTITION p_r23 VALUES IN ((102,337),(453,337),(-9,179)) ENGINE = InnoDB) */
 # restart
 SET SESSION debug= '+d,skip_dd_table_access_check';
 SELECT name, se_private_data FROM mysql.table_partitions;
@@ -47,8 +124,6 @@ CHECK TABLE t1;
 Table	Op	Msg_type	Msg_text
 test.t1	check	status	OK
 DROP TABLE t1;
-DROP TABLESPACE tbs01;
-DROP TABLESPACE tbs02;
 SET GLOBAL innodb_default_row_format = Default;
 #
 # Different partitions can have different row format

@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -121,7 +121,7 @@ static void report_errors(SSL *ssl) {
   int line, flags = 0;
   char buf[512];
 
-  DBUG_ENTER("report_errors");
+  DBUG_TRACE;
 
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags))) {
     DBUG_PRINT("error", ("OpenSSL: %s:%s:%d:%s\n", ERR_error_string(l, buf),
@@ -133,7 +133,6 @@ static void report_errors(SSL *ssl) {
                ("error: %s", ERR_error_string(SSL_get_error(ssl, l), buf)));
 
   DBUG_PRINT("info", ("socket_errno: %d", socket_errno));
-  DBUG_VOID_RETURN;
 }
 
 #endif
@@ -186,10 +185,20 @@ static void ssl_set_sys_error(int ssl_error) {
 }
 
 /**
-  This function does two things:
+  Check if an operation should be retried and handle errors
+
+  This function does the following:
     - it indicates whether a SSL I/O operation must be retried later;
+    - if DBUG is enabled it prints all the errors in the thread's queue to DBUG
     - it clears the OpenSSL error queue, thus the next OpenSSL-operation can be
       performed even after failed OpenSSL-call.
+
+  Note that this is not done for SSL_ERROR_WANT_READ/SSL_ERROR_WANT_WRITE
+  since these are not treated as errors and a call to the function is retried.
+
+  When SSL_ERROR_SSL is returned the ERR code of the top error in the queue is
+  peeked and returned to the caller so they can call ERR_error_string_n() and
+  retrieve the right error message.
 
   @param vio  VIO object representing a SSL connection.
   @param ret  Value returned by a SSL I/O function.
@@ -203,7 +212,7 @@ static void ssl_set_sys_error(int ssl_error) {
 
 static bool ssl_should_retry(Vio *vio, int ret, enum enum_vio_io_event *event,
                              unsigned long *ssl_errno_holder) {
-  int ssl_error;
+  int ssl_error, err_error;
   SSL *ssl = static_cast<SSL *>(vio->ssl_arg);
   bool should_retry = true;
 
@@ -213,12 +222,17 @@ static bool ssl_should_retry(Vio *vio, int ret, enum enum_vio_io_event *event,
   /* Retrieve the result for the SSL I/O operation. */
   switch (ssl_error) {
     case SSL_ERROR_WANT_READ:
+      err_error = ssl_error;  // for backward compatibility.
       *event = VIO_IO_EVENT_READ;
       break;
     case SSL_ERROR_WANT_WRITE:
+      err_error = ssl_error;  // for backward compatibility.
       *event = VIO_IO_EVENT_WRITE;
       break;
     default:
+      /* first save the top ERR error */
+      err_error = ERR_get_error();
+      /* now report all remaining errors on and/or clear the error stack */
 #ifndef DBUG_OFF /* Debug build */
       /* Note: the OpenSSL error queue gets cleared in report_errors(). */
       report_errors(ssl);
@@ -230,23 +244,17 @@ static bool ssl_should_retry(Vio *vio, int ret, enum enum_vio_io_event *event,
       break;
   }
 
-  *ssl_errno_holder = ssl_error;
+  *ssl_errno_holder = err_error;
 
   return should_retry;
 }
 
-#ifdef HAVE_WOLFSSL
-size_t vio_ssl_read(Vio *vio, uchar *buf, size_t size) {
-  // YASSL maps ETIMEOUT to EWOULDBLOCK and hence no need for retry here.
-  return SSL_read(static_cast<SSL *>(vio->ssl_arg), buf, (int)size);
-}
-#else
 size_t vio_ssl_read(Vio *vio, uchar *buf, size_t size) {
   int ret;
   SSL *ssl = static_cast<SSL *>(vio->ssl_arg);
   unsigned long ssl_errno_not_used;
 
-  DBUG_ENTER("vio_ssl_read");
+  DBUG_TRACE;
 
   while (1) {
     enum enum_vio_io_event event;
@@ -265,20 +273,30 @@ size_t vio_ssl_read(Vio *vio, uchar *buf, size_t size) {
     /* Process the SSL I/O error. */
     if (!ssl_should_retry(vio, ret, &event, &ssl_errno_not_used)) break;
 
+    if (!vio->is_blocking_flag) {
+      switch (event) {
+        case VIO_IO_EVENT_READ:
+          return VIO_SOCKET_WANT_READ;
+        case VIO_IO_EVENT_WRITE:
+          return VIO_SOCKET_WANT_WRITE;
+        default:
+          return VIO_SOCKET_ERROR;
+      }
+    }
+
     /* Attempt to wait for an I/O event. */
     if (vio_socket_io_wait(vio, event)) break;
   }
 
-  DBUG_RETURN(ret < 0 ? -1 : ret);
+  return ret < 0 ? -1 : ret;
 }
-#endif
 
 size_t vio_ssl_write(Vio *vio, const uchar *buf, size_t size) {
   int ret;
   SSL *ssl = static_cast<SSL *>(vio->ssl_arg);
   unsigned long ssl_errno_not_used;
 
-  DBUG_ENTER("vio_ssl_write");
+  DBUG_TRACE;
 
   while (1) {
     enum enum_vio_io_event event;
@@ -297,17 +315,28 @@ size_t vio_ssl_write(Vio *vio, const uchar *buf, size_t size) {
     /* Process the SSL I/O error. */
     if (!ssl_should_retry(vio, ret, &event, &ssl_errno_not_used)) break;
 
+    if (!vio->is_blocking_flag) {
+      switch (event) {
+        case VIO_IO_EVENT_READ:
+          return VIO_SOCKET_WANT_READ;
+        case VIO_IO_EVENT_WRITE:
+          return VIO_SOCKET_WANT_WRITE;
+        default:
+          return VIO_SOCKET_ERROR;
+      }
+    }
+
     /* Attempt to wait for an I/O event. */
     if (vio_socket_io_wait(vio, event)) break;
   }
 
-  DBUG_RETURN(ret < 0 ? -1 : ret);
+  return ret < 0 ? -1 : ret;
 }
 
 int vio_ssl_shutdown(Vio *vio) {
   int r = 0;
   SSL *ssl = (SSL *)vio->ssl_arg;
-  DBUG_ENTER("vio_ssl_shutdown");
+  DBUG_TRACE;
 
   if (ssl) {
     /*
@@ -337,7 +366,7 @@ int vio_ssl_shutdown(Vio *vio) {
         break;
     }
   }
-  DBUG_RETURN(vio_shutdown(vio));
+  return vio_shutdown(vio);
 }
 
 void vio_ssl_delete(Vio *vio) {
@@ -351,11 +380,9 @@ void vio_ssl_delete(Vio *vio) {
     vio->ssl_arg = 0;
   }
 
-#ifndef HAVE_WOLFSSL
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   ERR_remove_thread_state(0);
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
-#endif
 
   vio_delete(vio);
 }
@@ -376,9 +403,10 @@ typedef int (*ssl_handshake_func_t)(SSL *);
   @return Return value is 1 on success.
 */
 
-static int ssl_handshake_loop(Vio *vio, SSL *ssl, ssl_handshake_func_t func,
-                              unsigned long *ssl_errno_holder) {
-  int ret;
+static size_t ssl_handshake_loop(Vio *vio, SSL *ssl, ssl_handshake_func_t func,
+                                 unsigned long *ssl_errno_holder) {
+  DBUG_TRACE;
+  size_t ret = -1;
 
   vio->ssl_arg = ssl;
 
@@ -393,12 +421,27 @@ static int ssl_handshake_loop(Vio *vio, SSL *ssl, ssl_handshake_func_t func,
     */
     DBUG_ASSERT(ERR_peek_error() == 0);
 
-    ret = func(ssl);
+    int handshake_ret;
+    handshake_ret = func(ssl);
 
-    if (ret >= 1) break;
+    if (handshake_ret >= 1) {
+      ret = 0;
+      break;
+    }
 
     /* Process the SSL I/O error. */
-    if (!ssl_should_retry(vio, ret, &event, ssl_errno_holder)) break;
+    if (!ssl_should_retry(vio, handshake_ret, &event, ssl_errno_holder)) break;
+
+    if (!vio->is_blocking_flag) {
+      switch (event) {
+        case VIO_IO_EVENT_READ:
+          return VIO_SOCKET_WANT_READ;
+        case VIO_IO_EVENT_WRITE:
+          return VIO_SOCKET_WANT_WRITE;
+        default:
+          return VIO_SOCKET_ERROR;
+      }
+    }
 
     /* Wait for I/O so that the handshake can proceed. */
     if (vio_socket_io_wait(vio, event)) break;
@@ -410,72 +453,76 @@ static int ssl_handshake_loop(Vio *vio, SSL *ssl, ssl_handshake_func_t func,
 }
 
 static int ssl_do(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
-                  ssl_handshake_func_t func, unsigned long *ssl_errno_holder) {
-  int r;
-  SSL *ssl;
+                  ssl_handshake_func_t func, unsigned long *ssl_errno_holder,
+                  SSL **sslptr) {
+  SSL *ssl = nullptr;
   my_socket sd = mysql_socket_getfd(vio->mysql_socket);
 
   /* Declared here to make compiler happy */
-#if !defined(HAVE_WOLFSSL) && !defined(DBUG_OFF)
+#if !defined(DBUG_OFF)
   int j, n;
 #endif
 
-  DBUG_ENTER("ssl_do");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("ptr: %p, sd: %d  ctx: %p", ptr, sd, ptr->ssl_context));
 
-  if (!(ssl = SSL_new(ptr->ssl_context))) {
-    DBUG_PRINT("error", ("SSL_new failure"));
-    *ssl_errno_holder = ERR_get_error();
-    DBUG_RETURN(1);
+  if (!sslptr) {
+    sslptr = &ssl;
   }
-  DBUG_PRINT("info", ("ssl: %p timeout: %ld", ssl, timeout));
-  SSL_clear(ssl);
-  SSL_SESSION_set_timeout(SSL_get_session(ssl), timeout);
-  SSL_set_fd(ssl, sd);
-#if !defined(HAVE_WOLFSSL) && defined(SSL_OP_NO_COMPRESSION)
-  SSL_set_options(ssl, SSL_OP_NO_COMPRESSION); /* OpenSSL >= 1.0 only */
-#elif !defined(HAVE_WOLFSSL) && \
-    OPENSSL_VERSION_NUMBER >= 0x00908000L /* workaround for OpenSSL 0.9.8 */
-  sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
+
+  if (*sslptr == nullptr) {
+    if (!(ssl = SSL_new(ptr->ssl_context))) {
+      DBUG_PRINT("error", ("SSL_new failure"));
+      *ssl_errno_holder = ERR_get_error();
+      return 1;
+    }
+
+    DBUG_PRINT("info", ("ssl: %p timeout: %ld", ssl, timeout));
+    SSL_clear(ssl);
+    SSL_SESSION_set_timeout(SSL_get_session(ssl), timeout);
+    SSL_set_fd(ssl, sd);
+#if defined(SSL_OP_NO_COMPRESSION)
+    SSL_set_options(ssl, SSL_OP_NO_COMPRESSION); /* OpenSSL >= 1.0 only */
+#elif OPENSSL_VERSION_NUMBER >= 0x00908000L /* workaround for OpenSSL 0.9.8 */
+    sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
 #endif
 
-#if !defined(HAVE_WOLFSSL) && !defined(DBUG_OFF)
-  {
-    STACK_OF(SSL_COMP) *ssl_comp_methods = NULL;
-    ssl_comp_methods = SSL_COMP_get_compression_methods();
-    n = sk_SSL_COMP_num(ssl_comp_methods);
-    DBUG_PRINT("info", ("Available compression methods:\n"));
-    if (n == 0)
-      DBUG_PRINT("info", ("NONE\n"));
-    else
-      for (j = 0; j < n; j++) {
-        SSL_COMP *c = sk_SSL_COMP_value(ssl_comp_methods, j);
+#if !defined(DBUG_OFF)
+    {
+      STACK_OF(SSL_COMP) *ssl_comp_methods = NULL;
+      ssl_comp_methods = SSL_COMP_get_compression_methods();
+      n = sk_SSL_COMP_num(ssl_comp_methods);
+      DBUG_PRINT("info", ("Available compression methods:\n"));
+      if (n == 0)
+        DBUG_PRINT("info", ("NONE\n"));
+      else
+        for (j = 0; j < n; j++) {
+          SSL_COMP *c = sk_SSL_COMP_value(ssl_comp_methods, j);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-        DBUG_PRINT("info", ("  %d: %s\n", c->id, c->name));
+          DBUG_PRINT("info", ("  %d: %s\n", c->id, c->name));
 #else  /* OPENSSL_VERSION_NUMBER < 0x10100000L */
-        DBUG_PRINT("info",
-                   ("  %d: %s\n", SSL_COMP_get_id(c), SSL_COMP_get0_name(c)));
+          DBUG_PRINT("info",
+                     ("  %d: %s\n", SSL_COMP_get_id(c), SSL_COMP_get0_name(c)));
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
-      }
+        }
+    }
+#endif
+
+    *sslptr = ssl;
+  } else {
+    ssl = *sslptr;
   }
-#endif
 
-    /*
-      Since yaSSL does not support non-blocking send operations, use
-      special transport functions that properly handles non-blocking
-      sockets. These functions emulate the behavior of blocking I/O
-      operations by waiting for I/O to become available.
-    */
-#ifdef HAVE_WOLFSSL
-  /* Set first argument of the transport functions. */
-  wolfSSL_SetIOReadCtx(ssl, vio);
-  wolfSSL_SetIOWriteCtx(ssl, vio);
-#endif
+  size_t loop_ret;
+  if ((loop_ret = ssl_handshake_loop(vio, ssl, func, ssl_errno_holder))) {
+    if (loop_ret != VIO_SOCKET_ERROR) {
+      return (int)loop_ret;  // Don't free SSL
+    }
 
-  if ((r = ssl_handshake_loop(vio, ssl, func, ssl_errno_holder)) < 1) {
     DBUG_PRINT("error", ("SSL_connect/accept failure"));
     SSL_free(ssl);
-    DBUG_RETURN(1);
+    *sslptr = nullptr;
+    return (int)VIO_SOCKET_ERROR;
   }
 
   /*
@@ -483,7 +530,10 @@ static int ssl_do(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
     change type, set sd to the fd used when connecting
     and set pointer to the SSL structure
   */
-  if (vio_reset(vio, VIO_TYPE_SSL, SSL_get_fd(ssl), ssl, 0)) DBUG_RETURN(1);
+  if (vio_reset(vio, VIO_TYPE_SSL, SSL_get_fd(ssl), ssl, 0)) return 1;
+  if (sslptr != &ssl) {
+    *sslptr = nullptr;
+  }
 
 #ifndef DBUG_OFF
   {
@@ -511,21 +561,21 @@ static int ssl_do(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
   }
 #endif
 
-  DBUG_RETURN(0);
+  return 0;
 }
 
 int sslaccept(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
               unsigned long *ssl_errno_holder) {
-  DBUG_ENTER("sslaccept");
-  int ret = ssl_do(ptr, vio, timeout, SSL_accept, ssl_errno_holder);
-  DBUG_RETURN(ret);
+  DBUG_TRACE;
+  int ret = ssl_do(ptr, vio, timeout, SSL_accept, ssl_errno_holder, nullptr);
+  return ret;
 }
 
 int sslconnect(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
-               unsigned long *ssl_errno_holder) {
-  DBUG_ENTER("sslconnect");
-  int ret = ssl_do(ptr, vio, timeout, SSL_connect, ssl_errno_holder);
-  DBUG_RETURN(ret);
+               unsigned long *ssl_errno_holder, SSL **ssl) {
+  DBUG_TRACE;
+  int ret = ssl_do(ptr, vio, timeout, SSL_connect, ssl_errno_holder, ssl);
+  return ret;
 }
 
 bool vio_ssl_has_data(Vio *vio) {

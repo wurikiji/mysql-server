@@ -2,12 +2,12 @@
 .\"     Title: \fBmysqld_safe\fR
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 04/04/2018
+.\"      Date: 09/06/2019
 .\"    Manual: MySQL Database System
 .\"    Source: MySQL 8.0
 .\"  Language: English
 .\"
-.TH "\FBMYSQLD_SAFE\FR" "1" "04/04/2018" "MySQL 8\&.0" "MySQL Database System"
+.TH "\FBMYSQLD_SAFE\FR" "1" "09/06/2019" "MySQL 8\&.0" "MySQL Database System"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -77,7 +77,7 @@ Many of the options to
 \fBmysqld_safe\fR
 are the same as the options to
 \fBmysqld\fR\&. See
-Section\ \&5.1.4, \(lqServer Command Options\(rq\&.
+Section\ \&5.1.7, \(lqServer Command Options\(rq\&.
 .PP
 Options unknown to
 \fBmysqld_safe\fR
@@ -86,7 +86,7 @@ are passed to
 if they are specified on the command line, but ignored if they are specified in the
 [mysqld_safe]
 group of an option file\&. See
-Section\ \&4.2.6, \(lqUsing Option Files\(rq\&.
+Section\ \&4.2.2.2, \(lqUsing Option Files\(rq\&.
 .PP
 \fBmysqld_safe\fR
 reads all options from the
@@ -121,7 +121,7 @@ sections, but to be current you should rename such sections to
 .PP
 \fBmysqld_safe\fR
 accepts options on the command line and in option files, as described in the following table\&. For information about option files used by MySQL programs, see
-Section\ \&4.2.6, \(lqUsing Option Files\(rq\&.
+Section\ \&4.2.2.2, \(lqUsing Option Files\(rq\&.
 .sp
 .RS 4
 .ie n \{\
@@ -163,6 +163,24 @@ The size of the core file that
 \fBmysqld\fR
 should be able to create\&. The option value is passed to
 \fBulimit \-c\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+The
+innodb_buffer_pool_in_core_file
+variable can be used to reduce the size of core files on operating systems that support it\&. For more information, see
+Section\ \&15.8.3.7, \(lqExcluding Buffer Pool Pages from Core Files\(rq\&.
+.sp .5v
+.RE
 .RE
 .sp
 .RS 4
@@ -192,8 +210,8 @@ Read this option file in addition to the usual option files\&. If the file does 
 \fIfile_name\fR
 is interpreted relative to the current directory if given as a relative path name rather than a full path name\&. This must be the first option on the command line if it is used\&.
 .sp
-For additional information about this option, see
-Section\ \&4.2.7, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
+For additional information about this and other option\-file options, see
+Section\ \&4.2.2.3, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
 .RE
 .sp
 .RS 4
@@ -210,8 +228,8 @@ Use only the given option file\&. If the file does not exist or is otherwise ina
 \fIfile_name\fR
 is interpreted relative to the current directory if given as a relative path name rather than a full path name\&. This must be the first option on the command line if it is used\&.
 .sp
-For additional information about this option, see
-Section\ \&4.2.7, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
+For additional information about this and other option\-file options, see
+Section\ \&4.2.2.3, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
 .RE
 .sp
 .RS 4
@@ -570,8 +588,8 @@ Do not read any option files\&. If program startup fails due to reading unknown 
 \fB\-\-no\-defaults\fR
 can be used to prevent them from being read\&. This must be the first option on the command line if it is used\&.
 .sp
-For additional information about this option, see
-Section\ \&4.2.7, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
+For additional information about this and other option\-file options, see
+Section\ \&4.2.2.3, \(lqCommand-Line Options that Affect Option-File Handling\(rq\&.
 .RE
 .sp
 .RS 4
@@ -649,7 +667,7 @@ The path name of the plugin directory\&.
 .sp
 The port number that the server should use when listening for TCP/IP connections\&. The port number must be 1024 or higher unless the server is started by the
 root
-system user\&.
+operating system user\&.
 .RE
 .sp
 .RS 4
@@ -703,14 +721,14 @@ syslog; messages are written to an error log file\&.
 .sp
 When
 syslog
-is used, the
+is used for error logging, the
 daemon\&.err
 facility/severity is used for all log messages\&.
 .sp
 Using these options to control
 \fBmysqld\fR
 logging is deprecated\&. To write error log output to the system log, use the instructions at
-Section\ \&5.4.2.3, \(lqError Logging to the System Log\(rq\&. To control the facility, use the server
+Section\ \&5.4.2.7, \(lqError Logging to the System Log\(rq\&. To control the facility, use the server
 log_syslog_facility
 system variable\&.
 .RE
@@ -744,7 +762,7 @@ Using this option to control
 logging is deprecated\&. Use the server
 log_syslog_tag
 system variable instead\&. See
-Section\ \&5.4.2, \(lqThe Error Log\(rq\&.
+Section\ \&5.4.2.7, \(lqError Logging to the System Log\(rq\&.
 .RE
 .sp
 .RS 4
@@ -978,13 +996,13 @@ logging from
 is deprecated\&. Use the server\*(Aqs native
 syslog
 support instead\&. For more information, see
-Section\ \&5.4.2, \(lqThe Error Log\(rq\&.
+Section\ \&5.4.2.7, \(lqError Logging to the System Log\(rq\&.
 .sp .5v
 .RE
 .SH "COPYRIGHT"
 .br
 .PP
-Copyright \(co 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright \(co 1997, 2019, Oracle and/or its affiliates. All rights reserved.
 .PP
 This documentation is free software; you can redistribute it and/or modify it only under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License.
 .PP

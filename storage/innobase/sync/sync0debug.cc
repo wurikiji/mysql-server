@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2014, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2014, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 Portions of this file contain modifications contributed and copyrighted by
 Google, Inc. Those modifications are gratefully acknowledged and are described
@@ -113,8 +113,7 @@ struct LatchDebug {
   typedef OSMutex Mutex;
 
   /** Comparator for the ThreadMap. */
-  struct os_thread_id_less
-      : public std::binary_function<os_thread_id_t, os_thread_id_t, bool> {
+  struct os_thread_id_less {
     /** @return true if lhs < rhs */
     bool operator()(const os_thread_id_t &lhs,
                     const os_thread_id_t &rhs) const UNIV_NOTHROW {
@@ -196,11 +195,20 @@ struct LatchDebug {
 
       Latches *latches = check_order(latch, level);
 
-      ut_a(latches->empty() || level == SYNC_LEVEL_VARYING ||
-           level == SYNC_NO_ORDER_CHECK ||
-           latches->back().get_level() == SYNC_NO_ORDER_CHECK ||
-           latches->back().m_latch->get_level() == SYNC_LEVEL_VARYING ||
-           latches->back().get_level() >= level);
+      if (!(latches->empty() || level == SYNC_LEVEL_VARYING ||
+            level == SYNC_NO_ORDER_CHECK ||
+            latches->back().get_level() == SYNC_NO_ORDER_CHECK ||
+            latches->back().m_latch->get_level() == SYNC_LEVEL_VARYING ||
+            latches->back().get_level() >= level)) {
+        latch_level_t back_latch_level = latches->back().m_latch->get_level();
+        latch_level_t back_level = latches->back().m_latch->get_level();
+
+        ib::error()
+            << "LatchDebug::lock_validate() latch order violation. level="
+            << level << ", back_latch_level=" << back_latch_level
+            << ", back_level=" << back_level << ".";
+        ut_error;
+      }
     }
   }
 
@@ -236,11 +244,19 @@ struct LatchDebug {
       Latches::iterator it =
           std::find(latches->begin(), latches->end(), Latched(latch, level));
 
-      ut_a(latches->empty() || level == SYNC_LEVEL_VARYING ||
-           level == SYNC_NO_ORDER_CHECK ||
-           latches->back().m_latch->get_level() == SYNC_LEVEL_VARYING ||
-           latches->back().m_latch->get_level() == SYNC_NO_ORDER_CHECK ||
-           latches->back().get_level() >= level || it != latches->end());
+      if (!(latches->empty() || level == SYNC_LEVEL_VARYING ||
+            level == SYNC_NO_ORDER_CHECK ||
+            latches->back().m_latch->get_level() == SYNC_LEVEL_VARYING ||
+            latches->back().m_latch->get_level() == SYNC_NO_ORDER_CHECK ||
+            latches->back().get_level() >= level || it != latches->end())) {
+        latch_level_t back_latch_level = latches->back().m_latch->get_level();
+        latch_level_t back_level = latches->back().m_latch->get_level();
+
+        ib::error() << "LatchDebug::relock() latch order violation. level="
+                    << level << ", back_latch_level=" << back_latch_level
+                    << ", back_level=" << back_level << ".";
+        ut_error;
+      }
 
       if (it == latches->end()) {
         latches->push_back(Latched(latch, level));
@@ -335,8 +351,7 @@ struct LatchDebug {
 
  private:
   /** Comparator for the Levels . */
-  struct latch_level_less
-      : public std::binary_function<latch_level_t, latch_level_t, bool> {
+  struct latch_level_less {
     /** @return true if lhs < rhs */
     bool operator()(const latch_level_t &lhs,
                     const latch_level_t &rhs) const UNIV_NOTHROW {
@@ -392,6 +407,7 @@ LatchDebug::LatchDebug() {
   LEVEL_MAP_INSERT(SYNC_ANY_LATCH);
   LEVEL_MAP_INSERT(SYNC_FIL_SHARD);
   LEVEL_MAP_INSERT(SYNC_DOUBLEWRITE);
+  LEVEL_MAP_INSERT(SYNC_BUF_CHUNKS);
   LEVEL_MAP_INSERT(SYNC_BUF_FLUSH_LIST);
   LEVEL_MAP_INSERT(SYNC_BUF_FLUSH_STATE);
   LEVEL_MAP_INSERT(SYNC_BUF_ZIP_HASH);
@@ -402,6 +418,7 @@ LatchDebug::LatchDebug() {
   LEVEL_MAP_INSERT(SYNC_BUF_LRU_LIST);
   LEVEL_MAP_INSERT(SYNC_POOL);
   LEVEL_MAP_INSERT(SYNC_POOL_MANAGER);
+  LEVEL_MAP_INSERT(SYNC_TEMP_POOL_MANAGER);
   LEVEL_MAP_INSERT(SYNC_SEARCH_SYS);
   LEVEL_MAP_INSERT(SYNC_WORK_QUEUE);
   LEVEL_MAP_INSERT(SYNC_FTS_TOKENIZE);
@@ -410,6 +427,7 @@ LatchDebug::LatchDebug() {
   LEVEL_MAP_INSERT(SYNC_FTS_CACHE_INIT);
   LEVEL_MAP_INSERT(SYNC_RECV);
   LEVEL_MAP_INSERT(SYNC_LOG_SN);
+  LEVEL_MAP_INSERT(SYNC_LOG_LIMITS);
   LEVEL_MAP_INSERT(SYNC_LOG_WRITER);
   LEVEL_MAP_INSERT(SYNC_LOG_WRITE_NOTIFIER);
   LEVEL_MAP_INSERT(SYNC_LOG_FLUSH_NOTIFIER);
@@ -419,6 +437,7 @@ LatchDebug::LatchDebug() {
   LEVEL_MAP_INSERT(SYNC_LOG_ARCH);
   LEVEL_MAP_INSERT(SYNC_PAGE_ARCH);
   LEVEL_MAP_INSERT(SYNC_PAGE_ARCH_OPER);
+  LEVEL_MAP_INSERT(SYNC_PAGE_ARCH_CLIENT);
   LEVEL_MAP_INSERT(SYNC_PAGE_CLEANER);
   LEVEL_MAP_INSERT(SYNC_PURGE_QUEUE);
   LEVEL_MAP_INSERT(SYNC_TRX_SYS_HEADER);
@@ -447,6 +466,7 @@ LatchDebug::LatchDebug() {
   LEVEL_MAP_INSERT(SYNC_TRX_SYS_RSEG);
   LEVEL_MAP_INSERT(SYNC_RSEGS);
   LEVEL_MAP_INSERT(SYNC_UNDO_SPACES);
+  LEVEL_MAP_INSERT(SYNC_UNDO_DDL);
   LEVEL_MAP_INSERT(SYNC_TRX_UNDO);
   LEVEL_MAP_INSERT(SYNC_PURGE_LATCH);
   LEVEL_MAP_INSERT(SYNC_TREE_NODE);
@@ -675,9 +695,11 @@ Latches *LatchDebug::check_order(const latch_t *latch,
     case SYNC_LOG_FLUSHER:
     case SYNC_LOG_WRITE_NOTIFIER:
     case SYNC_LOG_FLUSH_NOTIFIER:
+    case SYNC_LOG_LIMITS:
     case SYNC_LOG_ARCH:
     case SYNC_PAGE_ARCH:
     case SYNC_PAGE_ARCH_OPER:
+    case SYNC_PAGE_ARCH_CLIENT:
     case SYNC_DOUBLEWRITE:
     case SYNC_SEARCH_SYS:
     case SYNC_THREADS:
@@ -690,6 +712,7 @@ Latches *LatchDebug::check_order(const latch_t *latch,
     case SYNC_TRX_SYS_RSEG:
     case SYNC_RSEGS:
     case SYNC_UNDO_SPACES:
+    case SYNC_UNDO_DDL:
     case SYNC_TRX_UNDO:
     case SYNC_PURGE_LATCH:
     case SYNC_PURGE_QUEUE:
@@ -704,6 +727,7 @@ Latches *LatchDebug::check_order(const latch_t *latch,
     case SYNC_STATS_AUTO_RECALC:
     case SYNC_POOL:
     case SYNC_POOL_MANAGER:
+    case SYNC_TEMP_POOL_MANAGER:
     case SYNC_RECV_WRITER:
     case SYNC_PARSER:
     case SYNC_DICT:
@@ -743,6 +767,7 @@ Latches *LatchDebug::check_order(const latch_t *latch,
       break;
 
     case SYNC_FIL_SHARD:
+    case SYNC_BUF_CHUNKS:
     case SYNC_BUF_FLUSH_LIST:
     case SYNC_BUF_LRU_LIST:
     case SYNC_BUF_FREE_LIST:
@@ -1181,7 +1206,7 @@ LatchMetaData latch_meta;
 
 /** Load the latch meta data. */
 static void sync_latch_meta_init() UNIV_NOTHROW {
-  latch_meta.resize(LATCH_ID_MAX);
+  latch_meta.resize(LATCH_ID_MAX + 1);
 
   /* The latches should be ordered on latch_id_t. So that we can
   index directly into the vector to update and fetch meta-data. */
@@ -1196,6 +1221,7 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
 #else
   LATCH_ADD_MUTEX(BUF_BLOCK_MUTEX, SYNC_BUF_BLOCK, buffer_block_mutex_key);
 #endif /* PFS_SKIP_BUFFER_MUTEX_RWLOCK */
+  LATCH_ADD_MUTEX(BUF_POOL_CHUNKS, SYNC_BUF_CHUNKS, buf_pool_chunks_mutex_key);
 
   LATCH_ADD_MUTEX(BUF_POOL_LRU_LIST, SYNC_BUF_LRU_LIST,
                   buf_pool_LRU_list_mutex_key);
@@ -1207,7 +1233,7 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
                   buf_pool_zip_free_mutex_key);
 
   LATCH_ADD_MUTEX(BUF_POOL_ZIP_HASH, SYNC_BUF_ZIP_HASH,
-                  buf_pool_zip_free_mutex_key);
+                  buf_pool_zip_hash_mutex_key);
 
   LATCH_ADD_MUTEX(BUF_POOL_FLUSH_STATE, SYNC_BUF_FLUSH_STATE,
                   buf_pool_flush_state_mutex_key);
@@ -1272,6 +1298,8 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
   LATCH_ADD_MUTEX(LOG_FLUSH_NOTIFIER, SYNC_LOG_FLUSH_NOTIFIER,
                   log_flush_notifier_mutex_key);
 
+  LATCH_ADD_MUTEX(LOG_LIMITS, SYNC_LOG_LIMITS, log_limits_mutex_key);
+
   LATCH_ADD_RWLOCK(LOG_SN, SYNC_LOG_SN, log_sn_lock_key);
 
   LATCH_ADD_MUTEX(LOG_ARCH, SYNC_LOG_ARCH, log_sys_arch_mutex_key);
@@ -1280,6 +1308,9 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
 
   LATCH_ADD_MUTEX(PAGE_ARCH_OPER, SYNC_PAGE_ARCH_OPER,
                   page_sys_arch_oper_mutex_key);
+
+  LATCH_ADD_MUTEX(PAGE_ARCH_CLIENT, SYNC_PAGE_ARCH_CLIENT,
+                  page_sys_arch_client_mutex_key);
 
   LATCH_ADD_MUTEX(PAGE_CLEANER, SYNC_PAGE_CLEANER, page_cleaner_mutex_key);
 
@@ -1344,6 +1375,9 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
   LATCH_ADD_MUTEX(TRX_POOL_MANAGER, SYNC_POOL_MANAGER,
                   trx_pool_manager_mutex_key);
 
+  LATCH_ADD_MUTEX(TEMP_POOL_MANAGER, SYNC_TEMP_POOL_MANAGER,
+                  temp_pool_manager_mutex_key);
+
   LATCH_ADD_MUTEX(TRX, SYNC_TRX, trx_mutex_key);
 
   LATCH_ADD_MUTEX(LOCK_SYS, SYNC_LOCK_SYS, lock_mutex_key);
@@ -1368,8 +1402,6 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
 #endif /* !PFS_SKIP_EVENT_MUTEX */
 
   LATCH_ADD_MUTEX(SYNC_ARRAY_MUTEX, SYNC_NO_ORDER_CHECK, sync_array_mutex_key);
-
-  LATCH_ADD_MUTEX(THREAD_MUTEX, SYNC_NO_ORDER_CHECK, thread_mutex_key);
 
   LATCH_ADD_MUTEX(ZIP_PAD_MUTEX, SYNC_NO_ORDER_CHECK, zip_pad_mutex_key);
 
@@ -1413,6 +1445,8 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
 
   LATCH_ADD_RWLOCK(UNDO_SPACES, SYNC_UNDO_SPACES, undo_spaces_lock_key);
 
+  LATCH_ADD_MUTEX(UNDO_DDL, SYNC_UNDO_DDL, PFS_NOT_INSTRUMENTED);
+
   LATCH_ADD_RWLOCK(FIL_SPACE, SYNC_FSP, fil_space_latch_key);
 
   LATCH_ADD_RWLOCK(FTS_CACHE, SYNC_FTS_CACHE, fts_cache_rw_lock_key);
@@ -1447,6 +1481,16 @@ static void sync_latch_meta_init() UNIV_NOTHROW {
 
   LATCH_ADD_MUTEX(CLONE_SNAPSHOT, SYNC_NO_ORDER_CHECK,
                   clone_snapshot_mutex_key);
+
+  LATCH_ADD_MUTEX(PARALLEL_READ, SYNC_NO_ORDER_CHECK, parallel_read_mutex_key);
+
+  LATCH_ADD_MUTEX(REDO_LOG_ARCHIVE_ADMIN_MUTEX, SYNC_NO_ORDER_CHECK,
+                  PFS_NOT_INSTRUMENTED);
+
+  LATCH_ADD_MUTEX(REDO_LOG_ARCHIVE_QUEUE_MUTEX, SYNC_NO_ORDER_CHECK,
+                  PFS_NOT_INSTRUMENTED);
+
+  LATCH_ADD_MUTEX(TEST_MUTEX, SYNC_NO_ORDER_CHECK, PFS_NOT_INSTRUMENTED);
 
   latch_id_t id = LATCH_ID_NONE;
 

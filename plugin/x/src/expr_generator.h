@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -28,18 +28,20 @@
 #include <stdexcept>
 #include <string>
 
-#include "plugin/x/ngs/include/ngs_common/protocol_protobuf.h"
+#include "plugin/x/ngs/include/ngs/protocol/protocol_protobuf.h"
+#include "plugin/x/src/prepare_param_handler.h"
 #include "plugin/x/src/query_string_builder.h"
 
 namespace xpl {
 
 class Expression_generator {
  public:
+  template <typename T>
+  using Repeated_field_list = ::google::protobuf::RepeatedPtrField<T>;
   using Expr = ::Mysqlx::Expr::Expr;
-  using Args =
-      ::google::protobuf::RepeatedPtrField<::Mysqlx::Datatypes::Scalar>;
-  using Document_path =
-      ::google::protobuf::RepeatedPtrField<::Mysqlx::Expr::DocumentPathItem>;
+  using Arg_list = Repeated_field_list<::Mysqlx::Datatypes::Scalar>;
+  using Document_path = Repeated_field_list<::Mysqlx::Expr::DocumentPathItem>;
+  using Prep_stmt_placeholder_list = Prepare_param_handler::Placeholder_list;
 
   class Error : public std::invalid_argument {
     int m_error;
@@ -58,7 +60,7 @@ class Expression_generator {
     CT_XML = Mysqlx::Resultset::XML
   };
 
-  Expression_generator(Query_string_builder *qb, const Args &args,
+  Expression_generator(Query_string_builder *qb, const Arg_list &args,
                        const std::string &default_schema,
                        const bool &is_relational)
       : m_qb(qb),
@@ -73,7 +75,11 @@ class Expression_generator {
 
   Expression_generator clone(Query_string_builder *qb) const;
   Query_string_builder &query_string_builder() const { return *m_qb; }
-  const Args &args() const { return m_args; }
+  const Arg_list &args() const { return m_args; }
+  void set_prep_stmt_placeholder_list(Prep_stmt_placeholder_list *ids) {
+    m_placeholders = ids;
+  }
+  bool is_prep_stmt_mode() const { return m_placeholders != nullptr; }
 
  private:
   using Placeholder = ::google::protobuf::uint32;
@@ -95,13 +101,16 @@ class Expression_generator {
 
   template <typename T>
   void generate_for_each(
-      const ::google::protobuf::RepeatedPtrField<T> &list,
+      const Repeated_field_list<T> &list,
       void (Expression_generator::*generate_fun)(const T &) const,
-      const typename ::google::protobuf::RepeatedPtrField<T>::size_type offset =
-          0) const;
+      const typename Repeated_field_list<T>::size_type offset = 0) const;
   void generate_unquote_param(const Mysqlx::Expr::Expr &arg) const;
   void generate_json_literal_param(const Mysqlx::Datatypes::Scalar &arg) const;
-  void generate_cont_in_param(const Mysqlx::Expr::Expr &arg) const;
+  void generate_json_only_param(const Mysqlx::Expr::Expr &arg,
+                                const std::string &expr_name) const;
+  void generate_placeholder(const Placeholder &arg,
+                            void (Expression_generator::*generate_fun)(
+                                const Mysqlx::Datatypes::Scalar &) const) const;
 
   void binary_operator(const Mysqlx::Expr::Operator &arg,
                        const char *str) const;
@@ -121,50 +130,57 @@ class Expression_generator {
   void binary_expression(const Mysqlx::Expr::Operator &arg,
                          const char *str) const;
   void asterisk_operator(const Mysqlx::Expr::Operator &arg) const;
-
-  void validate_placeholder(const Placeholder &arg) const;
+  void overlaps_expression(const Mysqlx::Expr::Operator &arg,
+                           const char *str) const;
 
   Query_string_builder *m_qb;
-  const Args &m_args;
+  const Arg_list &m_args;
   const std::string &m_default_schema;
   const bool &m_is_relational;
+  Prep_stmt_placeholder_list *m_placeholders{nullptr};
 };
 
 template <typename T>
-void generate_expression(Query_string_builder *qb, const T &expr,
-                         const Expression_generator::Args &args,
-                         const std::string &default_schema,
-                         bool is_relational) {
+void generate_expression(
+    Query_string_builder *qb, const T &expr,
+    const Expression_generator::Arg_list &args,
+    const std::string &default_schema, const bool is_relational,
+    Expression_generator::Prep_stmt_placeholder_list *ids = nullptr) {
   Expression_generator gen(qb, args, default_schema, is_relational);
+  gen.set_prep_stmt_placeholder_list(ids);
   gen.feed(expr);
 }
 
 template <typename T>
-ngs::PFS_string generate_expression(const T &expr,
-                                    const Expression_generator::Args &args,
-                                    const std::string &default_schema,
-                                    bool is_relational) {
+ngs::PFS_string generate_expression(
+    const T &expr, const Expression_generator::Arg_list &args,
+    const std::string &default_schema, const bool is_relational,
+    Expression_generator::Prep_stmt_placeholder_list *ids = nullptr) {
   Query_string_builder qb;
-  generate_expression(&qb, expr, args, default_schema, is_relational);
+  generate_expression(&qb, expr, args, default_schema, is_relational, ids);
   return qb.get();
 }
 
 template <typename T>
 void generate_expression(Query_string_builder *qb, const T &expr,
                          const std::string &default_schema,
-                         bool is_relational) {
-  generate_expression(qb, expr, Expression_generator::Args(), default_schema,
-                      is_relational);
+                         const bool is_relational) {
+  generate_expression(qb, expr, Expression_generator::Arg_list(),
+                      default_schema, is_relational);
 }
 
 template <typename T>
-ngs::PFS_string generate_expression(const T &expr,
-                                    const std::string &default_schema,
-                                    bool is_relational) {
-  return generate_expression(expr, Expression_generator::Args(), default_schema,
-                             is_relational);
+ngs::PFS_string generate_expression(
+    const T &expr, const std::string &default_schema, const bool is_relational,
+    Expression_generator::Prep_stmt_placeholder_list *ids = nullptr) {
+  return generate_expression(expr, Expression_generator::Arg_list(),
+                             default_schema, is_relational, ids);
 }
 
+template <typename T>
+inline bool is_table_data_model(const T &msg) {
+  return msg.data_model() == ::Mysqlx::Crud::TABLE;
+}
 }  // namespace xpl
 
 #endif  // PLUGIN_X_SRC_EXPR_GENERATOR_H_

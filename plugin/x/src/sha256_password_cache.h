@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -31,8 +31,8 @@
 
 #include "plugin/x/ngs/include/ngs/interface/sha256_password_cache_interface.h"
 #include "plugin/x/ngs/include/ngs/thread.h"
+#include "plugin/x/src/helper/multithread/rw_lock.h"
 #include "plugin/x/src/xpl_performance_schema.h"
-
 #include "sql/auth/i_sha2_password_common.h"
 
 namespace xpl {
@@ -50,8 +50,8 @@ class SHA256_password_cache final
   SHA256_password_cache();
   SHA256_password_cache(SHA256_password_cache &) = delete;
   SHA256_password_cache &operator=(const SHA256_password_cache &) = delete;
-  SHA256_password_cache(SHA256_password_cache &&) = default;
-  SHA256_password_cache &operator=(SHA256_password_cache &&) = default;
+  SHA256_password_cache(SHA256_password_cache &&) = delete;
+  SHA256_password_cache &operator=(SHA256_password_cache &&) = delete;
 
   void enable() override;
   void disable() override;
@@ -72,7 +72,7 @@ class SHA256_password_cache final
   std::pair<bool, sha2_cache_entry_t> create_hash(
       const std::string &value) const;
 
-  mutable ngs::RWLock m_cache_lock;
+  mutable RWLock m_cache_lock;
   password_cache_t m_password_cache;
   bool m_accepting_input = false;
 };

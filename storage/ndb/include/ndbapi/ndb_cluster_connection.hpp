@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -33,7 +33,7 @@ class Ndb_cluster_connection_node_iter
 public:
   Ndb_cluster_connection_node_iter() : scan_state(~0),
 				       init_pos(0),
-				       cur_pos(0) {};
+				       cur_pos(0) {}
 private:
   unsigned char scan_state;
   unsigned char init_pos;
@@ -307,6 +307,7 @@ public:
   void set_optimized_node_selection(int val);
 
   unsigned no_db_nodes();
+  unsigned max_api_nodeid() const;
   unsigned max_nodegroup();
   unsigned node_id();
   unsigned get_connect_count() const;

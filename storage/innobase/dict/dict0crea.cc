@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -34,18 +34,19 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "btr0btr.h"
 #include "btr0pcur.h"
 #include "dict0boot.h"
+#include "dict0dd.h"
 #include "dict0dict.h"
 #include "dict0priv.h"
 #include "dict0stats.h"
-#include "dict0upgrade.h"
 #include "fsp0space.h"
 #include "fsp0sysspace.h"
 #include "fts0priv.h"
 #include "ha_prototypes.h"
 #include "mach0data.h"
-#include "my_compiler.h"
+
 #include "my_dbug.h"
-#include "my_inttypes.h"
+
+#include "dict0upgrade.h"
 #include "page0page.h"
 #include "pars0pars.h"
 #include "que0que.h"
@@ -123,8 +124,11 @@ dberr_t dict_build_tablespace(trx_t *trx, Tablespace *tablespace) {
     return DB_IO_ERROR;
   }
 
-  log_ddl->write_delete_space_log(trx, NULL, space, datafile->filepath(), false,
-                                  true);
+  err = log_ddl->write_delete_space_log(trx, NULL, space, datafile->filepath(),
+                                        false, true);
+  if (err != DB_SUCCESS) {
+    return err;
+  }
 
   /* We create a new generic empty tablespace.
   We initially let it be 4 pages:
@@ -205,9 +209,12 @@ dberr_t dict_build_tablespace_for_table(dict_table_t *table, trx_t *trx) {
     table->space = space;
 
     /* Determine the tablespace flags. */
-    bool is_encrypted = dict_table_is_encrypted(table);
+    uint32_t fsp_flags = dict_tf_to_fsp_flags(table->flags);
 
-    ulint fsp_flags = dict_tf_to_fsp_flags(table->flags, is_encrypted);
+    /* For file-per-table tablespace, set encryption flag */
+    if (DICT_TF2_FLAG_IS_SET(table, DICT_TF2_ENCRYPTION_FILE_PER_TABLE)) {
+      fsp_flags_set_encryption(fsp_flags);
+    }
 
     if (DICT_TF_HAS_DATA_DIR(table->flags)) {
       std::string path;
@@ -232,7 +239,12 @@ dberr_t dict_build_tablespace_for_table(dict_table_t *table, trx_t *trx) {
       return DB_IO_ERROR;
     }
 
-    log_ddl->write_delete_space_log(trx, table, space, filepath, false, false);
+    err = log_ddl->write_delete_space_log(trx, table, space, filepath, false,
+                                          false);
+    if (err != DB_SUCCESS) {
+      ut_free(filepath);
+      return err;
+    }
 
     /* We create a new single-table tablespace for the table.
     We initially let it be 4 pages:
@@ -289,7 +301,27 @@ dberr_t dict_build_tablespace_for_table(dict_table_t *table, trx_t *trx) {
       row formats whereas the system tablespace only
       supports Redundant and Compact */
       ut_ad(dict_tf_get_rec_format(table->flags) != REC_FORMAT_COMPRESSED);
-      table->space = static_cast<uint32_t>(srv_tmp_space.space_id());
+
+      innodb_session_t *innodb_session = thd_to_innodb_session(trx->mysql_thd);
+      ibt::Tablespace *tblsp = nullptr;
+
+      bool is_slave_thd = thd_is_replication_slave_thread(trx->mysql_thd);
+      if (is_slave_thd) {
+        tblsp = ibt::get_rpl_slave_tblsp();
+      } else if (table->is_intrinsic()) {
+        tblsp = innodb_session->get_instrinsic_temp_tblsp();
+      } else {
+        tblsp = innodb_session->get_usr_temp_tblsp();
+      }
+
+      /* Session temporary tablespace couldn't be allocated. This means,
+      we have run out of disk space */
+      if (tblsp == nullptr) {
+        return (DB_NO_SESSION_TEMP);
+      }
+
+      table->space = tblsp->space_id();
+
     } else {
       /* Create in the system tablespace. */
       ut_ad(table->space == TRX_SYS_SPACE);
@@ -610,11 +642,11 @@ void dict_table_assign_new_id(dict_table_t *table, trx_t *trx) {
 @param[in]	is_create	true when creating SDI index
 @return in-memory index structure for tablespace dictionary or NULL */
 dict_index_t *dict_sdi_create_idx_in_mem(space_id_t space, bool space_discarded,
-                                         ulint in_flags, bool is_create) {
-  ulint flags = space_discarded ? in_flags : fil_space_get_flags(space);
+                                         uint32_t in_flags, bool is_create) {
+  uint32_t flags = space_discarded ? in_flags : fil_space_get_flags(space);
 
   /* This means the tablespace is evicted from cache */
-  if (flags == ULINT_UNDEFINED) {
+  if (flags == UINT32_UNDEFINED) {
     return (NULL);
   }
 
@@ -637,7 +669,7 @@ dict_index_t *dict_sdi_create_idx_in_mem(space_id_t space, bool space_discarded,
     rec_format = REC_FORMAT_COMPACT;
   }
 
-  ulint table_flags = 0;
+  uint32_t table_flags = 0;
   dict_tf_set(&table_flags, rec_format, zip_ssize, has_data_dir,
               has_shared_space);
 
@@ -647,7 +679,7 @@ dict_index_t *dict_sdi_create_idx_in_mem(space_id_t space, bool space_discarded,
   snprintf(table_name, sizeof(table_name), "SDI_" SPACE_ID_PF, space);
 
   dict_table_t *table =
-      dict_mem_table_create(table_name, space, 5, 0, table_flags, 0);
+      dict_mem_table_create(table_name, space, 5, 0, 0, table_flags, 0);
 
   dict_mem_table_add_col(table, heap, "type", DATA_INT,
                          DATA_NOT_NULL | DATA_UNSIGNED, 4);

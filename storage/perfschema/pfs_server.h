@@ -1,4 +1,4 @@
-/* Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2.0,
@@ -60,7 +60,7 @@
 #define PFS_MAX_RWLOCK_CLASS 60
 #endif
 #ifndef PFS_MAX_COND_CLASS
-#define PFS_MAX_COND_CLASS 80
+#define PFS_MAX_COND_CLASS 100
 #endif
 #ifndef PFS_MAX_THREAD_CLASS
 #define PFS_MAX_THREAD_CLASS 100
@@ -75,7 +75,7 @@
 #define PFS_MAX_SOCKET_CLASS 10
 #endif
 #ifndef PFS_MAX_STAGE_CLASS
-#define PFS_MAX_STAGE_CLASS 150
+#define PFS_MAX_STAGE_CLASS 175
 #endif
 #ifndef PFS_STATEMENTS_STACK_SIZE
 #define PFS_STATEMENTS_STACK_SIZE 10

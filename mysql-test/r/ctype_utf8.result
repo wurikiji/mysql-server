@@ -161,6 +161,8 @@ aa	b
 select char_length(left(@a:='тест',5)), length(@a), @a;
 char_length(left(@a:='тест',5))	length(@a)	@a
 4	8	тест
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 create table t1 select date_format("2004-01-19 10:10:10", "%Y-%m-%d");
 show create table t1;
 Table	Create Table
@@ -329,6 +331,8 @@ select * from t1 where a = 'b' and a != 'b';
 a
 drop table t1;
 set collation_connection=utf8_general_ci;
+Warnings:
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 drop table if exists t1;
 create table t1 as
 select repeat(' ', 64) as s1, repeat(' ',64) as s2
@@ -400,6 +404,8 @@ ERROR HY000: Illegal argument to a regular expression.
 select 'zвасяz' rlike '[[:<:]]вася[[:>:]]';
 ERROR HY000: Illegal argument to a regular expression.
 CREATE TABLE t1 (a enum ('Y', 'N') DEFAULT 'N' COLLATE utf8_unicode_ci);
+Warnings:
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 ALTER TABLE t1 ADD COLUMN b CHAR(20);
 DROP TABLE t1;
 set names utf8;
@@ -659,6 +665,7 @@ drop table t1;
 create table t1 (c varchar(30) character set utf8 collate utf8_bin, unique(c(10)));
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
 insert into t1 values ('aaaaaaaaaaa');
@@ -694,6 +701,7 @@ drop table t1;
 create table t1 (c char(3) character set utf8 collate utf8_bin, unique (c(2)));
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
@@ -722,6 +730,7 @@ unique key a using hash (c(1))
 ) engine=heap;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -760,6 +769,7 @@ unique key a using btree (c(1))
 ) engine=heap;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -798,6 +808,7 @@ unique key a (c(1))
 ) engine=innodb;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
 insert into t1 values ('aa');
 ERROR 23000: Duplicate entry 'a' for key 'a'
@@ -886,6 +897,7 @@ str
 drop table t1;
 CREATE TABLE t1 (a varchar(32) BINARY) CHARACTER SET utf8;
 Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 VALUES ('test');
 SELECT a FROM t1 WHERE a LIKE '%te';
@@ -900,6 +912,7 @@ p varchar(15) character set utf8
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 VALUES ('谷川俊二と申しますが、インターネット予約の会員登録をしましたところ、メールアドレスを間違えてしまい会員ＩＤが受け取ることが出来ませんでした。間違えアドレスはtani-shun@n.vodafone.ne.jpを書き込みました。どうすればよいですか？ その他、住所等は間違えありません。連絡ください。よろしくお願いします。m(__)m','040312-000057');
 INSERT INTO t1 VALUES ('aaa','bbb');
@@ -1014,6 +1027,7 @@ SUBSTR('вася',-2)
 create table t1 (id integer, a varchar(100) character set utf8 collate utf8_unicode_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values (1, 'Test');
 select * from t1 where soundex(a) = soundex('Test');
 id	a
@@ -1046,6 +1060,8 @@ D091303030
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 SET collation_connection='utf8_general_ci';
+Warnings:
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 create table t1 select repeat('a',4000) a;
 delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
@@ -1165,6 +1181,8 @@ ae	6165
 drop table t1;
 "END ctype_german.inc"
 SET collation_connection='utf8_bin';
+Warnings:
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 create table t1 select repeat('a',4000) a;
 delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
@@ -1245,6 +1263,7 @@ Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but wil
 create table t1 (s1 char(5) character set utf8 collate utf8_lithuanian_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_lithuanian_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('I'),('K'),('Y');
 select * from t1 where s1 < 'K' and s1 = 'Y';
 s1
@@ -1258,6 +1277,7 @@ drop table t1;
 create table t1 (s1 char(5) character set utf8 collate utf8_czech_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_czech_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('c'),('d'),('h'),('ch'),('CH'),('cH'),('Ch'),('i');
 select * from t1 where s1 > 'd' and s1 = 'CH';
 s1
@@ -1324,6 +1344,8 @@ KEY `IX_mobile_originated_message_created` (`created`),
 KEY `IX_mobile_originated_message_support` (`msisdn`,`momid`,`keyword`,`gateway_id`,`created`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 VALUES 
 (1,'blah','464','aaa','fkc1c9ilc20x0hgae7lx6j09','ERR','ERR Имри.Афимим.Аеимимримдмримрмрирор имримримримр имридм ирбднримрфмририримрфмфмим.Ад.Д имдимримрад.Адимримримрмдиримримримр м.Дадимфшьмримд им.Адимимрн имадми','ИМРИ.АФИМИМ.АЕИМИМРИМДМРИМРМРИРОР',3,'2005-06-01 17:30:43','1234567890'),
@@ -1335,12 +1357,13 @@ CREATE TABLE t2 (
 UNIQUE KEY `PK_user` (`msisdn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t2 VALUES ('1234567890',2,'2005-05-24 13:53:25');
 SELECT content, t2.msisdn FROM t1, t2 WHERE t1.msisdn = '1234567890';
 content	msisdn
-ERR Имри.Афимим.Аеимимримдмримрмрирор имримримримр имридм ирбднримрфмририримрфмфмим.Ад.Д имдимримрад.Адимримримрмдиримримримр м.Дадимфшьмримд им.Адимимрн имадми	1234567890
 11 g	1234567890
+ERR Имри.Афимим.Аеимимримдмримрмрирор имримримримр имридм ирбднримрфмририримрфмфмим.Ад.Д имдимримрад.Адимримримрмдиримримримр м.Дадимфшьмримд им.Адимимрн имадми	1234567890
 DROP TABLE t1,t2;
 SET sql_mode = default;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
@@ -1414,6 +1437,7 @@ KEY a (a)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values (_utf8 0xe880bd);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
@@ -1548,6 +1572,7 @@ Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but wil
 create table t1 (s1 char(5) character set utf8 collate utf8_unicode_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values
 ('a'),('b'),(null),('ペテルグル'),('ü'),('Y');
 create index it1 on t1 (s1);
@@ -1565,6 +1590,7 @@ Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but wil
 create table t1 (s1 char(5) character set utf8 collate utf8_bin);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values
 ('a'),('b'),(null),('ペテルグル'),('ü'),('Y');
 create index it1 on t1 (s1);
@@ -1583,6 +1609,7 @@ create table t1 (a varchar(30) not null primary key)
 engine=innodb  default character set utf8 collate utf8_general_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as gci1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1599,6 +1626,7 @@ create table t1 (a varchar(30) not null primary key)
 engine=innodb default character set utf8 collate utf8_unicode_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as uci1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1615,6 +1643,7 @@ create table t1 (a varchar(30) not null primary key)
 engine=innodb default character set utf8 collate utf8_bin;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as bin1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1634,7 +1663,9 @@ f varchar(128) default 'XXX',
 INDEX (a(4))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 Warnings:
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1(id, a, b) VALUES
 (1, 'cccc', 50), (2, 'cccc', 70), (3, 'cccc', 30),
 (4, 'cccc', 30), (5, 'cccc', 20), (6, 'bbbbbb', 40),
@@ -1677,6 +1708,7 @@ INDEX(a)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1 VALUES 
 ('Käli Käli 2-4'), ('Käli Käli 2-4'),
 ('Käli Käli 2+4'), ('Käli Käli 2+4'),
@@ -1730,6 +1762,7 @@ KEY(a(10))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 SELECT * FROM t1 WHERE a LIKE 'Käli Käli 2%';
 a
@@ -1745,6 +1778,7 @@ a char(255) DEFAULT ''
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 SELECT * FROM t1 WHERE a LIKE 'Käli Käli 2%';
@@ -1765,6 +1799,8 @@ val text NOT NULL,
 INDEX idx(tid, val(10))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 VALUES
 (40988,72,'VOLN� ADSL'),(41009,72,'VOLN� ADSL'),
@@ -1818,7 +1854,9 @@ DROP TABLE t1;
 create table t1(a char(200) collate utf8_unicode_ci NOT NULL default '')
 default charset=utf8 collate=utf8_unicode_ci;
 Warnings:
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values (unhex('65')), (unhex('C3A9')), (unhex('65'));
 explain select distinct a from t1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -1857,6 +1895,7 @@ SET CHARACTER SET utf8;
 CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 USE crashtest;
 CREATE TABLE crashtest (crash char(10)) DEFAULT CHARSET=utf8;
 Warnings:
@@ -2089,6 +2128,7 @@ Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but wil
 create table t1(col1 varchar(12) character set utf8 collate utf8_unicode_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values('t1_val');
 create view v1 as select 'v1_val' as col1;
 select coercibility(col1), collation(col1) from v1;
@@ -2170,6 +2210,7 @@ colB varchar(255) character set utf8 NOT NULL,
 PRIMARY KEY  (colA)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t1 (colA, colB) VALUES (1, 'foo'), (2, 'foo bar');
 CREATE TABLE t2 (
@@ -2178,6 +2219,7 @@ colB varchar(255) character set utf8 NOT NULL,
 KEY bad  (colA,colB(3))
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 INSERT INTO t2 (colA, colB) VALUES (1, 'foo'),(2, 'foo bar');
 SELECT * FROM t1 JOIN t2 ON t1.colA=t2.colA AND t1.colB=t2.colB
@@ -2375,6 +2417,7 @@ Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but wil
 CREATE TABLE t1 (a VARCHAR(10) CHARACTER SET utf8 COLLATE utf8_general_mysql500_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_mysql500_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1 VALUES ('a'),('r'),('s'),(_latin1 0xDF),(_latin1 0xF7),('t'),('z');
 SELECT * FROM t1 ORDER BY a;
 a
@@ -2398,10 +2441,15 @@ DROP TABLE t1;
 End of 5.1 tests
 Start of 5.4 tests
 SET NAMES utf8mb3;
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
 SHOW VARIABLES LIKE 'character_set_results%';
 Variable_name	Value
 character_set_results	utf8
 CREATE TABLE t1 (a CHAR CHARACTER SET utf8mb3 COLLATE utf8mb3_bin);
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -2411,6 +2459,8 @@ DROP TABLE t1;
 SELECT _utf8mb3'test';
 test
 test
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
 CREATE TABLE t1 (
 clipid INT NOT NULL,
 Tape TINYTEXT,
@@ -2545,7 +2595,10 @@ DROP TABLE t1;
 SET NAMES utf8 COLLATE utf8_sinhala_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_sinhala_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 CREATE TABLE t1 (s1 VARCHAR(10) COLLATE utf8_sinhala_ci);
+Warnings:
+Warning	3778	'utf8_sinhala_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 INSERT INTO t1 VALUES ('a'),('ae'),('af');
 SELECT s1,hex(s1) FROM t1 ORDER BY s1;
 s1	hex(s1)
@@ -2617,6 +2670,156 @@ DROP TABLE t1, t2;
 SET NAMES utf8;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+#
+# Bug#54916 GROUP_CONCAT + IFNULL truncates output
+#
+SELECT @@collation_connection;
+@@collation_connection
+utf8_general_ci
+CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=MYISAM;
+INSERT INTO t1 VALUES (1234567);
+SELECT GROUP_CONCAT(IFNULL(a,'')) FROM t1;
+GROUP_CONCAT(IFNULL(a,''))
+1234567
+SELECT GROUP_CONCAT(IF(a,a,'')) FROM t1;
+GROUP_CONCAT(IF(a,a,''))
+1234567
+SELECT GROUP_CONCAT(CASE WHEN a THEN a ELSE '' END) FROM t1;
+GROUP_CONCAT(CASE WHEN a THEN a ELSE '' END)
+1234567
+SELECT COALESCE(a,'') FROM t1 GROUP BY 1;
+Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
+def					COALESCE(a,'')	253	27	7	N	1	31	33
+COALESCE(a,'')
+1234567
+# All columns must be VARCHAR(9) with the same length:
+CREATE TABLE t2 AS
+SELECT
+CONCAT(a),
+IFNULL(a,''),
+IF(a,a,''),
+CASE WHEN a THEN a ELSE '' END,
+COALESCE(a,'')
+FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `CONCAT(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
+  `IFNULL(a,'')` varchar(9) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `IF(a,a,'')` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
+  `CASE WHEN a THEN a ELSE '' END` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
+  `COALESCE(a,'')` varchar(9) CHARACTER SET utf8 NOT NULL DEFAULT ''
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT CONCAT_WS(1,2,3) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `CONCAT_WS(1,2,3)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT INSERT(1133,3,0,22) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `INSERT(1133,3,0,22)` varchar(6) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT LCASE(a) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `LCASE(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT UCASE(a) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `UCASE(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT REPEAT(1,2) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `REPEAT(1,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT LEFT(123,2) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `LEFT(123,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT RIGHT(123,2) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `RIGHT(123,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT LTRIM(123) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `LTRIM(123)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT RTRIM(123) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `RTRIM(123)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT ELT(1,111,222,333) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `ELT(1,111,222,333)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT REPLACE(111,2,3) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `REPLACE(111,2,3)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT SUBSTRING_INDEX(111,111,1) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `SUBSTRING_INDEX(111,111,1)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT MAKE_SET(111,222,3) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `MAKE_SET(111,222,3)` varchar(5) CHARACTER SET utf8 NOT NULL DEFAULT ''
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT SOUNDEX(1) FROM t1;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `SOUNDEX(1)` varchar(4) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+CREATE TABLE t2 AS SELECT EXPORT_SET(1,'ST_Y','N','',8);
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `EXPORT_SET(1,'ST_Y','N','',8)` varchar(256) CHARACTER SET utf8 DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+DROP TABLE t2;
+DROP TABLE t1;
+#
+# End of Bug#54916
+#
 #
 # Start of WL#2649 Number-to-string conversions
 #
@@ -3380,16 +3583,28 @@ t1	CREATE TABLE `t1` (
   `c1` varchar(21) CHARACTER SET utf8 DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1;
+create table t2 ( f1 integer );
+insert into t2 values (1),(2),(3),(4);
+select sql_calc_found_rows * from t2 limit 2;
+f1
+1
+2
+Warnings:
+Warning	1287	SQL_CALC_FOUND_ROWS is deprecated and will be removed in a future release. Consider using two separate queries instead.
 select hex(concat(found_rows()));
 hex(concat(found_rows()))
-30
+34
+Warnings:
+Warning	1287	FOUND_ROWS() is deprecated and will be removed in a future release. Consider using COUNT(*) instead.
 create table t1 as select concat(found_rows()) as c1;
+Warnings:
+Warning	1287	FOUND_ROWS() is deprecated and will be removed in a future release. Consider using COUNT(*) instead.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(21) CHARACTER SET utf8 DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-drop table t1;
+drop table t1, t2;
 create table t1 as select concat(uuid_short()) as c1;
 show create table t1;
 Table	Create Table
@@ -3427,7 +3642,12 @@ drop table t1;
 select hex(concat(@a1:=1));
 hex(concat(@a1:=1))
 31
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 create table t1 as select concat(@a2:=2) as c1, @a3:=3 as c2;
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 select hex(c1) from t1;
 hex(c1)
 32
@@ -3456,7 +3676,12 @@ drop table t1;
 select hex(concat(@a1:=sqrt(1)));
 hex(concat(@a1:=sqrt(1)))
 31
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 create table t1 as select concat(@a2:=sqrt(1)) as c1, @a3:=sqrt(1) as c2;
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 select hex(c1) from t1;
 hex(c1)
 31
@@ -3485,7 +3710,12 @@ drop table t1;
 select hex(concat(@a1:=1.1));
 hex(concat(@a1:=1.1))
 312E31
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 create table t1 as select concat(@a2:=1.1) as c1, @a3:=1.1 as c2;
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 select hex(c1) from t1;
 hex(c1)
 312E31
@@ -3673,7 +3903,7 @@ create table t1 as select concat(ifnull(1.1,1.1)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(5) CHARACTER SET utf8 DEFAULT NULL
+  `c1` varchar(4) CHARACTER SET utf8 DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1;
 select hex(if(1,'b',1));
@@ -3977,7 +4207,7 @@ create table t1 as select concat(year(20090224)) as c1;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `c1` varchar(4) CHARACTER SET utf8 DEFAULT NULL
+  `c1` varchar(5) CHARACTER SET utf8 DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1;
 select hex(concat(weekday(20090224)));
@@ -4464,6 +4694,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a tinyint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4472,6 +4704,9 @@ hex(concat(a))	a
 313030	100
 drop table t1;
 create table t1 (a tinyint(4) zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 insert into t1 values (1), (10), (100);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4504,6 +4739,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a smallint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4526,6 +4763,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a mediumint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4548,6 +4787,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a int zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4570,6 +4811,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a bigint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4595,6 +4838,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a float zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4620,6 +4865,8 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 drop table t1, t2;
 create table t1 (a double zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
 select hex(concat(a)), a from t1;
 hex(concat(a))	a
@@ -4749,6 +4996,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a tinyint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4762,6 +5011,9 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a tinyint(30) zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 insert into t1 values (1), (10), (100);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4797,6 +5049,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a smallint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4823,6 +5077,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a mediumint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4849,6 +5105,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a int zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4875,6 +5133,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a bigint zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1), (10), (100), (1000), (10000);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4901,6 +5161,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a float zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -4930,6 +5192,8 @@ hex(a)
 drop table t1;
 drop view v1;
 create table t1 (a double zerofill);
+Warnings:
+Warning	1681	The ZEROFILL attribute is deprecated and will be removed in a future release. Use the LPAD function to zero-pad numbers, or store the formatted numbers in a CHAR column.
 insert into t1 values (1.1), (10.1), (100.1), (1000.1), (10000.1);
 create view v1(a) as select concat(a) from t1;
 show columns from v1;
@@ -5186,156 +5450,6 @@ SELECT charset(@ST_X), collation(@ST_X);
 charset(@ST_X)	collation(@ST_X)
 utf8	utf8_general_ci
 #
-# Bug#54916 GROUP_CONCAT + IFNULL truncates output
-#
-SELECT @@collation_connection;
-@@collation_connection
-utf8_general_ci
-CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=MYISAM;
-INSERT INTO t1 VALUES (1234567);
-SELECT GROUP_CONCAT(IFNULL(a,'')) FROM t1;
-GROUP_CONCAT(IFNULL(a,''))
-1234567
-SELECT GROUP_CONCAT(IF(a,a,'')) FROM t1;
-GROUP_CONCAT(IF(a,a,''))
-1234567
-SELECT GROUP_CONCAT(CASE WHEN a THEN a ELSE '' END) FROM t1;
-GROUP_CONCAT(CASE WHEN a THEN a ELSE '' END)
-1234567
-SELECT COALESCE(a,'') FROM t1 GROUP BY 1;
-Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def					COALESCE(a,'')	253	27	7	Y	0	31	33
-COALESCE(a,'')
-1234567
-# All columns must be VARCHAR(9) with the same length:
-CREATE TABLE t2 AS
-SELECT
-CONCAT(a),
-IFNULL(a,''),
-IF(a,a,''),
-CASE WHEN a THEN a ELSE '' END,
-COALESCE(a,'')
-FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `CONCAT(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
-  `IFNULL(a,'')` varchar(9) CHARACTER SET utf8 NOT NULL DEFAULT '',
-  `IF(a,a,'')` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
-  `CASE WHEN a THEN a ELSE '' END` varchar(9) CHARACTER SET utf8 DEFAULT NULL,
-  `COALESCE(a,'')` varchar(9) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT CONCAT_WS(1,2,3) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `CONCAT_WS(1,2,3)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT INSERT(1133,3,0,22) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `INSERT(1133,3,0,22)` varchar(6) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT LCASE(a) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `LCASE(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT UCASE(a) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `UCASE(a)` varchar(9) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT REPEAT(1,2) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `REPEAT(1,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT LEFT(123,2) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `LEFT(123,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT RIGHT(123,2) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `RIGHT(123,2)` varchar(2) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT LTRIM(123) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `LTRIM(123)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT RTRIM(123) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `RTRIM(123)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT ELT(1,111,222,333) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `ELT(1,111,222,333)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT REPLACE(111,2,3) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `REPLACE(111,2,3)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT SUBSTRING_INDEX(111,111,1) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `SUBSTRING_INDEX(111,111,1)` varchar(3) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT MAKE_SET(111,222,3) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `MAKE_SET(111,222,3)` varchar(5) CHARACTER SET utf8 NOT NULL DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT SOUNDEX(1) FROM t1;
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `SOUNDEX(1)` varchar(4) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-CREATE TABLE t2 AS SELECT EXPORT_SET(1,'ST_Y','N','',8);
-SHOW CREATE TABLE t2;
-Table	Create Table
-t2	CREATE TABLE `t2` (
-  `EXPORT_SET(1,'ST_Y','N','',8)` varchar(256) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-DROP TABLE t2;
-DROP TABLE t1;
-#
-# End of Bug#54916
-#
-#
 # WL#5510 Functions to_base64 and from_base64
 #
 CREATE TABLE t1 AS SELECT TO_BASE64('test') AS to_base64;
@@ -5368,6 +5482,8 @@ CREATE TABLE t1 (
 id INT(11) DEFAULT NULL,
 date_column DATE DEFAULT NULL,
 KEY(date_column));
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 INSERT INTO t1 VALUES (1,'2010-09-01'),(2,'2010-10-01');
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
@@ -5684,6 +5800,8 @@ select hex(weight_string(cast(_latin1 0x808080 as char),25, 4, 0xC0));
 hex(weight_string(cast(_latin1 0x808080 as char),25, 4, 0xC0))
 20AC20AC20AC00200020002000200020002000200020002000
 set @@collation_connection=utf8_bin;
+Warnings:
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 select @@collation_connection;
 @@collation_connection
 utf8_bin
@@ -5841,6 +5959,7 @@ select @@max_sort_length;
 create table t1 (a varchar(128) character set utf8 collate utf8_general_ci);
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_general_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 insert into t1 values ('a'),('b'),('c');
 select * from t1 order by a;
 a
@@ -5850,6 +5969,7 @@ c
 alter table t1 modify a varchar(128) character set utf8 collate utf8_bin;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 select * from t1 order by a;
 a
 a
@@ -5876,23 +5996,18 @@ inet6_aton(inet_ntoa('1'))
 SELECT inet6_ntoa(inet_ntoa('1'));
 inet6_ntoa(inet_ntoa('1'))
 NULL
-Warnings:
-Warning	1411	Incorrect string value: 'inet_ntoa('1')' for function inet6_ntoa
 #
 # Bug#14040277 UNINITIALIZED VALUE REFERENCED IN STR_TO_IPV6
 #
 SELECT inet6_aton(soundex('a'));
 inet6_aton(soundex('a'))
 NULL
-Warnings:
-Warning	1411	Incorrect string value: 'soundex('a')' for function inet6_aton
 #
 # Bug#19047425 UNINITIALISED VALUE IN STR_TO_IPV6
 #
 do is_ipv4_mapped(inet6_aton(convert(_ascii "a:" using utf8)));
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
-Warning	1411	Incorrect string value: 'convert(_ascii'a:' using utf8)' for function inet6_aton
 #
 # End of 5.6 tests
 #
@@ -5918,3 +6033,24 @@ E5A4A7E4B88DE58897E9A2A0E58F8AE58C97E788B1E5B094E585B0E88194E59088E78E8BE59BBD
 E5A4A7E4B88DE58897E9A2A0E58F8AE58C97E788B1E5B094E585B0E88194E59088E78E8BE59BBD
 E5A4A7E4B88DE58897E9A2A0E58F8AE58C97E788B1E5B094E585B0E88194E59088E78E8BE59BBD
 DROP TABLE t1;
+#
+# Bug#26475237: "INCORRECT STRING VALUE" IS DIPLAYED INSTEAD OF
+#               "DATA TOO LONG" SOMETIMES.
+#
+CREATE TABLE t1(c1 TINYTEXT CHARACTER SET utf8mb4);
+CREATE TABLE t2(c2 TINYTEXT CHARACTER SET latin1);
+INSERT INTO t1 (c1) VALUES(REPEAT('A', 255));
+INSERT INTO t1 (c1) VALUES(REPEAT('A', 256));
+ERROR 22001: Data too long for column 'c1' at row 1
+INSERT INTO t1 (c1) VALUES(REPEAT(X'C385', 127));
+# Without the patch, returns an inappropriate error.
+INSERT INTO t1 (c1) VALUES(REPEAT(X'C385', 128));
+ERROR 22001: Data too long for column 'c1' at row 1
+INSERT INTO t1 (c1) VALUES(REPEAT(X'C385', 129));
+ERROR 22001: Data too long for column 'c1' at row 1
+INSERT INTO t1 (c1) VALUES(CONCAT('a', REPEAT(X'C385', 128)));
+ERROR 22001: Data too long for column 'c1' at row 1
+INSERT INTO t2 (c2) VALUES(REPEAT(_utf8mb4 0xE0B295, 128));
+ERROR HY000: Incorrect string value: '\xE0\xB2\x95\xE0\xB2\x95...' for column 'c2' at row 1
+DROP TABLE t1;
+DROP TABLE t2;

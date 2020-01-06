@@ -1,6 +1,6 @@
 #ifndef INCLUDES_MYSQL_SQL_LIST_H
 #define INCLUDES_MYSQL_SQL_LIST_H
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <algorithm>
+#include <iterator>
 #include <type_traits>
 
 #include "my_alloc.h"
@@ -55,6 +56,8 @@ class SQL_I_List {
       : elements(tmp.elements),
         first(tmp.first),
         next(elements ? tmp.next : &first) {}
+
+  SQL_I_List(SQL_I_List &&) = default;
 
   inline void empty() {
     elements = 0;
@@ -88,6 +91,11 @@ class SQL_I_List {
       elements += save->elements;
     }
   }
+
+  inline uint size() const { return elements; }
+
+  SQL_I_List &operator=(SQL_I_List &) = default;
+  SQL_I_List &operator=(SQL_I_List &&) = default;
 };
 
 /*
@@ -118,21 +126,6 @@ struct list_node {
 };
 
 extern MYSQL_PLUGIN_IMPORT list_node end_of_list;
-
-/**
-  Comparison function for list sorting.
-
-  @param n1   Info of 1st node
-  @param n2   Info of 2nd node
-  @param arg  Additional info
-
-  @return
-    -1  n1 < n2
-     0  n1 == n2
-     1  n1 > n2
-*/
-
-typedef int (*Node_cmp_func)(void *n1, void *n2, void *arg);
 
 class base_list {
  protected:
@@ -257,33 +250,6 @@ class base_list {
     }
   }
   /**
-    @brief
-    Sort the list
-
-    @param cmp  node comparison function
-    @param arg  additional info to be passed to comparison function
-
-    @details
-    The function sorts list nodes by an exchange sort algorithm.
-    The order of list nodes isn't changed, values of info fields are
-    swapped instead. Due to this, list iterators that are initialized before
-    sort could be safely used after sort, i.e they wouldn't cause a crash.
-    As this isn't an effective algorithm the list to be sorted is supposed to
-    be short.
-  */
-  void sort(Node_cmp_func cmp, void *arg) {
-    if (elements < 2) return;
-    for (list_node *n1 = first; n1 && n1 != &end_of_list; n1 = n1->next) {
-      for (list_node *n2 = n1->next; n2 && n2 != &end_of_list; n2 = n2->next) {
-        if ((*cmp)(n1->info, n2->info, arg) > 0) {
-          void *tmp = n1->info;
-          n1->info = n2->info;
-          n2->info = tmp;
-        }
-      }
-    }
-  }
-  /**
     Swap two lists.
   */
   inline void swap(base_list &rhs) {
@@ -296,9 +262,9 @@ class base_list {
   inline void *head() { return first->info; }
   inline const void *head() const { return first->info; }
   inline void **head_ref() { return first != &end_of_list ? &first->info : 0; }
-  inline void *back() { return (*last)->info; }
   inline bool is_empty() const { return first == &end_of_list; }
   inline list_node *last_ref() { return &end_of_list; }
+  inline uint size() const { return elements; }
   friend class base_list_iterator;
   friend class error_list;
   friend class error_list_iterator;
@@ -441,7 +407,7 @@ class base_list_iterator {
   {
     return &current->info;
   }
-  inline bool is_last(void) { return el == &list->last_ref()->next; }
+  inline bool is_last(void) { return el == list->last; }
   inline bool is_before_first() const { return current == NULL; }
   bool prepend(void *a, MEM_ROOT *mem_root) {
     if (list->push_front(a, mem_root)) return true;
@@ -454,6 +420,9 @@ class base_list_iterator {
   }
   friend class error_list_iterator;
 };
+
+template <class T>
+class List_STL_Iterator;
 
 template <class T>
 class List : public base_list {
@@ -470,20 +439,23 @@ class List : public base_list {
     constant T parameter (like List<const char>), since the untyped storage
     is "void *", and assignment of const pointer to "void *" is a syntax error.
   */
-  inline bool push_back(T *a) { return base_list::push_back((void *)a); }
-  inline bool push_back(T *a, MEM_ROOT *mem_root) {
-    return base_list::push_back((void *)a, mem_root);
+  inline bool push_back(T *a) {
+    return base_list::push_back(const_cast<void *>(((const void *)a)));
   }
-  inline bool push_front(T *a) { return base_list::push_front((void *)a); }
+  inline bool push_back(T *a, MEM_ROOT *mem_root) {
+    return base_list::push_back(const_cast<void *>((const void *)a), mem_root);
+  }
+  inline bool push_front(T *a) {
+    return base_list::push_front(const_cast<void *>((const void *)a));
+  }
   inline bool push_front(T *a, MEM_ROOT *mem_root) {
-    return base_list::push_front((void *)a, mem_root);
+    return base_list::push_front(const_cast<void *>((const void *)a), mem_root);
   }
   inline T *head() { return static_cast<T *>(base_list::head()); }
   inline const T *head() const {
     return static_cast<const T *>(base_list::head());
   }
   inline T **head_ref() { return (T **)base_list::head_ref(); }
-  inline T *back() { return (T *)base_list::back(); }
   inline T *pop() { return (T *)base_list::pop(); }
   inline void concat(List<T> *list) { base_list::concat(list); }
   inline void disjoin(List<T> *list) { base_list::disjoin(list); }
@@ -537,7 +509,58 @@ class List : public base_list {
 
     return false;
   }
-  using base_list::sort;
+
+  /**
+    @brief
+    Sort the list
+
+    @param cmp  node comparison function
+
+    @details
+    The function sorts list nodes by an exchange sort algorithm.
+    The order of list nodes isn't changed, values of info fields are
+    swapped instead. Due to this, list iterators that are initialized before
+    sort could be safely used after sort, i.e they wouldn't cause a crash.
+    As this isn't an effective algorithm the list to be sorted is supposed to
+    be short.
+  */
+  template <typename Node_cmp_func>
+  void sort(Node_cmp_func cmp) {
+    if (elements < 2) return;
+    for (list_node *n1 = first; n1 && n1 != &end_of_list; n1 = n1->next) {
+      for (list_node *n2 = n1->next; n2 && n2 != &end_of_list; n2 = n2->next) {
+        if (cmp(static_cast<T *>(n1->info), static_cast<T *>(n2->info)) > 0) {
+          void *tmp = n1->info;
+          n1->info = n2->info;
+          n2->info = tmp;
+        }
+      }
+    }
+  }
+
+  // For C++11 range-based for loops.
+  using iterator = List_STL_Iterator<T>;
+  iterator begin() { return iterator(first); }
+  iterator end() {
+    // If the list overlaps another list, last isn't actually
+    // the last element, and if so, we'd give a different result from
+    // List_iterator_fast.
+    DBUG_ASSERT((*last)->next == &end_of_list);
+
+    return iterator(*last);
+  }
+
+  using const_iterator = List_STL_Iterator<const T>;
+  const_iterator begin() const { return const_iterator(first); }
+  const_iterator end() const {
+    DBUG_ASSERT((*last)->next == &end_of_list);
+    return const_iterator(*last);
+  }
+  const_iterator cbegin() const { return const_iterator(first); }
+  const_iterator cend() const {
+    DBUG_ASSERT((*last)->next == &end_of_list);
+    return const_iterator(*last);
+  }
 };
 
 template <class T>
@@ -576,6 +599,57 @@ class List_iterator_fast : public base_list_iterator {
   void sublist(List<T> &list_arg, uint el_arg) {
     base_list_iterator::sublist(list_arg, el_arg);
   }
+};
+
+/*
+  Like List_iterator<T>, but with an STL-compatible interface
+  (ForwardIterator), so that you can use it in range-based for loops.
+  Prefer this to List_iterator<T> wherever possible, but also prefer
+  std::vector<T> or std::list<T> to List<T> wherever possible.
+ */
+template <class T>
+class List_STL_Iterator {
+ public:
+  explicit List_STL_Iterator(list_node *node) : m_current(node) {}
+
+  // Iterator (required for InputIterator).
+  T &operator*() const { return *static_cast<T *>(m_current->info); }
+
+  List_STL_Iterator &operator++() {
+    m_current = m_current->next;
+    return *this;
+  }
+
+  using difference_type = ptrdiff_t;
+  using value_type = T;  // NOTE: std::remove_cv_t<T> from C++20.
+  using pointer = T *;
+  using reference = T &;
+  using iterator_category = std::forward_iterator_tag;
+
+  // EqualityComparable (required for InputIterator).
+  bool operator==(const List_STL_Iterator &other) const {
+    return m_current == other.m_current;
+  }
+
+  // InputIterator (required for ForwardIterator).
+  bool operator!=(const List_STL_Iterator &other) const {
+    return !(*this == other);
+  }
+
+  T *operator->() const { return static_cast<T *>(m_current->info); }
+
+  // DefaultConstructible (required for ForwardIterator).
+  List_STL_Iterator() {}
+
+  // ForwardIterator.
+  List_STL_Iterator operator++(int) {
+    List_STL_Iterator copy = *this;
+    m_current = m_current->next;
+    return copy;
+  }
+
+ private:
+  list_node *m_current;
 };
 
 template <typename T>

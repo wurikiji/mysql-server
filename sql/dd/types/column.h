@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -44,7 +44,7 @@ class Properties;
 
 namespace tables {
 class Columns;
-};
+}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -101,7 +101,7 @@ class Column : virtual public Entity_object {
     HT_HIDDEN_SQL = 3
   };
 
-  virtual ~Column(){};
+  virtual ~Column() {}
 
   /////////////////////////////////////////////////////////////////////////
   // Table.
@@ -295,7 +295,7 @@ class Column : virtual public Entity_object {
   virtual const Properties &options() const = 0;
 
   virtual Properties &options() = 0;
-  virtual bool set_options_raw(const String_type &options_raw) = 0;
+  virtual bool set_options(const String_type &options_raw) = 0;
 
   /////////////////////////////////////////////////////////////////////////
   // se_private_data.
@@ -304,8 +304,8 @@ class Column : virtual public Entity_object {
   virtual const Properties &se_private_data() const = 0;
 
   virtual Properties &se_private_data() = 0;
-  virtual bool set_se_private_data_raw(
-      const String_type &se_private_data_raw) = 0;
+  virtual bool set_se_private_data(const Properties &se_private_data) = 0;
+  virtual bool set_se_private_data(const String_type &se_private_data_raw) = 0;
 
   /////////////////////////////////////////////////////////////////////////
   // Column key type.
@@ -362,6 +362,8 @@ class Column : virtual public Entity_object {
   */
 
   virtual bool deserialize(Sdi_rcontext *rctx, const RJ_Value &val) = 0;
+
+  virtual bool is_array() const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////

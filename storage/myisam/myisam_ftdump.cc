@@ -1,4 +1,4 @@
-/* Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -32,6 +32,7 @@
 #include "my_inttypes.h"
 #include "print_version.h"
 #include "storage/myisam/ftdefs.h"
+#include "storage/myisam/myisamdef.h"
 #include "welcome_copyright_notice.h"
 
 static void usage() MY_ATTRIBUTE((noreturn));
@@ -125,7 +126,7 @@ int main(int argc, char *argv[]) {
     keylen = *(info->lastkey);
 
     subkeys = ft_sintXkorr(info->lastkey + keylen + 1);
-    if (subkeys >= 0) ft_floatXget(weight, info->lastkey + keylen + 1);
+    if (subkeys >= 0) weight = ft_floatXget(info->lastkey + keylen + 1);
 
     snprintf(buf, MAX_LEN, "%.*s", (int)keylen, info->lastkey + 1);
     my_casedn_str(default_charset_info, buf);

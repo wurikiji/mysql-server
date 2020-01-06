@@ -2,7 +2,7 @@
 #define PARTITION_HANDLER_INCLUDED
 
 /*
-   Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -309,6 +309,15 @@ class Partition_handler {
   virtual uint alter_flags(uint flags MY_ATTRIBUTE((unused))) const {
     return 0;
   }
+
+  /**
+    Get partition row type from SE
+    @param       table      partition table
+    @param       part_id    Id of partition for which row type to be retrieved
+    @return      Partition row type.
+  */
+  virtual enum row_type get_partition_row_type(const dd::Table *table,
+                                               uint part_id) = 0;
 
  private:
   /**
@@ -851,7 +860,7 @@ class Partition_helper {
   */
   virtual int read_range_first_in_part(uint part, uchar *buf,
                                        const key_range *start_key,
-                                       const key_range *end_key, bool eq_range,
+                                       const key_range *end_key,
                                        bool sorted) = 0;
   /**
     Do read_range_next in the specified partition.
@@ -1082,8 +1091,6 @@ class Partition_helper {
   bool m_pkey_is_clustered;
   /** Cached value of m_part_info->is_sub_partitioned(). */
   bool m_is_sub_partitioned;
-  /** Partition share for auto_inc handling. */
-  Partition_share *m_part_share;
   /** Total number of partitions. */
   uint m_tot_parts;
   uint m_last_part;        // Last accessed partition.
@@ -1136,5 +1143,9 @@ class Partition_helper {
   /** Partitions that returned HA_ERR_KEY_NOT_FOUND. */
   MY_BITMAP m_key_not_found_partitions;
   /** @} */
+
+ private:
+  /** Partition share for auto_inc handling. */
+  Partition_share *m_part_share;
 };
 #endif /* PARTITION_HANDLER_INCLUDED */

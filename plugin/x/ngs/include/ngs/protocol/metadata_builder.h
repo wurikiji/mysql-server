@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -25,22 +25,29 @@
 #ifndef PLUGIN_X_NGS_INCLUDE_NGS_PROTOCOL_METADATA_BUILDER_H_
 #define PLUGIN_X_NGS_INCLUDE_NGS_PROTOCOL_METADATA_BUILDER_H_
 
-#include <set>
-#include <string>
+#include <vector>
 
-#include "m_ctype.h"
 #include "my_inttypes.h"
-#include "plugin/x/ngs/include/ngs/interface/protocol_encoder_interface.h"
-#include "plugin/x/ngs/include/ngs/protocol/message_builder.h"
+#include "plugin/x/ngs/include/ngs/protocol/column_info_builder.h"
 
 namespace ngs {
 
-class Output_buffer;
+using Metadata_vector = std::vector<Column_info_builder>;
 
-class Metadata_builder : public Message_builder {
+class Metadata_builder {
  public:
-  void encode_metadata(Output_buffer *out_buffer,
-                       const Encode_column_info *column_info);
+  void begin_metdata(const int num_of_columns) {
+    m_columns.resize(num_of_columns);
+
+    for (auto &c : m_columns) {
+      c.reset();
+    }
+  }
+
+  Metadata_vector &get_columns() { return m_columns; }
+
+ private:
+  Metadata_vector m_columns;
 };
 
 }  // namespace ngs

@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -110,7 +110,7 @@ public:
     int print_full_config;
     const char* configdir;
     int verbose;
-    MgmtOpts() : configdir(MYSQLCLUSTERDIR) {};
+    MgmtOpts() : configdir(MYSQLCLUSTERDIR) {}
     int reload;
     int initial;
     NodeBitmask nowait_nodes;
@@ -145,7 +145,7 @@ private:
 
 public:
 
-  NodeId getOwnNodeId() const {return _ownNodeId;};
+  NodeId getOwnNodeId() const {return _ownNodeId;}
 
   /**
    * Get status on a node.
@@ -154,17 +154,18 @@ public:
    * Copy the string if you are not going to use it immediately.
    */
   int status(int nodeId,
-	     ndb_mgm_node_status * status,
-	     Uint32 * version,
-	     Uint32 * mysql_version,
-	     Uint32 * phase,
-	     bool * systemShutdown,
-	     Uint32 * dynamicId,
-	     Uint32 * nodeGroup,
-	     Uint32 * connectCount,
-	     const char **address,
+             ndb_mgm_node_status * status,
+             Uint32 * version,
+             Uint32 * mysql_version,
+             Uint32 * phase,
+             bool * systemShutdown,
+             Uint32 * dynamicId,
+             Uint32 * nodeGroup,
+             Uint32 * connectCount,
+             const char **address,
              char *addr_buf,
-             size_t addr_buf_size);
+             size_t addr_buf_size,
+             bool* is_single_user);
 
   /**
    *   Stop a list of nodes
@@ -322,13 +323,20 @@ private:
   void config_changed(NodeId, const Config*);
   void setClusterLog(const Config* conf);
   void configure_eventlogger(const BaseString& logdestination) const;
+  /**
+   * Make cluster logging asynchronous/synchronous
+   * when g_eventLogger is set up the next time.
+   * @param async_cluster_logging true for async logging,
+   * false for sync logging
+   */
+  void set_async_cluster_logging(bool async_cluster_logging);
 public:
 
   /**
    * Returns the port number where MgmApiService is started
    * @return port number.
    */
-  int getPort() const { return m_port; };
+  int getPort() const { return m_port; }
 
   int setDbParameter(int node, int parameter, const char * value, BaseString&);
   int setConnectionDbParameter(int node1, int node2, int param, int value,
@@ -365,20 +373,23 @@ private:
                   Uint32& version, Uint32& mysql_version,
                   const char **address,
                   char *addr_buf,
-                  size_t addr_buf_size);
+                  size_t addr_buf_size,
+                  bool& is_single_user);
   void status_mgmd(NodeId node_id,
                    ndb_mgm_node_status& node_status,
                    Uint32& version, Uint32& mysql_version,
                    const char **address,
                    char *addr_buf,
-                   size_t addr_buf_size);
+                   size_t addr_buf_size,
+                   bool& is_single_user);
 
   int sendVersionReq(int processId,
                      Uint32 &version,
                      Uint32& mysql_version,
                      const char **address,
                      char *addr_buf,
-                     size_t addr_buf_size);
+                     size_t addr_buf_size,
+                     bool& is_single_user);
 
   int sendStopMgmd(NodeId nodeId,
                    bool abort,
@@ -413,6 +424,7 @@ private:
 
   bool is_any_node_starting(void);
   bool is_any_node_stopping(void);
+  bool is_any_node_alive(void);
   bool is_any_node_in_started_state(void);
   bool is_cluster_single_user(void);
   bool are_all_nodes_in_cmvmi_state(void);
@@ -453,7 +465,9 @@ private:
   /**
    * An event from <i>nodeId</i> has arrived
    */
-  void eventReport(const Uint32 * theData, Uint32 len);
+  void eventReport(const Uint32 * theSignalData,
+                   Uint32 len,
+                   const Uint32 * theData);
  
   class TransporterFacade * theFacade;
 
@@ -484,11 +498,16 @@ private:
 public:
   /* Get copy of configuration packed with base64 */
   bool get_packed_config(ndb_mgm_node_type nodetype,
-                         BaseString& buf64, BaseString& error);
+                         BaseString& buf64,
+                         BaseString& error,
+                         bool v2,
+                         Uint32 node_id);
 
   /* Get copy of configuration packed with base64 from node nodeid */
   bool get_packed_config_from_node(NodeId nodeid,
-                         BaseString& buf64, BaseString& error);
+                         BaseString& buf64,
+                         BaseString& error,
+                         bool v2);
 
   void print_config(const char* section_filter = NULL,
                     NodeId nodeid_filter = 0,
@@ -531,10 +550,10 @@ private:
   int try_alloc(NodeId id,
                 ndb_mgm_node_type type,
                 Uint32 timeout_ms);
-  bool try_alloc_from_list(NodeId& nodeid,
-                           ndb_mgm_node_type type,
-                           Uint32 timeout_ms,
-                           Vector<PossibleNode>& nodes_info);
+  int try_alloc_from_list(NodeId& nodeid,
+                          ndb_mgm_node_type type,
+                          Uint32 timeout_ms,
+                          Vector<PossibleNode>& nodes_info);
   int find_node_type(NodeId nodeid,
                      ndb_mgm_node_type type,
                      const struct sockaddr* client_addr,
@@ -572,6 +591,7 @@ public:
 
 private:
   BaseString m_version_string;
+  bool m_async_cluster_logging;
 public:
   const char* get_version_string(void) const {
     return m_version_string.c_str();

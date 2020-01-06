@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -54,8 +54,6 @@
   TREE_ELEMENT struct.
   If one uses only pointers in tree one can use tree_set_pointer() to
   change address of data.
-
-  Implemented by monty.
 */
 
 /*
@@ -106,7 +104,7 @@ static int test_rb_tree(TREE_ELEMENT *element);
 void init_tree(TREE *tree, size_t default_alloc_size, ulong memory_limit,
                int size, qsort2_cmp compare, bool with_delete,
                tree_element_free free_element, const void *custom_arg) {
-  DBUG_ENTER("init_tree");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("tree: %p  size: %d", tree, size));
 
   if (default_alloc_size < DEFAULT_ALLOC_SIZE)
@@ -143,11 +141,10 @@ void init_tree(TREE *tree, size_t default_alloc_size, ulong memory_limit,
   if (!(tree->with_delete = with_delete)) {
     init_alloc_root(key_memory_TREE, &tree->mem_root, default_alloc_size, 0);
   }
-  DBUG_VOID_RETURN;
 }
 
 static void free_tree(TREE *tree, myf free_flags) {
-  DBUG_ENTER("free_tree");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("tree: %p", tree));
 
   if (tree->root) /* If initialized */
@@ -167,8 +164,6 @@ static void free_tree(TREE *tree, myf free_flags) {
   tree->root = &tree->null_element;
   tree->elements_in_tree = 0;
   tree->allocated = 0;
-
-  DBUG_VOID_RETURN;
 }
 
 void delete_tree(TREE *tree) {
@@ -196,6 +191,10 @@ static void delete_tree_element(TREE *tree, TREE_ELEMENT *element) {
   The following should be true:
     parent[0] = & parent[-1][0]->left ||
     parent[0] = & parent[-1][0]->right
+
+  @returns
+    NULL     OOM or duplicate
+    non-null inserted element
 */
 
 TREE_ELEMENT *tree_insert(TREE *tree, void *key, uint key_size,
@@ -234,7 +233,7 @@ TREE_ELEMENT *tree_insert(TREE *tree, void *key, uint key_size,
       element =
           (TREE_ELEMENT *)my_malloc(key_memory_TREE, alloc_size, MYF(MY_WME));
     else
-      element = (TREE_ELEMENT *)alloc_root(&tree->mem_root, alloc_size);
+      element = (TREE_ELEMENT *)tree->mem_root.Alloc(alloc_size);
     if (!element) return (NULL);
     **parent = element;
     element->left = element->right = &tree->null_element;

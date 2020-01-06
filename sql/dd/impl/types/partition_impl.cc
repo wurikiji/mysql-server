@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,6 +23,7 @@
 #include "sql/dd/impl/types/partition_impl.h"
 
 #include <stddef.h>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -36,7 +37,6 @@
 #include "my_inttypes.h"
 #include "my_sys.h"
 #include "mysqld_error.h"                         // ER_*
-#include "sql/dd/impl/properties_impl.h"          // Properties_impl
 #include "sql/dd/impl/raw/raw_record.h"           // Raw_record
 #include "sql/dd/impl/sdi_impl.h"                 // sdi read/write functions
 #include "sql/dd/impl/tables/index_partitions.h"  // Index_partitions
@@ -46,8 +46,7 @@
 #include "sql/dd/impl/types/partition_index_impl.h"  // Partition_index_impl
 #include "sql/dd/impl/types/partition_value_impl.h"  // Partition_value_impl
 #include "sql/dd/impl/types/table_impl.h"            // Table_impl
-#include "sql/dd/properties.h"
-#include "sql/dd/string_type.h"  // dd::String_type
+#include "sql/dd/string_type.h"                      // dd::String_type
 #include "sql/dd/types/object_table.h"
 #include "sql/dd/types/partition_index.h"
 #include "sql/dd/types/partition_value.h"
@@ -63,6 +62,10 @@ class Index;
 class Sdi_rcontext;
 class Sdi_wcontext;
 
+static const std::set<String_type> default_valid_option_keys = {
+    "data_file_name", "explicit_tablespace", "index_file_name", "max_rows",
+    "min_rows",       "nodegroup_id",        "tablespace"};
+
 ///////////////////////////////////////////////////////////////////////////
 // Partition_impl implementation.
 ///////////////////////////////////////////////////////////////////////////
@@ -71,8 +74,8 @@ Partition_impl::Partition_impl()
     : m_parent_partition_id(INVALID_OBJECT_ID),
       m_number(-1),
       m_se_private_id(INVALID_OBJECT_ID),
-      m_options(new Properties_impl()),
-      m_se_private_data(new Properties_impl()),
+      m_options(default_valid_option_keys),
+      m_se_private_data(),
       m_table(NULL),
       m_parent(NULL),
       m_values(),
@@ -84,8 +87,8 @@ Partition_impl::Partition_impl(Table_impl *table)
     : m_parent_partition_id(INVALID_OBJECT_ID),
       m_number(-1),
       m_se_private_id((ulonglong)-1),
-      m_options(new Properties_impl()),
-      m_se_private_data(new Properties_impl()),
+      m_options(default_valid_option_keys),
+      m_se_private_data(),
       m_table(table),
       m_parent(NULL),
       m_values(),
@@ -100,8 +103,8 @@ Partition_impl::Partition_impl(Table_impl *table, Partition_impl *parent)
     : m_parent_partition_id(INVALID_OBJECT_ID),
       m_number(-1),
       m_se_private_id((ulonglong)-1),
-      m_options(new Properties_impl()),
-      m_se_private_data(new Properties_impl()),
+      m_options(default_valid_option_keys),
+      m_se_private_data(),
       m_table(table),
       m_parent(parent),
       m_values(),
@@ -118,38 +121,6 @@ Partition_impl::~Partition_impl() {}
 const Table &Partition_impl::table() const { return *m_table; }
 
 Table &Partition_impl::table() { return *m_table; }
-
-///////////////////////////////////////////////////////////////////////////
-
-bool Partition_impl::set_options_raw(const String_type &options_raw) {
-  Properties *properties = Properties_impl::parse_properties(options_raw);
-
-  if (!properties)
-    return true;  // Error status, current values has not changed.
-
-  m_options.reset(properties);
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-bool Partition_impl::set_se_private_data_raw(
-    const String_type &se_private_data_raw) {
-  Properties *properties =
-      Properties_impl::parse_properties(se_private_data_raw);
-
-  if (!properties)
-    return true;  // Error status, current values has not changed.
-
-  m_se_private_data.reset(properties);
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-void Partition_impl::set_se_private_data(const Properties &se_private_data) {
-  m_se_private_data->assign(se_private_data);
-}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -252,9 +223,8 @@ bool Partition_impl::restore_attributes(const Raw_record &r) {
 
   m_se_private_id = r.read_uint(Table_partitions::FIELD_SE_PRIVATE_ID, -1);
 
-  set_options_raw(r.read_str(Table_partitions::FIELD_OPTIONS, ""));
-  set_se_private_data_raw(
-      r.read_str(Table_partitions::FIELD_SE_PRIVATE_DATA, ""));
+  set_options(r.read_str(Table_partitions::FIELD_OPTIONS, ""));
+  set_se_private_data(r.read_str(Table_partitions::FIELD_SE_PRIVATE_DATA, ""));
 
   return false;
 }
@@ -273,9 +243,8 @@ bool Partition_impl::store_attributes(Raw_record *r) {
                   m_description_utf8.empty()) ||
          r->store(Table_partitions::FIELD_ENGINE, m_engine) ||
          r->store(Table_partitions::FIELD_COMMENT, m_comment) ||
-         r->store(Table_partitions::FIELD_OPTIONS, *m_options) ||
-         r->store(Table_partitions::FIELD_SE_PRIVATE_DATA,
-                  *m_se_private_data) ||
+         r->store(Table_partitions::FIELD_OPTIONS, m_options) ||
+         r->store(Table_partitions::FIELD_SE_PRIVATE_DATA, m_se_private_data) ||
          r->store(Table_partitions::FIELD_SE_PRIVATE_ID, m_se_private_id,
                   m_se_private_id == INVALID_OBJECT_ID) ||
          r->store_ref_id(Table_partitions::FIELD_TABLESPACE_ID,
@@ -316,9 +285,10 @@ bool Partition_impl::deserialize(Sdi_rcontext *rctx, const RJ_Value &val) {
   read(&m_comment, val, "comment");
   read_properties(&m_options, val, "options");
   read_properties(&m_se_private_data, val, "se_private_data");
-  deserialize_each(rctx, [this]() { return add_value(); }, val, "values");
-  deserialize_each(rctx, [this]() { return add_index(nullptr); }, val,
-                   "indexes");
+  deserialize_each(
+      rctx, [this]() { return add_value(); }, val, "values");
+  deserialize_each(
+      rctx, [this]() { return add_index(nullptr); }, val, "indexes");
 
   return deserialize_tablespace_ref(rctx, &m_tablespace_id, val,
                                     "tablespace_ref");
@@ -337,8 +307,8 @@ void Partition_impl::debug_print(String_type &outb) const {
      << "m_description_utf8: " << m_description_utf8 << "; "
      << "m_engine: " << m_engine << "; "
      << "m_comment: " << m_comment << "; "
-     << "m_options " << m_options->raw_string() << "; "
-     << "m_se_private_data " << m_se_private_data->raw_string() << "; "
+     << "m_options " << m_options.raw_string() << "; "
+     << "m_se_private_data " << m_se_private_data.raw_string() << "; "
      << "m_se_private_id: {OID: " << m_se_private_id << "}; "
      << "m_tablespace: {OID: " << m_tablespace_id << "}; "
      << "m_values: " << m_values.size() << " [ ";
@@ -419,9 +389,8 @@ Partition_impl::Partition_impl(const Partition_impl &src, Table_impl *parent)
       m_description_utf8(src.m_description_utf8),
       m_engine(src.m_engine),
       m_comment(src.m_comment),
-      m_options(Properties_impl::parse_properties(src.m_options->raw_string())),
-      m_se_private_data(Properties_impl::parse_properties(
-          src.m_se_private_data->raw_string())),
+      m_options(src.m_options),
+      m_se_private_data(src.m_se_private_data),
       m_table(parent),
       m_parent(src.parent() ? parent->get_partition(src.parent()->name())
                             : NULL),
@@ -448,9 +417,8 @@ Partition_impl::Partition_impl(const Partition_impl &src, Partition_impl *part)
       m_description_utf8(src.m_description_utf8),
       m_engine(src.m_engine),
       m_comment(src.m_comment),
-      m_options(Properties_impl::parse_properties(src.m_options->raw_string())),
-      m_se_private_data(Properties_impl::parse_properties(
-          src.m_se_private_data->raw_string())),
+      m_options(src.m_options),
+      m_se_private_data(src.m_se_private_data),
       m_table(&part->table_impl()),
       m_parent(part),
       m_values(),

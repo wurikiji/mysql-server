@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -48,6 +48,7 @@
 #include "sql/auth/sql_security_ctx.h"
 #include "sql/current_thd.h"
 #include "sql/dd/dd_schema.h"  // dd::Schema_MDL_locker
+#include "sql/dd/types/event.h"
 #include "sql/event_data_objects.h"
 #include "sql/event_db_repository.h"
 #include "sql/event_queue.h"
@@ -78,12 +79,10 @@
 
 extern my_thread_attr_t connection_attrib;
 
-Event_db_repository *Event_worker_thread::db_repository;
-
-static const LEX_STRING scheduler_states_names[] = {
-    {C_STRING_WITH_LEN("INITIALIZED")},
-    {C_STRING_WITH_LEN("RUNNING")},
-    {C_STRING_WITH_LEN("STOPPING")}};
+static const LEX_CSTRING scheduler_states_names[] = {
+    {STRING_WITH_LEN("INITIALIZED")},
+    {STRING_WITH_LEN("RUNNING")},
+    {STRING_WITH_LEN("STOPPING")}};
 
 struct scheduler_param {
   THD *thd;
@@ -105,8 +104,8 @@ void Event_worker_thread::print_warnings(THD *thd, Event_job_data *et) {
   const Sql_condition *err;
   enum loglevel ll;
 
-  DBUG_ENTER("evex_print_warnings");
-  if (thd->get_stmt_da()->cond_count() == 0) DBUG_VOID_RETURN;
+  DBUG_TRACE;
+  if (thd->get_stmt_da()->cond_count() == 0) return;
 
   char msg_buf[10 * STRING_BUFFER_USUAL_SIZE];
   char prefix_buf[5 * STRING_BUFFER_USUAL_SIZE];
@@ -149,7 +148,6 @@ void Event_worker_thread::print_warnings(THD *thd, Event_job_data *et) {
     LogErr(ll, ER_EVENT_MESSAGE_STACK, static_cast<int>(err_msg.length()),
            err_msg.c_ptr());
   }
-  DBUG_VOID_RETURN;
 }
 
 /*
@@ -165,9 +163,10 @@ void Event_worker_thread::print_warnings(THD *thd, Event_job_data *et) {
 */
 
 bool post_init_event_thread(THD *thd) {
-  if (my_thread_init() || thd->store_globals()) {
+  if (my_thread_init()) {
     return true;
   }
+  thd->store_globals();
 
   Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
   thd_manager->add_thd(thd);
@@ -210,13 +209,13 @@ void deinit_event_thread(THD *thd) {
 */
 
 void pre_init_event_thread(THD *thd) {
-  DBUG_ENTER("pre_init_event_thread");
+  DBUG_TRACE;
   thd->security_context()->set_master_access(0);
   thd->security_context()->cache_current_db_access(0);
-  thd->security_context()->set_host_or_ip_ptr((char *)my_localhost,
+  thd->security_context()->set_host_or_ip_ptr(my_localhost,
                                               strlen(my_localhost));
   thd->get_protocol_classic()->init_net(NULL);
-  thd->security_context()->set_user_ptr(C_STRING_WITH_LEN("event_scheduler"));
+  thd->security_context()->set_user_ptr(STRING_WITH_LEN("event_scheduler"));
   thd->get_protocol_classic()->get_net()->read_timeout = slave_net_timeout;
   thd->slave_thread = 0;
   thd->variables.option_bits |= OPTION_AUTO_IS_NULL;
@@ -233,8 +232,6 @@ void pre_init_event_thread(THD *thd) {
 
   /* Do not use user-supplied timeout value for system threads. */
   thd->variables.lock_wait_timeout = LONG_TIMEOUT;
-
-  DBUG_VOID_RETURN;
 }
 
 /*
@@ -261,19 +258,20 @@ static void *event_scheduler_thread(void *arg) {
 
   res = post_init_event_thread(thd);
 
-  DBUG_ENTER("event_scheduler_thread");
-  my_claim(arg);
-  thd->claim_memory_ownership();
-  my_free(arg);
-  if (!res)
-    scheduler->run(thd);
-  else {
-    thd->proc_info = "Clearing";
-    thd->get_protocol_classic()->end_net();
-    delete thd;
-  }
+  {
+    DBUG_TRACE;
+    my_claim(arg);
+    thd->claim_memory_ownership();
+    my_free(arg);
+    if (!res)
+      scheduler->run(thd);
+    else {
+      thd->proc_info = "Clearing";
+      thd->get_protocol_classic()->end_net();
+      delete thd;
+    }
 
-  DBUG_LEAVE;  // Against gcc warnings
+  }  // Against gcc warnings
   my_thread_end();
   return 0;
 }
@@ -331,13 +329,13 @@ void Event_worker_thread::run(THD *thd, Event_queue_element_for_exec *event) {
   thd->thread_stack = &my_stack;  // remember where our stack is
   res = post_init_event_thread(thd);
 
-  DBUG_ENTER("Event_worker_thread::run");
+  DBUG_TRACE;
   DBUG_PRINT("info", ("Time is %ld, THD: %p", (long)my_time(0), thd));
 
   if (res) {
     delete event;
     deinit_event_thread(thd);
-    DBUG_VOID_RETURN;
+    return;
   }
 
 #ifdef HAVE_PSI_STATEMENT_INTERFACE
@@ -354,26 +352,23 @@ void Event_worker_thread::run(THD *thd, Event_queue_element_for_exec *event) {
     thd is deleted.
   */
   {
-    MDL_request event_mdl_request;
-    char event_name_buf[NAME_LEN + 1];
-
     dd::Schema_MDL_locker mdl_handler(thd);
     if (mdl_handler.ensure_locked(event->dbname.str)) goto end;
 
-    // convert event name to lower case before acquiring MDL lock.
-    convert_name_lowercase(event->name.str, event_name_buf,
-                           sizeof(event_name_buf));
+    MDL_key mdl_key;
+    dd::Event::create_mdl_key(event->dbname.str, event->name.str, &mdl_key);
 
-    MDL_REQUEST_INIT(&event_mdl_request, MDL_key::EVENT, event->dbname.str,
-                     event_name_buf, MDL_SHARED, MDL_EXPLICIT);
+    MDL_request event_mdl_request;
+    MDL_REQUEST_INIT_BY_KEY(&event_mdl_request, &mdl_key, MDL_SHARED,
+                            MDL_EXPLICIT);
     if (thd->mdl_context.acquire_lock(&event_mdl_request,
                                       thd->variables.lock_wait_timeout)) {
       DBUG_PRINT("error", ("Got error in getting MDL locks"));
       goto end;
     }
 
-    if ((res = db_repository->load_named_event(thd, event->dbname, event->name,
-                                               &job_data))) {
+    if ((res = Event_db_repository::load_named_event(thd, event->dbname,
+                                                     event->name, &job_data))) {
       DBUG_PRINT("error", ("Got error from load_named_event"));
       thd->mdl_context.release_lock(event_mdl_request.ticket);
       goto end;
@@ -404,8 +399,6 @@ end:
 
   delete event;
   deinit_event_thread(thd);
-
-  DBUG_VOID_RETURN;
 }
 
 Event_scheduler::Event_scheduler(Event_queue *queue_arg)
@@ -450,8 +443,7 @@ bool Event_scheduler::start(int *err_no) {
   bool ret = false;
   my_thread_handle th;
   struct scheduler_param *scheduler_param_value;
-  ulong master_access;
-  DBUG_ENTER("Event_scheduler::start");
+  DBUG_TRACE;
 
   LOCK_DATA();
   DBUG_PRINT("info",
@@ -478,11 +470,15 @@ bool Event_scheduler::start(int *err_no) {
     We should run the event scheduler thread under the super-user privileges.
     In particular, this is needed to be able to lock the mysql.events table
     for writing when the server is running in the read-only mode.
-
     Same goes for transaction access mode. Set it to read-write for this thd.
+
+    In case the definer has SYSTEM_USER privileges then event scheduler thread
+    can drop the event only if the same privilege is granted to it.
+    Therefore, assign all privileges to this thread.
   */
-  master_access = new_thd->security_context()->master_access();
-  new_thd->security_context()->set_master_access(master_access | SUPER_ACL);
+  new_thd->security_context()->skip_grants();
+  new_thd->security_context()->set_host_or_ip_ptr(my_localhost,
+                                                  strlen(my_localhost));
   new_thd->variables.transaction_read_only = false;
   new_thd->tx_read_only = false;
 
@@ -516,7 +512,7 @@ bool Event_scheduler::start(int *err_no) {
 
 end:
   UNLOCK_DATA();
-  DBUG_RETURN(ret);
+  return ret;
 }
 
 /*
@@ -533,7 +529,7 @@ end:
 
 bool Event_scheduler::run(THD *thd) {
   bool res = false;
-  DBUG_ENTER("Event_scheduler::run");
+  DBUG_TRACE;
 
   LogErr(INFORMATION_LEVEL, ER_SCHEDULER_STARTED, thd->thread_id());
   /*
@@ -571,7 +567,7 @@ bool Event_scheduler::run(THD *thd) {
   mysql_cond_broadcast(&COND_state);
   UNLOCK_DATA();
 
-  DBUG_RETURN(res);
+  return res;
 }
 
 /*
@@ -590,7 +586,7 @@ bool Event_scheduler::execute_top(Event_queue_element_for_exec *event_name) {
   THD *new_thd;
   my_thread_handle th;
   int res = 0;
-  DBUG_ENTER("Event_scheduler::execute_top");
+  DBUG_TRACE;
   if (!(new_thd = new THD())) goto error;
 
   pre_init_event_thread(new_thd);
@@ -626,14 +622,14 @@ bool Event_scheduler::execute_top(Event_queue_element_for_exec *event_name) {
   ++started_events;
 
   DBUG_PRINT("info", ("Event is in THD: %p", new_thd));
-  DBUG_RETURN(false);
+  return false;
 
 error:
   DBUG_PRINT("error", ("Event_scheduler::execute_top() res: %d", res));
   if (new_thd) delete new_thd;
 
   delete event_name;
-  DBUG_RETURN(true);
+  return true;
 }
 
 /*
@@ -671,7 +667,7 @@ bool Event_scheduler::is_running() {
 
 bool Event_scheduler::stop() {
   THD *thd = current_thd;
-  DBUG_ENTER("Event_scheduler::stop");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("thd: %p", thd));
 
   LOCK_DATA();
@@ -718,7 +714,7 @@ bool Event_scheduler::stop() {
   LogErr(INFORMATION_LEVEL, ER_SCHEDULER_STOPPED);
 end:
   UNLOCK_DATA();
-  DBUG_RETURN(false);
+  return false;
 }
 
 /**
@@ -750,11 +746,11 @@ class Is_worker : public Do_THD_Impl {
 int Event_scheduler::workers_count() {
   int count = 0;
   Is_worker is_worker;
-  DBUG_ENTER("Event_scheduler::workers_count");
+  DBUG_TRACE;
   Global_THD_manager::get_instance()->do_for_all_thd(&is_worker);
   count = is_worker.get_count();
   DBUG_PRINT("exit", ("%d", count));
-  DBUG_RETURN(count);
+  return count;
 }
 
 /*
@@ -768,13 +764,12 @@ int Event_scheduler::workers_count() {
 */
 
 void Event_scheduler::lock_data(const char *func, uint line) {
-  DBUG_ENTER("Event_scheduler::lock_data");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("func=%s line=%u", func, line));
   mysql_mutex_lock(&LOCK_scheduler_state);
   mutex_last_locked_in_func = func;
   mutex_last_locked_at_line = line;
   mutex_scheduler_data_locked = true;
-  DBUG_VOID_RETURN;
 }
 
 /*
@@ -788,13 +783,12 @@ void Event_scheduler::lock_data(const char *func, uint line) {
 */
 
 void Event_scheduler::unlock_data(const char *func, uint line) {
-  DBUG_ENTER("Event_scheduler::unlock_data");
+  DBUG_TRACE;
   DBUG_PRINT("enter", ("func=%s line=%u", func, line));
   mutex_last_unlocked_at_line = line;
   mutex_scheduler_data_locked = false;
   mutex_last_unlocked_in_func = func;
   mysql_mutex_unlock(&LOCK_scheduler_state);
-  DBUG_VOID_RETURN;
 }
 
 /*
@@ -813,7 +807,7 @@ void Event_scheduler::cond_wait(THD *thd, struct timespec *abstime,
                                 const PSI_stage_info *stage,
                                 const char *src_func, const char *src_file,
                                 uint src_line) {
-  DBUG_ENTER("Event_scheduler::cond_wait");
+  DBUG_TRACE;
   waiting_on_cond = true;
   mutex_last_unlocked_at_line = src_line;
   mutex_scheduler_data_locked = false;
@@ -840,7 +834,6 @@ void Event_scheduler::cond_wait(THD *thd, struct timespec *abstime,
   mutex_last_locked_at_line = src_line;
   mutex_scheduler_data_locked = true;
   waiting_on_cond = false;
-  DBUG_VOID_RETURN;
 }
 
 /*
@@ -851,7 +844,7 @@ void Event_scheduler::cond_wait(THD *thd, struct timespec *abstime,
 */
 
 void Event_scheduler::dump_internal_status() {
-  DBUG_ENTER("Event_scheduler::dump_internal_status");
+  DBUG_TRACE;
 
   puts("");
   puts("Event scheduler status:");
@@ -865,8 +858,6 @@ void Event_scheduler::dump_internal_status() {
   printf("Workers    : %d\n", workers_count());
   printf("Executed   : %lu\n", (ulong)started_events);
   printf("Data locked: %s\n", mutex_scheduler_data_locked ? "YES" : "NO");
-
-  DBUG_VOID_RETURN;
 }
 
 /**

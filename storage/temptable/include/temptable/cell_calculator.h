@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, Oracle and/or its affiliates. All Rights Reserved.
+/* Copyright (c) 2018, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -50,18 +50,16 @@ class Cell_calculator {
       /** [in] Key part (indexed column) for which calculator is created. */
       const KEY_PART_INFO &mysql_key_part);
 
-#ifndef DBUG_OFF
   /** Constructor to be used when creating calculators for columns when
   comparing table rows. */
   explicit Cell_calculator(
       /** [in] Field (column) for which calculator is created. */
       const Field *mysql_field);
-#endif /* DBUG_OFF */
 
   /** Calculate hash value for a cell.
    * @return a hash number */
   size_t hash(
-      /** [in] Cell for which hash is to be calculate. */
+      /** [in] Cell for which hash is to be calculated. */
       const Cell &cell) const;
 
   /** Compare two cells.
@@ -127,7 +125,6 @@ inline Cell_calculator::Cell_calculator(const KEY_PART_INFO &mysql_key_part)
   }
 }
 
-#ifndef DBUG_OFF
 inline Cell_calculator::Cell_calculator(const Field *mysql_field)
     : m_mysql_field(mysql_field),
       m_cs(field_charset(*m_mysql_field)),
@@ -143,7 +140,6 @@ inline Cell_calculator::Cell_calculator(const Field *mysql_field)
     m_mode = Mode::BINARY;
   }
 }
-#endif /* DBUG_OFF */
 
 inline const CHARSET_INFO *Cell_calculator::field_charset(const Field &field) {
   /* Decide if we should use charset+collation for comparisons, or rely on pure
@@ -213,8 +209,8 @@ inline size_t Cell_calculator::hash(const Cell &cell) const {
                                   length);
   }
 
-  unsigned long h1 = 1;
-  unsigned long h2 = 4;
+  uint64 h1 = 1;
+  uint64 h2 = 4;
   m_cs->coll->hash_sort(m_cs, data, length, &h1, &h2);
   return h1;
 }

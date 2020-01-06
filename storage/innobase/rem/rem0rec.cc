@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -35,16 +35,17 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include <sys/types.h>
 #ifndef UNIV_HOTBACKUP
 
+#include "data0data.h"
 #include "fts0fts.h"
 #endif /* !UNIV_HOTBACKUP */
 #include "gis0geo.h"
 #include "mach0data.h"
 #include "mtr0log.h"
 #include "mtr0mtr.h"
-#include "my_dbug.h"
-#include "my_inttypes.h"
 #include "page0page.h"
 #include "trx0sys.h"
+
+#include "my_dbug.h"
 
 /*			PHYSICAL RECORD (OLD STYLE)
                         ===========================
@@ -319,8 +320,9 @@ UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) ulint
   n_v_fields = v_entry ? dtuple_get_n_v_fields(v_entry) : 0;
 
   if (n_fields > 0) {
-    n_null = index->has_instant_cols() ? index->get_n_nullable_before(n_fields)
-                                       : index->n_nullable;
+    n_null = index->has_instant_cols()
+                 ? index->get_n_nullable_before(static_cast<uint32_t>(n_fields))
+                 : index->n_nullable;
   }
 
   if (index->has_instant_cols() && status != nullptr) {
@@ -452,15 +454,23 @@ UNIV_INLINE MY_ATTRIBUTE((warn_unused_result)) ulint
         data_size += mach_get_compressed_size(i + REC_MAX_N_FIELDS);
         vfield = dtuple_get_nth_v_field(v_entry, col->v_pos);
 
-        flen = vfield->len;
+        if (dfield_is_multi_value(vfield)) {
+          Multi_value_logger mv_logger(
+              static_cast<multi_value_data *>(dfield_get_data(vfield)),
+              dfield_get_len(vfield));
+          data_size += mv_logger.get_log_len(true);
+        } else {
+          flen = vfield->len;
 
-        if (flen != UNIV_SQL_NULL) {
-          flen = ut_min(flen, static_cast<ulint>(
-                                  DICT_MAX_FIELD_LEN_BY_FORMAT(index->table)));
-          data_size += flen;
+          if (flen != UNIV_SQL_NULL) {
+            flen = ut_min(
+                flen,
+                static_cast<ulint>(DICT_MAX_FIELD_LEN_BY_FORMAT(index->table)));
+            data_size += flen;
+          }
+
+          data_size += mach_get_compressed_size(flen);
         }
-
-        data_size += mach_get_compressed_size(flen);
       }
     }
   }
@@ -705,8 +715,9 @@ bool rec_convert_dtuple_to_rec_comp(rec_t *rec, const dict_index_t *index,
   ut_ad(temp || dict_table_is_comp(index->table));
 
   if (n_fields != 0) {
-    n_null = index->has_instant_cols() ? index->get_n_nullable_before(n_fields)
-                                       : index->n_nullable;
+    n_null = index->has_instant_cols()
+                 ? index->get_n_nullable_before(static_cast<uint32_t>(n_fields))
+                 : index->n_nullable;
   }
 
   if (temp) {
@@ -737,7 +748,9 @@ bool rec_convert_dtuple_to_rec_comp(rec_t *rec, const dict_index_t *index,
         }
         break;
       case REC_STATUS_NODE_PTR:
-        ut_ad(n_fields == dict_index_get_n_unique_in_tree_nonleaf(index) + 1);
+        ut_ad(n_fields ==
+              static_cast<ulint>(
+                  dict_index_get_n_unique_in_tree_nonleaf(index) + 1));
         n_node_ptr_field = n_fields - 1;
         n_null = index->n_instant_nullable;
         break;
@@ -874,21 +887,28 @@ bool rec_convert_dtuple_to_rec_comp(rec_t *rec, const dict_index_t *index,
 
       vfield = dtuple_get_nth_v_field(v_entry, col->v_pos);
 
-      flen = vfield->len;
+      if (dfield_is_multi_value(vfield)) {
+        Multi_value_logger mv_logger(
+            static_cast<multi_value_data *>(dfield_get_data(vfield)),
+            dfield_get_len(vfield));
+        mv_logger.log(&ptr);
+      } else {
+        flen = vfield->len;
 
-      if (flen != UNIV_SQL_NULL) {
-        /* The virtual column can only be in sec
-        index, and index key length is bound by
-        DICT_MAX_FIELD_LEN_BY_FORMAT */
-        flen = ut_min(flen, static_cast<ulint>(
-                                DICT_MAX_FIELD_LEN_BY_FORMAT(index->table)));
-      }
+        if (flen != UNIV_SQL_NULL) {
+          /* The virtual column can only be in sec
+          index, and index key length is bound by
+          DICT_MAX_FIELD_LEN_BY_FORMAT */
+          flen = ut_min(flen, static_cast<ulint>(
+                                  DICT_MAX_FIELD_LEN_BY_FORMAT(index->table)));
+        }
 
-      ptr += mach_write_compressed(ptr, flen);
+        ptr += mach_write_compressed(ptr, flen);
 
-      if (flen != UNIV_SQL_NULL) {
-        ut_memcpy(ptr, dfield_get_data(vfield), flen);
-        ptr += flen;
+        if (flen != UNIV_SQL_NULL) {
+          ut_memcpy(ptr, dfield_get_data(vfield), flen);
+          ptr += flen;
+        }
       }
     }
   }
@@ -1075,7 +1095,7 @@ static rec_t *rec_copy_prefix_to_buf_old(
     ulint area_end,   /*!< in: end of the prefix data */
     byte **buf,       /*!< in/out: memory buffer for
                       the copied prefix, or NULL */
-    ulint *buf_size)  /*!< in/out: buffer size */
+    size_t *buf_size) /*!< in/out: buffer size */
 {
   rec_t *copy_rec;
   ulint area_start;
@@ -1104,19 +1124,8 @@ static rec_t *rec_copy_prefix_to_buf_old(
   return (copy_rec);
 }
 
-/** Copies the first n fields of a physical record to a new physical record in
- a buffer.
- @return own: copied record */
-rec_t *rec_copy_prefix_to_buf(
-    const rec_t *rec,          /*!< in: physical record */
-    const dict_index_t *index, /*!< in: record descriptor */
-    ulint n_fields,            /*!< in: number of fields
-                               to copy */
-    byte **buf,                /*!< in/out: memory buffer
-                               for the copied prefix,
-                               or NULL */
-    ulint *buf_size)           /*!< in/out: buffer size */
-{
+rec_t *rec_copy_prefix_to_buf(const rec_t *rec, const dict_index_t *index,
+                              ulint n_fields, byte **buf, size_t *buf_size) {
   const byte *nulls;
   const byte *lens;
   uint16_t n_null;
@@ -1288,7 +1297,7 @@ ibool rec_validate(
   uint16_t n_defaults = 0;
 
   ut_a(rec);
-  n_fields = rec_offs_n_fields(offsets);
+  n_fields = static_cast<uint16_t>(rec_offs_n_fields(offsets));
 
   if ((n_fields == 0) || (n_fields > REC_MAX_N_FIELDS)) {
     ib::error(ER_IB_MSG_925) << "Record has " << n_fields << " fields";

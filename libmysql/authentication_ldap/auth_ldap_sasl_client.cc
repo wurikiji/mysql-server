@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -117,26 +117,61 @@ int Sasl_client::initilize() {
   int rc_sasl = SASL_FAIL;
   strncpy(m_service_name, SASL_SERVICE_NAME, sizeof(m_service_name) - 1);
   m_service_name[sizeof(m_service_name) - 1] = '\0';
+#ifdef _WIN32
+  char sasl_plugin_dir[MAX_PATH] = "";
+  int ret_executable_path = 0;
+  /**
+    Getting the current executable path, SASL SCRAM dll will be copied in
+    executable path. Using/Setting the path from cmake file may not work as
+    during installation SASL SCRAM DLL may be copied to any path based on
+    installable path.
+  */
+  ret_executable_path =
+      GetModuleFileName(NULL, sasl_plugin_dir, sizeof(sasl_plugin_dir));
+  if ((ret_executable_path == 0) ||
+      (ret_executable_path == sizeof(sasl_plugin_dir))) {
+    log_error(
+        "sasl client initilize: failed to find executable path or buffer size "
+        "for path is too small.");
+    log_stream << "Sasl_client::initilize failed rc: " << rc_sasl;
+    log_error(log_stream.str());
+    return SASL_FAIL;
+  }
+  char *pos = strrchr(sasl_plugin_dir, '\\');
+  if (pos != NULL) {
+    *pos = '\0';
+  }
+  /**
+    Sasl SCRAM dll default search path is C:\CMU2,
+    This is the reason we have copied in the executable folder and setting the
+    same from the code.
+  */
+  sasl_set_path(SASL_PATH_TYPE_PLUGIN, sasl_plugin_dir);
+  log_stream << "Sasl_client::initilize sasl scrum plug-in path : "
+             << sasl_plugin_dir;
+  log_dbg(log_stream.str());
+  log_stream.clear();
+#endif
   /** Initialize client-side of SASL. */
   rc_sasl = sasl_client_init(NULL);
   if (rc_sasl != SASL_OK) {
-    goto EXIT;
+    log_stream << "Sasl_client::initilize failed rc: " << rc_sasl;
+    log_error(log_stream.str());
+    return rc_sasl;
   }
 
   /** Creating sasl connection. */
   rc_sasl = sasl_client_new(m_service_name, NULL, NULL, NULL, callbacks, 0,
                             &m_connection);
-  if (rc_sasl != SASL_OK) goto EXIT;
-
-  /** Set security properties. */
-  sasl_setprop(m_connection, SASL_SEC_PROPS, &security_properties);
-  rc_sasl = SASL_OK;
-EXIT:
   if (rc_sasl != SASL_OK) {
     log_stream << "Sasl_client::initilize failed rc: " << rc_sasl;
     log_error(log_stream.str());
+    return rc_sasl;
   }
-  return rc_sasl;
+
+  /** Set security properties. */
+  sasl_setprop(m_connection, SASL_SEC_PROPS, &security_properties);
+  return SASL_OK;
 }
 
 Sasl_client::~Sasl_client() {
@@ -201,10 +236,11 @@ int Sasl_client::sasl_start(char **client_output, int *client_output_length) {
     log_error("Sasl_client::SaslStart: sasl connection is null");
     return rc_sasl;
   }
+  void *sasl_client_output_p = &sasl_client_output;
   do {
     rc_sasl =
         sasl_client_start(m_connection, m_mechanism, &interactions,
-                          (const char **)&sasl_client_output,
+                          static_cast<const char **>(sasl_client_output_p),
                           (unsigned int *)client_output_length, &mechanism);
     if (rc_sasl == SASL_INTERACT) interact(interactions);
   } while (rc_sasl == SASL_INTERACT);
@@ -232,9 +268,11 @@ int Sasl_client::sasl_step(char *server_in, int server_in_length,
   if (m_connection == NULL) {
     return rc_sasl;
   }
+  void *client_out_p = client_out;
   do {
     rc_sasl = sasl_client_step(m_connection, server_in, server_in_length,
-                               &interactions, (const char **)client_out,
+                               &interactions,
+                               static_cast<const char **>(client_out_p),
                                (unsigned int *)client_out_length);
     if (rc_sasl == SASL_INTERACT) Sasl_client::interact(interactions);
   } while (rc_sasl == SASL_INTERACT);
@@ -247,6 +285,13 @@ void Sasl_client::set_user_info(std::string name, std::string pwd) {
   strncpy(m_user_pwd, pwd.c_str(), sizeof(m_user_pwd) - 1);
   m_user_pwd[sizeof(m_user_pwd) - 1] = '\0';
 }
+
+#ifdef __clang__
+// Clang UBSAN false positive?
+// Call to function through pointer to incorrect function type
+static int sasl_authenticate(MYSQL_PLUGIN_VIO *vio,
+                             MYSQL *mysql) SUPPRESS_UBSAN;
+#endif  // __clang__
 
 static int sasl_authenticate(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql) {
   int rc_sasl = SASL_FAIL;
@@ -325,4 +370,4 @@ EXIT:
 mysql_declare_client_plugin(AUTHENTICATION) "authentication_ldap_sasl_client",
     "Yashwant Sahu", "LDAP SASL Client Authentication Plugin", {0, 1, 0},
     "PROPRIETARY", NULL, NULL, NULL, NULL,
-    sasl_authenticate mysql_end_client_plugin;
+    sasl_authenticate, NULL mysql_end_client_plugin;

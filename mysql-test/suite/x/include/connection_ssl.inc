@@ -1,6 +1,6 @@
 ## Script connection_ssl.inc
 #
-# Extracted test logic form 'connection_(wolf|open)ssl.test' and changed to
+# Extracted test logic form 'connection_openssl.test' and changed to
 # a parametric test.
 #
 # Arguments:
@@ -35,10 +35,14 @@
 
 SET GLOBAL mysqlx_connect_timeout = 300;
 call mtr.add_suppression("Maximum number of authentication attempts reached");
+call mtr.add_suppression("Access denied for user .*");
 
 ## Test starts here
 --write_file $MYSQL_TMP_DIR/mysqlx-enable-ssl.tmp
--->import ssl.macro
+-->import connection.macro
+-->noquery_result
+-->recvmessage Mysqlx.Notice.Frame {type:5}
+-->query_result
 Mysqlx.Connection.CapabilitiesGet {
 }
 -->recv capabilities[0]
@@ -55,6 +59,9 @@ EOF
 --write_file $MYSQL_TMP_DIR/mysqlx-setcapabilities-tls-invalid.tmp
 -->echo # setting read/write tls param with possible invalid data types:
 -->echo # V_SINT,V_UINT ,V_NULL,V_OCTETS ,V_DOUBLE,V_FLOAT,V_STRING
+-->noquery_result
+-->recvmessage Mysqlx.Notice.Frame {type:5}
+-->query_result
 Mysqlx.Connection.CapabilitiesGet {
 }
 -->recv capabilities[0]

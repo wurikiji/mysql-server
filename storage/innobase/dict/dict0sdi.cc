@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2017, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -50,8 +50,8 @@ this program; if not, write to the Free Software Foundation, Inc.,
 DB_TABLESPACE_NOT_FOUND */
 static dberr_t dict_sdi_exists(const dd::Tablespace &tablespace,
                                uint32 *space_id) {
-  if (tablespace.se_private_data().get_uint32(dd_space_key_strings[DD_SPACE_ID],
-                                              space_id)) {
+  if (tablespace.se_private_data().get(dd_space_key_strings[DD_SPACE_ID],
+                                       space_id)) {
     /* error, attribute not found */
     ut_ad(0);
     return (DB_ERROR);
@@ -110,8 +110,8 @@ bool dict_sdi_create(dd::Tablespace *tablespace) {
                                 << tablespace->name() << "," << tablespace->id()
                                 << ")";);
 
-  uint32 space_id;
-  if (tablespace->se_private_data().get_uint32("id", &space_id)) {
+  uint32 space_id = 0;
+  if (tablespace->se_private_data().get("id", &space_id)) {
     /* error, attribute not found */
     ut_ad(0);
     return (true);
@@ -133,8 +133,8 @@ bool dict_sdi_create(dd::Tablespace *tablespace) {
     ut_ad(space != nullptr);
 
     dd::Properties &p = tablespace->se_private_data();
-    p.set_uint32(dd_space_key_strings[DD_SPACE_FLAGS],
-                 static_cast<uint32>(space->flags));
+    p.set(dd_space_key_strings[DD_SPACE_FLAGS],
+          static_cast<uint32>(space->flags));
 
     fil_space_release(space);
   }
@@ -167,12 +167,11 @@ bool dict_sdi_drop(dd::Tablespace *tablespace) {
 @param[in,out]	vector		vector to hold SDI keys
 @retval		false		success
 @retval		true		failure */
-bool dict_sdi_get_keys(const dd::Tablespace &tablespace,
-                       dd::sdi_vector_t &vector) {
+bool dict_sdi_get_keys(const dd::Tablespace &tablespace, sdi_vector_t &vector) {
 #if 0 /* TODO: Enable in WL#9761 */
 	uint32	space_id;
 
-	if (dd_tablespace_get_discard(&tablespace)) {
+	if (dd_tablespace_is_discarded(&tablespace)) {
 		/* sdi_get_keys shouldn't be called on discarded tablespaces.*/
 		ut_ad(0);
 	}
@@ -213,8 +212,8 @@ bool dict_sdi_get_keys(const dd::Tablespace &tablespace,
                                 out: actual length of SDI
 @retval		false		success
 @retval		true		failure */
-bool dict_sdi_get(const dd::Tablespace &tablespace,
-                  const dd::sdi_key_t *sdi_key, void *sdi, uint64 *sdi_len) {
+bool dict_sdi_get(const dd::Tablespace &tablespace, const sdi_key_t *sdi_key,
+                  void *sdi, uint64 *sdi_len) {
 #if 0 /* TODO: Enable in WL#9761 */
 	DBUG_EXECUTE_IF("ib_sdi",
 		ib::info(ER_IB_MSG_214) << "dict_sdi_get(" << tablespace.name()
@@ -224,7 +223,7 @@ bool dict_sdi_get(const dd::Tablespace &tablespace,
 			<< ")";
 	);
 
-	if (dd_tablespace_get_discard(&tablespace)) {
+	if (dd_tablespace_is_discarded(&tablespace)) {
 		/* sdi_get shouldn't be called on discarded tablespaces.*/
 		ut_ad(0);
 	}
@@ -295,7 +294,7 @@ object
 @retval		false		success
 @retval		true		failure */
 bool dict_sdi_set(handlerton *hton, const dd::Tablespace &tablespace,
-                  const dd::Table *table, const dd::sdi_key_t *sdi_key,
+                  const dd::Table *table, const sdi_key_t *sdi_key,
                   const void *sdi, uint64 sdi_len) {
   const char *operation = "set";
 
@@ -308,7 +307,7 @@ bool dict_sdi_set(handlerton *hton, const dd::Tablespace &tablespace,
   /* Used for testing purpose for DDLs from Memcached */
   DBUG_EXECUTE_IF("skip_sdi", return (false););
 
-  if (dd_tablespace_get_discard(&tablespace)) {
+  if (dd_tablespace_is_discarded(&tablespace)) {
     /* Claim success. */
     return (false);
   }
@@ -317,9 +316,9 @@ bool dict_sdi_set(handlerton *hton, const dd::Tablespace &tablespace,
   all partitions should have valid se_private_id. If not, we cannot
   proceed with storing SDI as the tablespace is not created yet. */
   if (table && (table->se_private_id() == dd::INVALID_OBJECT_ID) &&
-      std::all_of(table->partitions().begin(), table->partitions().end(),
-                  [](const dd::Partition *p) {
-                    return (p->se_private_id() == dd::INVALID_OBJECT_ID);
+      std::all_of(table->leaf_partitions().begin(),
+                  table->leaf_partitions().end(), [](const dd::Partition *lp) {
+                    return (lp->se_private_id() == dd::INVALID_OBJECT_ID);
                   })) {
     /* This is a preliminary store of the object - before SE has
     added SE-specific data. Cannot, and should not, store sdi at
@@ -369,8 +368,8 @@ bool dict_sdi_set(handlerton *hton, const dd::Tablespace &tablespace,
   Sdi_Compressor compressor(static_cast<uint32_t>(sdi_len), sdi);
   compressor.compress();
 
-  err = ib_sdi_set(space_id, &ib_sdi_key, sdi_len, compressor.get_comp_len(),
-                   compressor.get_data(), trx);
+  err = ib_sdi_set(space_id, &ib_sdi_key, static_cast<uint32_t>(sdi_len),
+                   compressor.get_comp_len(), compressor.get_data(), trx);
 
   DBUG_EXECUTE_IF("sdi_set_failure",
                   dict_sdi_report_error(operation, table, tablespace);
@@ -403,7 +402,7 @@ bool dict_sdi_set(handlerton *hton, const dd::Tablespace &tablespace,
 @retval		false		success
 @retval		true		failure */
 bool dict_sdi_delete(const dd::Tablespace &tablespace, const dd::Table *table,
-                     const dd::sdi_key_t *sdi_key) {
+                     const sdi_key_t *sdi_key) {
   const char *operation = "delete";
 
   DBUG_EXECUTE_IF("ib_sdi", ib::info(ER_IB_MSG_218)
@@ -415,7 +414,7 @@ bool dict_sdi_delete(const dd::Tablespace &tablespace, const dd::Table *table,
   /* Used for testing purpose for DDLs from Memcached */
   DBUG_EXECUTE_IF("skip_sdi", return (false););
 
-  if (dd_tablespace_get_discard(&tablespace)) {
+  if (dd_tablespace_is_discarded(&tablespace)) {
     /* Claim success. */
     return (false);
   }
@@ -424,8 +423,8 @@ bool dict_sdi_delete(const dd::Tablespace &tablespace, const dd::Table *table,
   all partitions should have valid se_private_id. If not, we cannot
   proceed with storing SDI as the tablespace is not created yet. */
   if (table && (table->se_private_id() == dd::INVALID_OBJECT_ID) &&
-      std::all_of(table->partitions().begin(), table->partitions().end(),
-                  [](const dd::Partition *p) {
+      std::all_of(table->leaf_partitions().begin(),
+                  table->leaf_partitions().end(), [](const dd::Partition *p) {
                     return (p->se_private_id() == dd::INVALID_OBJECT_ID);
                   })) {
     /* This is a preliminary store of the object - before SE has
@@ -483,7 +482,6 @@ bool dict_sdi_delete(const dd::Tablespace &tablespace, const dd::Table *table,
                         << " is interrupted";);
     return (true);
   } else if (err != DB_SUCCESS) {
-    ut_ad(0);
     dict_sdi_report_error(operation, table, tablespace);
     return (true);
   } else {

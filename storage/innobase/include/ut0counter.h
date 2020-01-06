@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2012, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2012, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -41,6 +41,10 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "os0thread.h"
 #include "ut0dbg.h"
 
+#include <array>
+#include <atomic>
+#include <functional>
+
 /** CPU cache line size */
 #ifdef __powerpc__
 #define INNOBASE_CACHE_LINE_SIZE 128
@@ -77,8 +81,8 @@ struct counter_indexer_t : public generic_indexer_t<Type, N> {
     if (c != 0) {
       return (c);
     } else {
-    /* We may go here if my_timer_cycles() returns 0,
-    so we have to have the plan B for the counter. */
+      /* We may go here if my_timer_cycles() returns 0,
+      so we have to have the plan B for the counter. */
 #if !defined(_WIN32)
       return (size_t(os_thread_get_curr_id()));
 #else
@@ -202,6 +206,14 @@ class ib_counter_t {
     return (total);
   }
 
+  Type operator[](size_t index) const UNIV_NOTHROW {
+    size_t i = m_policy.offset(index);
+
+    ut_ad(i < UT_ARR_SIZE(m_counter));
+
+    return (m_counter[i]);
+  }
+
  private:
   /** Indexer into the array */
   Indexer<Type, N> m_policy;
@@ -209,5 +221,90 @@ class ib_counter_t {
   /** Slot 0 is unused. */
   Type m_counter[(N + 1) * (INNOBASE_CACHE_LINE_SIZE / sizeof(Type))];
 };
+
+/** Sharded atomic counter. */
+namespace Counter {
+
+using Type = uint64_t;
+
+using N = std::atomic<Type>;
+
+static_assert(INNOBASE_CACHE_LINE_SIZE >= sizeof(N),
+              "Atomic counter size > INNOBASE_CACHE_LINE_SIZE");
+
+using Pad = byte[INNOBASE_CACHE_LINE_SIZE - sizeof(N)];
+
+/** Counter shard. */
+struct Shard {
+  /** Separate on cache line. */
+  Pad m_pad;
+
+  /** Sharded counter. */
+  N m_n{};
+};
+
+template <size_t COUNT = 128>
+using Shards = std::array<Shard, COUNT>;
+
+using Function = std::function<void(const Type)>;
+
+/** Increment the counter of a shard by 1.
+@param[in,out]  shards          Sharded counter to increment.
+@param[in] id                   Shard key. */
+template <size_t COUNT>
+inline void inc(Shards<COUNT> &shards, size_t id) {
+  shards[id % shards.size()].m_n.fetch_add(1, std::memory_order_relaxed);
+}
+
+/** Increment the counter for a shard by n.
+@param[in,out]  shards          Sharded counter to increment.
+@param[in] id                   Shard key.
+@param[in] n                    Number to add. */
+template <size_t COUNT>
+inline void add(Shards<COUNT> &shards, size_t id, size_t n) {
+  shards[id % shards.size()].m_n.fetch_add(n, std::memory_order_relaxed);
+}
+
+/** Get the counter value for a shard.
+@param[in,out]  shards          Sharded counter to increment.
+@param[in] id                   Shard key. */
+template <size_t COUNT>
+inline Type get(const Shards<COUNT> &shards, size_t id) {
+  return (shards[id % shards.size()].m_n.load(std::memory_order_relaxed));
+}
+
+/** Iterate over the shards.
+@param[in] shards               Shards to iterate over
+@param[in] f                    Callback function
+@return total value. */
+template <size_t COUNT>
+inline void for_each(const Shards<COUNT> &shards, Function &&f) {
+  for (const auto &shard : shards) {
+    f(shard.m_n);
+  }
+}
+
+/** Get the total value of all shards.
+@param[in] shards               Shards to sum.
+@return total value. */
+template <size_t COUNT>
+inline Type total(const Shards<COUNT> &shards) {
+  Type n = 0;
+
+  for_each(shards, [&](const Type count) { n += count; });
+
+  return (n);
+}
+
+/** Clear the counter - reset to 0.
+@param[in,out] shards          Shards to clear. */
+template <size_t COUNT>
+inline void clear(Shards<COUNT> &shards) {
+  for (auto &shard : shards) {
+    shard.m_n.store(0, std::memory_order_relaxed);
+  }
+}
+
+}  // namespace Counter
 
 #endif /* ut0counter_h */

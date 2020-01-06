@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2012, Facebook Inc.
 
 This program is free software; you can redistribute it and/or modify it under
@@ -24,8 +24,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 *****************************************************************************/
-
-#include "my_compiler.h"
 
 /** @file include/btr0btr.h
  The B-tree
@@ -60,7 +58,7 @@ is acceptable for the program to die with a clear assert failure. */
 #define BTR_MAX_LEVELS 100
 
 /** Latching modes for btr_cur_search_to_nth_level(). */
-enum btr_latch_mode {
+enum btr_latch_mode : size_t {
   /** Search a record on a leaf page and S-latch it. */
   BTR_SEARCH_LEAF = RW_S_LATCH,
   /** (Prepare to) modify a record on a leaf page and X-latch it. */
@@ -86,48 +84,48 @@ enum btr_latch_mode {
 /** If this is ORed to btr_latch_mode, it means that the search tuple
 will be inserted to the index, at the searched position.
 When the record is not in the buffer pool, try to use the insert buffer. */
-#define BTR_INSERT 512
+constexpr size_t BTR_INSERT = 512;
 
 /** This flag ORed to btr_latch_mode says that we do the search in query
 optimization */
-#define BTR_ESTIMATE 1024
+constexpr size_t BTR_ESTIMATE = 1024;
 
 /** This flag ORed to BTR_INSERT says that we can ignore possible
 UNIQUE definition on secondary indexes when we decide if we can use
 the insert buffer to speed up inserts */
-#define BTR_IGNORE_SEC_UNIQUE 2048
+constexpr size_t BTR_IGNORE_SEC_UNIQUE = 2048;
 
 /** Try to delete mark the record at the searched position using the
 insert/delete buffer when the record is not in the buffer pool. */
-#define BTR_DELETE_MARK 4096
+constexpr size_t BTR_DELETE_MARK = 4096;
 
 /** Try to purge the record at the searched position using the insert/delete
 buffer when the record is not in the buffer pool. */
-#define BTR_DELETE 8192
+constexpr size_t BTR_DELETE = 8192;
 
 /** In the case of BTR_SEARCH_LEAF or BTR_MODIFY_LEAF, the caller is
 already holding an S latch on the index tree */
-#define BTR_ALREADY_S_LATCHED 16384
+constexpr size_t BTR_ALREADY_S_LATCHED = 16384;
 
 /** In the case of BTR_MODIFY_TREE, the caller specifies the intention
 to insert record only. It is used to optimize block->lock range.*/
-#define BTR_LATCH_FOR_INSERT 32768
+constexpr size_t BTR_LATCH_FOR_INSERT = 32768;
 
 /** In the case of BTR_MODIFY_TREE, the caller specifies the intention
 to delete record only. It is used to optimize block->lock range.*/
-#define BTR_LATCH_FOR_DELETE 65536
+constexpr size_t BTR_LATCH_FOR_DELETE = 65536;
 
 /** This flag is for undo insert of rtree. For rtree, we need this flag
 to find proper rec to undo insert.*/
-#define BTR_RTREE_UNDO_INS 131072
+constexpr size_t BTR_RTREE_UNDO_INS = 131072;
 
 /** In the case of BTR_MODIFY_LEAF, the caller intends to allocate or
 free the pages of externally stored fields. */
-#define BTR_MODIFY_EXTERNAL 262144
+constexpr size_t BTR_MODIFY_EXTERNAL = 262144;
 
 /** Try to delete mark the record at the searched position when the
 record is in spatial index */
-#define BTR_RTREE_DELETE_MARK 524288
+constexpr size_t BTR_RTREE_DELETE_MARK = 524288;
 
 #define BTR_LATCH_MODE_WITHOUT_FLAGS(latch_mode)                            \
   ((latch_mode) &                                                           \
@@ -445,10 +443,9 @@ ibool btr_compress(
 /** Discards a page from a B-tree. This is used to remove the last record from
  a B-tree page: the whole page must be removed at the same time. This cannot
  be used for the root page, which is allowed to be empty. */
-void btr_discard_page(
-    btr_cur_t *cursor, /*!< in: cursor on the page to discard: not on
-                       the root page */
-    mtr_t *mtr);       /*!< in: mtr */
+void btr_discard_page(btr_cur_t *cursor, /*!< in: cursor on the page to discard:
+                                         not on the root page */
+                      mtr_t *mtr);       /*!< in: mtr */
 /** Parses the redo log record for setting an index record as the predefined
  minimum record.
  @return end of log record or NULL */
@@ -534,12 +531,11 @@ void btr_print_index(dict_index_t *index, /*!< in: index */
 /** Checks the size and number of fields in a record based on the definition of
  the index.
  @return true if ok */
-ibool btr_index_rec_validate(
-    const rec_t *rec,          /*!< in: index record */
-    const dict_index_t *index, /*!< in: index */
-    ibool dump_on_error)       /*!< in: TRUE if the function
-                               should print hex dump of record
-                               and page on error */
+ibool btr_index_rec_validate(const rec_t *rec,          /*!< in: index record */
+                             const dict_index_t *index, /*!< in: index */
+                             ibool dump_on_error) /*!< in: TRUE if the function
+                                                  should print hex dump of
+                                                  record and page on error */
     MY_ATTRIBUTE((warn_unused_result));
 /** Checks the consistency of an index tree.
  @return true if ok */

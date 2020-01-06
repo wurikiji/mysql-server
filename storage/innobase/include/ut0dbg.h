@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -35,7 +35,12 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 /* Do not include univ.i because univ.i includes this. */
 
+#include <functional>
 #include "os0thread.h"
+
+/** Set a callback function to be called before exiting.
+@param[in]	callback	user callback function */
+void ut_set_assert_callback(std::function<void()> &callback);
 
 /** Report a failed assertion. */
 [[noreturn]] void ut_dbg_assertion_failed(
@@ -75,8 +80,16 @@ this program; if not, write to the Free Software Foundation, Inc.,
     snprintf(buf, sizeof buf, prefix "_%u", count); \
     DBUG_EXECUTE_IF(buf, DBUG_SUICIDE(););          \
   } while (0)
+
+#define DBUG_INJECT_CRASH_WITH_LOG_FLUSH(prefix, count)                \
+  do {                                                                 \
+    char buf[64];                                                      \
+    snprintf(buf, sizeof buf, prefix "_%u", count);                    \
+    DBUG_EXECUTE_IF(buf, log_buffer_flush_to_disk(); DBUG_SUICIDE();); \
+  } while (0)
 #else
 #define DBUG_INJECT_CRASH(prefix, count)
+#define DBUG_INJECT_CRASH_WITH_LOG_FLUSH(prefix, count)
 #endif
 
 /** Silence warnings about an unused variable by doing a null assignment.

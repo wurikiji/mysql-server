@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <functional>
+#include <list>
 #include <memory>
 #include <set>
 #include <utility>
@@ -34,7 +35,9 @@
 #include "lex_string.h"
 #include "my_command.h"
 #include "my_dbug.h"
+#include "my_hostname.h"  // HOSTNAME_LENGTH
 #include "my_inttypes.h"
+#include "mysql_com.h"  // USERNAME_LENGTH
 #include "template_utils.h"
 
 /* Forward Declarations */
@@ -51,12 +54,20 @@ struct HA_CREATE_INFO;
 struct LEX_USER;
 template <class T>
 class List;
-
 typedef struct user_conn USER_CONN;
 class Security_context;
+class ACL_USER;
 struct TABLE;
+struct MEM_ROOT;
 struct TABLE_LIST;
 enum class role_enum;
+enum class Consumer_type;
+class LEX_GRANT_AS;
+
+namespace consts {
+extern const std::string mysql;
+extern const std::string system_user;
+}  // namespace consts
 
 /** user, host tuple which reference either acl_cache or g_default_roles */
 typedef std::pair<LEX_CSTRING, LEX_CSTRING> Auth_id_ref;
@@ -160,7 +171,7 @@ class ACL_internal_schema_access {
 */
 class ACL_internal_schema_registry {
  public:
-  static void register_schema(const LEX_STRING &name,
+  static void register_schema(const LEX_CSTRING &name,
                               const ACL_internal_schema_access *access);
   static const ACL_internal_schema_access *lookup(const char *name);
 };
@@ -181,8 +192,7 @@ class IS_internal_schema_access : public ACL_internal_schema_access {
 
 /* Data Structures */
 
-extern const char *command_array[];
-extern uint command_lengths[];
+extern const std::vector<std::string> global_acls_vector;
 
 enum mysql_db_table_field {
   MYSQL_DB_FIELD_HOST = 0,
@@ -260,6 +270,8 @@ enum mysql_user_table_field {
   MYSQL_USER_FIELD_DROP_ROLE_PRIV,
   MYSQL_USER_FIELD_PASSWORD_REUSE_HISTORY,
   MYSQL_USER_FIELD_PASSWORD_REUSE_TIME,
+  MYSQL_USER_FIELD_PASSWORD_REQUIRE_CURRENT,
+  MYSQL_USER_FIELD_USER_ATTRIBUTES,
   MYSQL_USER_FIELD_COUNT
 };
 
@@ -345,10 +357,10 @@ enum mysql_dynamic_priv_table_field {
 /* When we run mysql_upgrade we must make sure that the server can be run
    using previous mysql.user table schema during acl_load.
 
-   Acl_load_user_table_schema is a common interface for the current and the
+   User_table_schema is a common interface for the current and the
                               previous mysql.user table schema.
  */
-class Acl_load_user_table_schema {
+class User_table_schema {
  public:
   virtual uint host_idx() = 0;
   virtual uint user_idx() = 0;
@@ -400,14 +412,18 @@ class Acl_load_user_table_schema {
   virtual uint account_locked_idx() = 0;
   virtual uint password_reuse_history_idx() = 0;
   virtual uint password_reuse_time_idx() = 0;
+  // Added in 8.0.13
+  virtual uint password_require_current_idx() = 0;
+  // Added in 8.0.14
+  virtual uint user_attributes_idx() = 0;
 
-  virtual ~Acl_load_user_table_schema() {}
+  virtual ~User_table_schema() {}
 };
 
 /*
   This class describes indices for the current mysql.user table schema.
  */
-class Acl_load_user_table_current_schema : public Acl_load_user_table_schema {
+class User_table_current_schema : public User_table_schema {
  public:
   uint host_idx() { return MYSQL_USER_FIELD_HOST; }
   uint user_idx() { return MYSQL_USER_FIELD_USER; }
@@ -479,12 +495,16 @@ class Acl_load_user_table_current_schema : public Acl_load_user_table_schema {
   uint password_reuse_time_idx() {
     return MYSQL_USER_FIELD_PASSWORD_REUSE_TIME;
   }
+  uint password_require_current_idx() {
+    return MYSQL_USER_FIELD_PASSWORD_REQUIRE_CURRENT;
+  }
+  uint user_attributes_idx() { return MYSQL_USER_FIELD_USER_ATTRIBUTES; }
 };
 
 /*
   This class describes indices for the old mysql.user table schema.
  */
-class Acl_load_user_table_old_schema : public Acl_load_user_table_schema {
+class User_table_old_schema : public User_table_schema {
  public:
   enum mysql_user_table_field_56 {
     MYSQL_USER_FIELD_HOST_56 = 0,
@@ -597,20 +617,21 @@ class Acl_load_user_table_old_schema : public Acl_load_user_table_schema {
   uint drop_role_priv_idx() { return MYSQL_USER_FIELD_COUNT_56; }
   uint password_reuse_history_idx() { return MYSQL_USER_FIELD_COUNT_56; }
   uint password_reuse_time_idx() { return MYSQL_USER_FIELD_COUNT_56; }
+  uint password_require_current_idx() { return MYSQL_USER_FIELD_COUNT_56; }
+  uint user_attributes_idx() { return MYSQL_USER_FIELD_COUNT_56; }
 };
 
-class Acl_load_user_table_schema_factory {
+class User_table_schema_factory {
  public:
-  virtual Acl_load_user_table_schema *get_user_table_schema(TABLE *table) {
+  virtual User_table_schema *get_user_table_schema(TABLE *table) {
     return is_old_user_table_schema(table)
-               ? implicit_cast<Acl_load_user_table_schema *>(
-                     new Acl_load_user_table_old_schema())
-               : implicit_cast<Acl_load_user_table_schema *>(
-                     new Acl_load_user_table_current_schema());
+               ? implicit_cast<User_table_schema *>(new User_table_old_schema())
+               : implicit_cast<User_table_schema *>(
+                     new User_table_current_schema());
   }
 
   virtual bool is_old_user_table_schema(TABLE *table);
-  virtual ~Acl_load_user_table_schema_factory() {}
+  virtual ~User_table_schema_factory() {}
 };
 
 extern bool mysql_user_table_is_in_short_password_format;
@@ -625,6 +646,8 @@ extern bool validate_user_plugins;
 /* sql_authentication */
 
 int set_default_auth_plugin(char *plugin_name, size_t plugin_name_length);
+std::string get_default_autnetication_plugin_name();
+
 void acl_log_connect(const char *user, const char *host, const char *auth_as,
                      const char *db, THD *thd,
                      enum enum_server_command command);
@@ -646,61 +669,55 @@ bool acl_check_host(THD *thd, const char *host, const char *ip);
 #define ACCESS_RIGHTS_ATTR (1L << 5)   /* update privileges */
 #define ACCOUNT_LOCK_ATTR (1L << 6)    /* update account lock status */
 #define DIFFERENT_PLUGIN_ATTR \
-  (1L << 7) /* updated plugin with a different value */
-
-/* rewrite CREATE/ALTER/GRANT user */
-void mysql_rewrite_create_alter_user(
-    THD *thd, String *rlb, std::set<LEX_USER *> *users_not_to_log = NULL,
-    bool for_binlog = false, bool hide_password_hash = false);
-void mysql_rewrite_grant(THD *thd, String *rlb);
-void mysql_rewrite_set_password(THD *thd, String *rlb,
-                                std::set<LEX_USER *> *users,
-                                bool for_binlog = false);
+  (1L << 7)                       /* updated plugin with a different value */
+#define USER_ATTRIBUTES (1L << 8) /* Request to update user attributes */
 
 /* sql_user */
 void log_user(THD *thd, String *str, LEX_USER *user, bool comma);
-void append_user_new(THD *thd, String *str, LEX_USER *user, bool comma = true,
-                     bool hide_password_hash = false);
-int check_change_password(THD *thd, const char *host, const char *user);
-bool change_password(THD *thd, const char *host, const char *user,
-                     char *password);
+bool check_change_password(THD *thd, const char *host, const char *user,
+                           bool retain_current_password);
+bool change_password(THD *thd, LEX_USER *user, const char *password,
+                     const char *current_password,
+                     bool retain_current_password);
 bool mysql_create_user(THD *thd, List<LEX_USER> &list, bool if_not_exists,
                        bool is_role);
 bool mysql_alter_user(THD *thd, List<LEX_USER> &list, bool if_exists);
-bool mysql_drop_user(THD *thd, List<LEX_USER> &list, bool if_exists);
+bool mysql_drop_user(THD *thd, List<LEX_USER> &list, bool if_exists,
+                     bool drop_role);
 bool mysql_rename_user(THD *thd, List<LEX_USER> &list);
 
 /* sql_auth_cache */
+void init_acl_memory();
 int wild_case_compare(CHARSET_INFO *cs, const char *str, const char *wildstr);
 int wild_case_compare(CHARSET_INFO *cs, const char *str, size_t str_len,
                       const char *wildstr, size_t wildstr_len);
 bool hostname_requires_resolving(const char *hostname);
 bool acl_init(bool dont_read_acl_tables);
 void acl_free(bool end = false);
-bool check_engine_type_for_acl_table(THD *thd);
+bool check_engine_type_for_acl_table(THD *thd, bool mdl_locked);
 bool grant_init(bool skip_grant_tables);
 void grant_free(void);
-bool reload_acl_caches(THD *thd, bool locked = false);
+bool reload_acl_caches(THD *thd, bool mdl_locked);
 ulong acl_get(THD *thd, const char *host, const char *ip, const char *user,
               const char *db, bool db_is_pattern);
 bool is_acl_user(THD *thd, const char *host, const char *user);
-bool acl_getroot(THD *thd, Security_context *sctx, char *user, char *host,
-                 char *ip, const char *db);
-bool check_acl_tables_intact(THD *thd);
+bool acl_getroot(THD *thd, Security_context *sctx, const char *user,
+                 const char *host, const char *ip, const char *db);
+bool check_acl_tables_intact(THD *thd, bool mdl_locked);
 bool check_acl_tables_intact(THD *thd, TABLE_LIST *tables);
 void notify_flush_event(THD *thd);
+bool wildcard_db_grant_exists();
 
 /* sql_authorization */
-bool has_grant_role_privilege(THD *thd);
-bool has_revoke_role_privilege(THD *thd);
-int mysql_set_active_role_none(THD *thd);
-int mysql_set_role_default(THD *thd);
-int mysql_set_active_role_all(THD *thd, const List<LEX_USER> *except_users);
-int mysql_set_active_role(THD *thd, const List<LEX_USER> *role_list);
+bool skip_grant_tables();
+bool mysql_set_active_role_none(THD *thd);
+bool mysql_set_role_default(THD *thd);
+bool mysql_set_active_role_all(THD *thd, const List<LEX_USER> *except_users);
+bool mysql_set_active_role(THD *thd, const List<LEX_USER> *role_list);
 bool mysql_grant(THD *thd, const char *db, List<LEX_USER> &list, ulong rights,
                  bool revoke_grant, bool is_proxy,
                  const List<LEX_CSTRING> &dynamic_privilege,
-                 bool grant_all_current_privileges);
+                 bool grant_all_current_privileges, LEX_GRANT_AS *grant_as);
 bool mysql_routine_grant(THD *thd, TABLE_LIST *table, bool is_proc,
                          List<LEX_USER> &user_list, ulong rights, bool revoke,
                          bool write_to_binlog);
@@ -766,6 +783,7 @@ bool check_access(THD *thd, ulong want_access, const char *db, ulong *save_priv,
 bool check_table_access(THD *thd, ulong requirements, TABLE_LIST *tables,
                         bool any_combination_of_privileges_will_do, uint number,
                         bool no_errors);
+bool check_table_encryption_admin_access(THD *thd);
 bool mysql_grant_role(THD *thd, const List<LEX_USER> *users,
                       const List<LEX_USER> *roles, bool with_admin_opt);
 bool mysql_revoke_role(THD *thd, const List<LEX_USER> *users,
@@ -781,9 +799,8 @@ void roles_graphml(THD *thd, String *);
 bool has_grant_role_privilege(THD *thd, const LEX_CSTRING &role_name,
                               const LEX_CSTRING &role_host);
 Auth_id_ref create_authid_from(const LEX_USER *user);
+std::string create_authid_str_from(const LEX_USER *user);
 void append_identifier(String *packet, const char *name, size_t length);
-void append_identifier_with_q(int q, String *packet, const char *name,
-                              size_t length);
 bool is_role_id(LEX_USER *authid);
 void shutdown_acl_cache();
 bool is_granted_role(LEX_CSTRING user, LEX_CSTRING host, LEX_CSTRING role,
@@ -802,10 +819,12 @@ typedef enum ssl_artifacts_status {
 } ssl_artifacts_status;
 
 ulong get_global_acl_cache_size();
-#if defined(HAVE_OPENSSL) && !defined(HAVE_WOLFSSL)
+#if defined(HAVE_OPENSSL)
 extern bool opt_auto_generate_certs;
-bool do_auto_cert_generation(ssl_artifacts_status auto_detection_status);
-#endif /* HAVE_OPENSSL && !HAVE_WOLFSSL */
+bool do_auto_cert_generation(ssl_artifacts_status auto_detection_status,
+                             const char **ssl_ca, const char **ssl_key,
+                             const char **ssl_cert);
+#endif /* HAVE_OPENSSL */
 
 #define DEFAULT_SSL_CA_CERT "ca.pem"
 #define DEFAULT_SSL_CA_KEY "ca-key.pem"
@@ -813,14 +832,16 @@ bool do_auto_cert_generation(ssl_artifacts_status auto_detection_status);
 #define DEFAULT_SSL_SERVER_KEY "server-key.pem"
 
 void update_mandatory_roles(void);
-bool check_authorization_id_string(const char *buffer, size_t length);
-void func_current_role(THD *thd, String *active_role);
+bool check_authorization_id_string(THD *thd, LEX_STRING &mandatory_roles);
+void func_current_role(const THD *thd, String *active_role);
 
-extern volatile uint32 global_password_history, global_password_reuse_interval;
+extern uint32 global_password_history, global_password_reuse_interval;
 
 struct Security_context_policy {
   enum Operation { Precheck, Execute };
+  Security_context_policy() = default;
   virtual ~Security_context_policy() = default;
+  Security_context_policy(const Security_context_policy &) = default;
   virtual bool operator()(Security_context *, Operation) = 0;
 };
 
@@ -869,6 +890,7 @@ class Security_context_factory {
     @param extend_user_profile        The policy for creating the user profile
     @param priv                       The policy for authorizing the authid to
                                       use the server.
+    @param static_priv                Static privileges for authid.
     @param drop_policy                The policy for deleting the authid and
                                       revoke privileges
   */
@@ -876,22 +898,28 @@ class Security_context_factory {
       THD *thd, const std::string &user, const std::string &host,
       const Security_context_functor &extend_user_profile,
       const Security_context_functor &priv,
+      const Security_context_functor &static_priv,
       const std::function<void(Security_context *)> &drop_policy)
       : m_thd(thd),
         m_user(user),
         m_host(host),
         m_user_profile(extend_user_profile),
         m_privileges(priv),
+        m_static_privileges(static_priv),
         m_drop_policy(drop_policy) {}
 
-  Sctx_ptr<Security_context> create();
+  Sctx_ptr<Security_context> create(MEM_ROOT *mem_root);
+  void apply_policies_to_security_ctx();
 
  private:
+  bool apply_pre_constructed_policies(Security_context *sctx);
+
   THD *m_thd;
   std::string m_user;
   std::string m_host;
   Security_context_functor m_user_profile;
   Security_context_functor m_privileges;
+  Security_context_functor m_static_privileges;
   const std::function<void(Security_context *)> m_drop_policy;
 };
 
@@ -905,6 +933,10 @@ class Default_local_authid : public Create_authid<Default_local_authid> {
   const THD *m_thd;
 };
 
+/**
+  Grant the privilege temporarily to the in-memory global privleges map.
+  This class is not thread safe.
+ */
 class Grant_temporary_dynamic_privileges
     : public Grant_privileges<Grant_temporary_dynamic_privileges> {
  public:
@@ -928,5 +960,82 @@ class Drop_temporary_dynamic_privileges {
   std::vector<std::string> m_privs;
 };
 
+class Grant_temporary_static_privileges
+    : public Grant_privileges<Grant_temporary_static_privileges> {
+ public:
+  Grant_temporary_static_privileges(const THD *thd, const ulong privs);
+  bool precheck(Security_context *sctx);
+  bool grant_privileges(Security_context *sctx);
+
+ private:
+  /** THD handle */
+  const THD *m_thd;
+
+  /** Privileges */
+  const ulong m_privs;
+};
+
 bool operator==(const LEX_CSTRING &a, const LEX_CSTRING &b);
+bool is_partial_revoke_exists(THD *thd);
+void set_system_user_flag(THD *thd, bool check_for_main_security_ctx = false);
+
+/**
+  Storage container for default auth ids. Default roles are only weakly
+  depending on ACL_USERs. You can retain a default role even if the
+  corresponding ACL_USER is missing in the acl_cache.
+*/
+class Auth_id {
+ public:
+  Auth_id();
+  Auth_id(const char *user, size_t user_len, const char *host, size_t host_len);
+  Auth_id(const Auth_id_ref &id);
+  Auth_id(const LEX_CSTRING &user, const LEX_CSTRING &host);
+  Auth_id(const std::string &user, const std::string &host);
+  Auth_id(const LEX_USER *lex_user);
+  Auth_id(const ACL_USER *acl_user);
+
+  ~Auth_id();
+  Auth_id(const Auth_id &id);
+  Auth_id &operator=(const Auth_id &) = default;
+
+  bool operator<(const Auth_id &id) const;
+  void auth_str(std::string *out) const;
+  std::string auth_str() const;
+  const std::string &user() const;
+  const std::string &host() const;
+
+ private:
+  void create_key();
+  /** User part */
+  std::string m_user;
+  /** Host part */
+  std::string m_host;
+  /**
+    Key: Internal representation mainly to facilitate use of
+         Auth_id class in standard container.
+         Format: 'user\0host\0'
+  */
+  std::string m_key;
+};
+
+/*
+  As of now Role_id is an alias of Auth_id.
+  We may extend the Auth_id as Role_id once
+  more substances are added to latter.
+*/
+using Role_id = Auth_id;
+
+/**
+  Length of string buffer, that is enough to contain
+  username and hostname parts of the user identifier with trailing zero in
+  MySQL standard format:
+  user_name_part\@host_name_part\\0
+*/
+static constexpr int USER_HOST_BUFF_SIZE =
+    HOSTNAME_LENGTH + USERNAME_LENGTH + 2;
+
+void generate_random_password(std::string *password, uint32_t);
+typedef std::list<std::vector<std::string>> Userhostpassword_list;
+bool send_password_result_set(THD *thd,
+                              const Userhostpassword_list &generated_passwords);
 #endif /* AUTH_COMMON_INCLUDED */

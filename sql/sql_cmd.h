@@ -1,4 +1,4 @@
-/* Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -34,6 +34,9 @@
 
 class THD;
 class Prepared_statement;
+struct handlerton;
+struct MYSQL_LEX_STRING;
+struct MYSQL_LEX_CSTRING;
 
 /**
   Representation of an SQL command.
@@ -103,7 +106,9 @@ class Sql_cmd {
 
     @param thd  Current THD.
   */
-  virtual void cleanup(THD *thd MY_ATTRIBUTE((unused))) {}
+  virtual void cleanup(THD *thd MY_ATTRIBUTE((unused))) {
+    m_secondary_engine = nullptr;
+  }
 
   /// Set the owning prepared statement
   void set_owner(Prepared_statement *stmt) { m_owner = stmt; }
@@ -137,6 +142,59 @@ class Sql_cmd {
     return false;
   }
 
+  /**
+    Is this statement of a type and on a form that makes it eligible
+    for execution in a secondary storage engine?
+
+    @return the name of the secondary storage engine, or nullptr if
+    the statement is not eligible for execution in a secondary storage
+    engine
+  */
+  virtual const MYSQL_LEX_CSTRING *eligible_secondary_storage_engine() const {
+    return nullptr;
+  }
+
+  /**
+    Disable use of secondary storage engines in this statement. After
+    a call to this function, the statement will not try to use a
+    secondary storage engine until it is reprepared.
+  */
+  void disable_secondary_storage_engine() {
+    DBUG_ASSERT(m_secondary_engine == nullptr);
+    m_secondary_engine_enabled = false;
+  }
+
+  /**
+    Has use of secondary storage engines been disabled for this statement?
+  */
+  bool secondary_storage_engine_disabled() const {
+    return !m_secondary_engine_enabled;
+  }
+
+  /**
+    Mark the current statement as using a secondary storage engine.
+    This function must be called before the statement starts opening
+    tables in a secondary engine.
+  */
+  void use_secondary_storage_engine(const handlerton *hton) {
+    DBUG_ASSERT(m_secondary_engine_enabled);
+    m_secondary_engine = hton;
+  }
+
+  /**
+    Is this statement using a secondary storage engine?
+  */
+  bool using_secondary_storage_engine() const {
+    return m_secondary_engine != nullptr;
+  }
+
+  /**
+    Get the handlerton of the secondary engine that is used for
+    executing this statement, or nullptr if a secondary engine is not
+    used.
+  */
+  const handlerton *secondary_engine() const { return m_secondary_engine; }
+
  protected:
   Sql_cmd() : m_owner(nullptr), m_prepared(false), prepare_only(true) {}
 
@@ -166,6 +224,21 @@ class Sql_cmd {
   Prepared_statement
       *m_owner;     /// Owning prepared statement, nullptr if non-prep.
   bool m_prepared;  /// True when statement has been prepared
+
+  /**
+    Tells if a secondary storage engine can be used for this
+    statement. If it is false, use of a secondary storage engine will
+    not be considered for executing this statement.
+  */
+  bool m_secondary_engine_enabled{true};
+
+  /**
+    The secondary storage engine to use for execution of this
+    statement, if any, or nullptr if the primary engine is used.
+    This property is reset at the start of each execution.
+  */
+  const handlerton *m_secondary_engine{nullptr};
+
  protected:
   bool prepare_only;  /// @see needs_explicit_preparation
                       /// @todo remove when prepare-once is implemented

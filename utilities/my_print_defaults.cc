@@ -1,6 +1,6 @@
 
 /*
-   Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,12 +23,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
-/*
-**  print_default.c:
-**  Print all parameters in a default file that will be given to some program.
-**
-**  Written by Monty
-*/
+// Print all parameters in a default file that will be given to some program.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,7 +162,8 @@ static int get_options(int *argc, char ***argv) {
 
 int main(int argc, char **argv) {
   int count, error, args_used;
-  char **load_default_groups, *tmp_arguments[6];
+  const char **load_default_groups;
+  char *tmp_arguments[6];
   char **argument, **arguments, **org_argv;
   char *defaults, *extra_defaults, *group_suffix, *login_path;
 
@@ -184,15 +180,15 @@ int main(int argc, char **argv) {
   arguments[count] = 0;
 
   /* Check out the args */
-  if (!(load_default_groups = (char **)my_malloc(
-            PSI_NOT_INSTRUMENTED, (argc + 1) * sizeof(char *), MYF(MY_WME))))
+  if (!(load_default_groups = static_cast<const char **>(my_malloc(
+            PSI_NOT_INSTRUMENTED, (argc + 1) * sizeof(char *), MYF(MY_WME)))))
     exit(1);
   if (get_options(&argc, &argv)) exit(1);
   memcpy((char *)load_default_groups, (char *)argv, (argc + 1) * sizeof(*argv));
 
   MEM_ROOT alloc{PSI_NOT_INSTRUMENTED, 512};
-  if ((error = load_defaults(config_file, (const char **)load_default_groups,
-                             &count, &arguments, &alloc))) {
+  if ((error = load_defaults(config_file, load_default_groups, &count,
+                             &arguments, &alloc))) {
     if (verbose && opt_defaults_file_used) {
       if (error == 1)
         fprintf(stderr, "WARNING: Defaults file '%s' not found!\n",

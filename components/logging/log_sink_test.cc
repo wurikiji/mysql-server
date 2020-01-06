@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
@@ -52,40 +52,6 @@ static bool run_tests = true;
 log_filter_ruleset *test_rules = nullptr;
 
 /**
-  Variable listener. This is a temporary solution until we have
-  per-component system variables. "check" is where our component
-  can veto.
-
-  @param   ll  a log_line with a list-item describing the variable
-               (name, new value)
-
-  @retval   0  for allow (including when we don't feel the event is for us),
-  @retval  <0  deny (nullptr, malformed structures, etc. -- caller broken?)
-  @retval  >0  deny (user input rejected)
-*/
-DEFINE_METHOD(int, log_service_imp::variable_check,
-              (log_line * ll MY_ATTRIBUTE((unused)))) {
-  return 0;
-}
-
-/**
-  Variable listener. This is a temporary solution until we have
-  per-component system variables. "update" is where we're told
-  to update our state (if the variable concerns us to begin with).
-
-  @param  ll  a log_line with a list-item describing the variable
-              (name, new value)
-
-  @retval  0  the event is not for us
-  @retval <0  for failure
-  @retval >0  for success (at least one item was updated)
-*/
-DEFINE_METHOD(int, log_service_imp::variable_update,
-              (log_line * ll MY_ATTRIBUTE((unused)))) {
-  return 0;
-}
-
-/**
   delete a rule from the given rule-set
 
   @param   rs     the rule-set
@@ -117,15 +83,16 @@ static bool rule_delete(log_filter_ruleset *rs, log_item_type t,
       size_t rt;
 
       if (r->match.alloc & LOG_ITEM_FREE_KEY)
-        log_bs->free((void *)r->match.key);
+        log_bs->free(const_cast<char *>(r->match.key));
       if ((r->match.alloc & LOG_ITEM_FREE_VALUE) &&
           (r->match.item_class == LOG_LEX_STRING))
-        log_bs->free((void *)r->match.data.data_string.str);
+        log_bs->free(const_cast<char *>(r->match.data.data_string.str));
 
-      if (r->aux.alloc & LOG_ITEM_FREE_KEY) log_bs->free((void *)r->aux.key);
+      if (r->aux.alloc & LOG_ITEM_FREE_KEY)
+        log_bs->free(const_cast<char *>(r->aux.key));
       if ((r->aux.alloc & LOG_ITEM_FREE_VALUE) &&
           (r->aux.item_class == LOG_LEX_STRING))
-        log_bs->free((void *)r->aux.data.data_string.str);
+        log_bs->free(const_cast<char *>(r->aux.data.data_string.str));
 
       rs->count--;
       for (rt = rn; rt < rs->count; rt++) {
@@ -168,10 +135,8 @@ static void test_add_item_log_me(log_filter_ruleset *rs, const char *label,
   Show that flow control actually works.
   This is intended to work in tandem with the log_components_filter.test;
   the test sets up the filter-rules, and we provided some input to them.
-
-  @retval  0  success
 */
-static int test_if_then_else() {
+static void test_if_then_else() {
   LogEvent()
       .type(LOG_TYPE_ERROR)
       .prio(INFORMATION_LEVEL)
@@ -231,7 +196,6 @@ static int test_if_then_else() {
       .subsys(LOG_SUBSYSTEM_TAG)
       .component(LOG_COMPONENT_TAG)
       .message("WL#9651 expected: r1-IF, r2-FAILURE, r3-FAILURE");
-  return 0;
 }
 
 /**
@@ -241,12 +205,14 @@ static int test_if_then_else() {
   @retval -1  could not acquire ruleset (to add throttle)
   @retval -2  could not initialize new rule
   @retval -3  could not acquire ruleset (to delete throttle)
+  @retval -4  could not delete all rules
 */
 static int test_add_item(log_filter_ruleset *rs) {
   log_filter_rule *r;
   int rr = -99;
   uint32 orig_count;
 
+  // if we can't lock the rules, return directly
   if ((log_bf->filter_ruleset_lock(rs, LOG_BUILTINS_LOCK_EXCLUSIVE)) < 0)
     return -1;
 
@@ -368,25 +334,32 @@ static int test_add_item(log_filter_ruleset *rs) {
   // modify and log event
   test_add_item_log_me(rs, "delta in medias res", orig_count);
 
+  // if we can't lock the rules, return directly
   if ((log_bf->filter_ruleset_lock(rs, LOG_BUILTINS_LOCK_EXCLUSIVE)) < 0)
     return -3;
-
-  assert(!rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_PRIO_CHANGE,
-                      LOG_FILTER_COND_EQ, LOG_FILTER_ITEM_SET));
-  assert(!rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_DEL_ITEM,
-                      LOG_FILTER_COND_NE, LOG_FILTER_ITEM_DEL));
-  assert(!rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_PRS_ITEM,
-                      LOG_FILTER_COND_PRESENT, LOG_FILTER_ITEM_SET));
 
   rr = 0;
 
 done:
+  /*
+    If we arrive here from a goto, something went wrong, and we don't
+    know what rules were set up correctly. Therefore, some of these
+    deletes may fail (since we never added the corresponding rule).
+    We stick with the original return-code here however as we're
+    interested in the root issue, not subsequent issue.
+
+    If we made it this far without goto (rr==0), all 3 rules have
+    been set up, so not being able to delete any one is clearly an
+    error and should be flagged as such.
+  */
   rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_PRIO_CHANGE, LOG_FILTER_COND_EQ,
               LOG_FILTER_ITEM_SET);
   rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_DEL_ITEM, LOG_FILTER_COND_NE,
               LOG_FILTER_ITEM_DEL);
   rule_delete(rs, LOG_ITEM_GEN_LEX_STRING, KEY_PRS_ITEM,
               LOG_FILTER_COND_PRESENT, LOG_FILTER_ITEM_SET);
+
+  if ((rr == 0) && (rs->count != orig_count)) rr = -4;
 
   log_bf->filter_ruleset_unlock(rs);
 
@@ -399,70 +372,86 @@ done:
 /**
   Get coverage for some of the built-ins.
 
-  @retval -1  could not acquire ruleset (to add throttle)
-  @retval -2  could not initialize new rule
-  @retval -3  could not acquire ruleset (to delete throttle)
+  @retval  number of problems detected
 */
 static int test_builtins() {
-  // test classifiers
-  assert(log_bi->item_numeric_class(LOG_INTEGER));
-  assert(log_bi->item_numeric_class(LOG_FLOAT));
-  assert(!log_bi->item_numeric_class(LOG_LEX_STRING));
-  assert(!log_bi->item_numeric_class(LOG_CSTRING));
+  int ret = 0;
 
-  assert(!log_bi->item_string_class(LOG_INTEGER));
-  assert(!log_bi->item_string_class(LOG_FLOAT));
-  assert(log_bi->item_string_class(LOG_LEX_STRING));
-  assert(log_bi->item_string_class(LOG_CSTRING));
+#if !defined(DBUG_OFF)
+  // test classifiers
+  DBUG_ASSERT(log_bi->item_numeric_class(LOG_INTEGER));
+  DBUG_ASSERT(log_bi->item_numeric_class(LOG_FLOAT));
+  DBUG_ASSERT(!log_bi->item_numeric_class(LOG_LEX_STRING));
+  DBUG_ASSERT(!log_bi->item_numeric_class(LOG_CSTRING));
+
+  DBUG_ASSERT(!log_bi->item_string_class(LOG_INTEGER));
+  DBUG_ASSERT(!log_bi->item_string_class(LOG_FLOAT));
+  DBUG_ASSERT(log_bi->item_string_class(LOG_LEX_STRING));
+  DBUG_ASSERT(log_bi->item_string_class(LOG_CSTRING));
 
   // test functions for wellknowns
   int wellknown = log_bi->wellknown_by_type(LOG_ITEM_LOG_LABEL);
-  assert(LOG_ITEM_LOG_LABEL == log_bi->wellknown_get_type(wellknown));
+  DBUG_ASSERT(LOG_ITEM_LOG_LABEL == log_bi->wellknown_get_type(wellknown));
 
   wellknown = log_bi->wellknown_by_type(LOG_ITEM_GEN_INTEGER);
   const char *wk = log_bi->wellknown_get_name(wellknown);
-  assert(LOG_ITEM_TYPE_RESERVED ==
-         log_bi->wellknown_by_name(wk, log_bs->length(wk)));
+  DBUG_ASSERT(LOG_ITEM_TYPE_RESERVED ==
+              log_bi->wellknown_by_name(wk, log_bs->length(wk)));
+#endif
 
   // make a bag, then create a couple of key/value pairs on it
   log_line *ll = log_bi->line_init();
-  assert(log_bi->line_item_count(ll) == 0);
+  DBUG_ASSERT(ll != nullptr);
+  if (ll == nullptr) return 1;
+  DBUG_ASSERT(log_bi->line_item_count(ll) == 0);
 
   log_item_data *d = log_bi->line_item_set(ll, LOG_ITEM_LOG_LABEL);
-  assert(d != nullptr);
-  assert(log_bi->line_item_count(ll) == 1);
+  DBUG_ASSERT(d != nullptr);
+  DBUG_ASSERT(log_bi->line_item_count(ll) == 1);
 
   log_item_data *d1 = log_bi->line_item_set(ll, LOG_ITEM_SQL_ERRCODE);
-  assert(!log_bi->item_set_int(d1, ER_PARSER_TRACE));
-  assert(d1 != nullptr);
-  assert(log_bi->line_item_count(ll) == 2);
+  ret += log_bi->item_set_int(d1, ER_PARSER_TRACE) ? 1 : 0;
+  DBUG_ASSERT(ret == 0);
+  DBUG_ASSERT(d1 != nullptr);
+  DBUG_ASSERT(log_bi->line_item_count(ll) == 2);
 
   // setters (woof)
-  assert(!log_bi->item_set_float(d, 3.1415926927));
-  assert(!log_bi->item_set_int(d, 31415926927));
-  assert(!log_bi->item_set_cstring(d, "pi==3.14"));
-  assert(!log_bi->item_set_lexstring(d, "pi", 2));
+  ret += log_bi->item_set_float(d, 3.1415926927) ? 1 : 0;
+  DBUG_ASSERT(ret == 0);
 
-  // find our item in the bag
+  ret += log_bi->item_set_int(d, 31415926927) ? 1 : 0;
+  DBUG_ASSERT(ret == 0);
+
+  ret += log_bi->item_set_cstring(d, "pi==3.14") ? 1 : 0;
+  DBUG_ASSERT(ret == 0);
+
+  ret += log_bi->item_set_lexstring(d, "pi", 2) ? 1 : 0;
+  DBUG_ASSERT(ret == 0);
+
+  // get our item from the bag
   log_item_iter *it;
   log_item *li;
-  assert((it = log_bi->line_item_iter_acquire(ll)) != nullptr);
-  assert((li = log_bi->line_item_iter_first(it)) != nullptr);
+
+  it = log_bi->line_item_iter_acquire(ll);
+  DBUG_ASSERT(it != nullptr);
+
+  li = log_bi->line_item_iter_first(it);
+  DBUG_ASSERT(li != nullptr);
 
   // break item, then detect brokeness
   li->item_class = LOG_FLOAT;
-  assert(log_bi->item_inconsistent(li) < 0);
+  DBUG_ASSERT(log_bi->item_inconsistent(li) < 0);
 
   // release iter
   log_bi->line_item_iter_release(it);
 
-  // try to log it anyway
+  // try to log item we broke.  logger should handle this gracefully.
   log_bi->line_submit(ll);
 
   // release line
   log_bi->line_exit(ll);
 
-  return 0;
+  return ret;
 }
 
 /**
@@ -669,16 +658,18 @@ static void banner() {
       .message("using LogEvent() object in external service");
 
   // built-in API test: test "well-known" lookups
+#if !defined(DBUG_OFF)
   {
     int wellknown = log_bi->wellknown_by_type(LOG_ITEM_LOG_LABEL);
     const char *label_key = log_bi->wellknown_get_name(wellknown);
     int wellagain =
         log_bi->wellknown_by_name(label_key, log_bs->length(label_key));
 
-    assert(wellknown == wellagain);
+    DBUG_ASSERT(wellknown == wellagain);
 
-    assert(LOG_ITEM_TYPE_NOT_FOUND == log_bi->wellknown_by_name("", 0));
+    DBUG_ASSERT(LOG_ITEM_TYPE_NOT_FOUND == log_bi->wellknown_by_name("", 0));
   }
+#endif
 
   // built-in API test: test item_consistent() checks
   {
@@ -898,6 +889,14 @@ DEFINE_METHOD(int, log_service_imp::run,
 
     test_rules = log_fd->filter_debug_ruleset_get();
 
+    bool pause_return = false;
+    if ((test_rules->count > 0) &&
+        (test_rules->rule[0].verb == LOG_FILTER_RETURN) &&
+        !(test_rules->rule[0].flags & LOG_FILTER_FLAG_DISABLED)) {
+      pause_return = true;
+      test_rules->rule[0].flags |= LOG_FILTER_FLAG_DISABLED;
+    }
+
     // log a message from this here external service
     banner();
 
@@ -924,6 +923,7 @@ DEFINE_METHOD(int, log_service_imp::run,
     failed = true;
 
     // Do not release the rule-set here, as it's not ours.
+    if (pause_return) test_rules->rule[0].flags &= ~LOG_FILTER_FLAG_DISABLED;
     test_rules = nullptr;
   }
 
@@ -1034,11 +1034,21 @@ DEFINE_METHOD(int, log_service_imp::close,
   return 0;
 }
 
+/**
+  Get characteristics of a log-service.
+
+  @retval  <0        an error occurred
+  @retval  >=0       characteristics (a set of log_service_chistics flags)
+*/
+DEFINE_METHOD(int, log_service_imp::characteristics, (void)) {
+  return LOG_SERVICE_SINK;
+}
+
 /* implementing a service: log_service */
 BEGIN_SERVICE_IMPLEMENTATION(log_sink_test, log_service)
 log_service_imp::run, log_service_imp::flush, log_service_imp::open,
-    log_service_imp::close, log_service_imp::variable_check,
-    log_service_imp::variable_update END_SERVICE_IMPLEMENTATION();
+    log_service_imp::close,
+    log_service_imp::characteristics END_SERVICE_IMPLEMENTATION();
 
 /* component provides: just the log_service service, for now */
 BEGIN_COMPONENT_PROVIDES(log_sink_test)
@@ -1052,7 +1062,7 @@ REQUIRES_SERVICE(log_builtins), REQUIRES_SERVICE(log_builtins_string),
 
 /* component description */
 BEGIN_COMPONENT_METADATA(log_sink_test)
-METADATA("mysql.author", "Oracle Corporation"),
+METADATA("mysql.author", "T.A. Nuernberg, Oracle Corporation"),
     METADATA("mysql.license", "GPL"), METADATA("log_service_type", "sink"),
     END_COMPONENT_METADATA();
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -53,13 +53,20 @@ const Collations &Collations::instance() {
 
 ///////////////////////////////////////////////////////////////////////////
 
+const CHARSET_INFO *Collations::name_collation() {
+  return &my_charset_utf8_general_ci;
+}
+
+///////////////////////////////////////////////////////////////////////////
+
 Collations::Collations() {
   m_target_def.set_table_name("collations");
 
   m_target_def.add_field(FIELD_ID, "FIELD_ID",
                          "id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
   m_target_def.add_field(FIELD_NAME, "FIELD_NAME",
-                         "name VARCHAR(64) NOT NULL COLLATE utf8_general_ci");
+                         "name VARCHAR(64) NOT NULL COLLATE " +
+                             String_type(name_collation()->name));
   m_target_def.add_field(FIELD_CHARACTER_SET_ID, "FIELD_CHARACTER_SET_ID",
                          "character_set_id BIGINT UNSIGNED NOT NULL");
   m_target_def.add_field(FIELD_IS_COMPILED, "FIELD_IS_COMPILED",
@@ -87,6 +94,7 @@ Collations::Collations() {
 
 bool Collations::populate(THD *thd) const {
   // Obtain a list of the previously stored collations.
+  cache::Dictionary_client::Auto_releaser releaser(thd->dd_client());
   std::vector<const Collation *> prev_coll;
   if (thd->dd_client()->fetch_global_components(&prev_coll)) return true;
 
@@ -152,7 +160,6 @@ bool Collations::populate(THD *thd) const {
 
   // The remaining ids in the prev_coll_ids set were not updated, and must
   // therefore be deleted from the DD since they are not supported anymore.
-  cache::Dictionary_client::Auto_releaser releaser(thd->dd_client());
   for (std::set<Object_id>::const_iterator del_it = prev_coll_ids.begin();
        del_it != prev_coll_ids.end(); ++del_it) {
     const Collation *del_coll = NULL;
@@ -175,7 +182,7 @@ Collation *Collations::create_entity_object(const Raw_record &) const {
 
 bool Collations::update_object_key(Global_name_key *key,
                                    const String_type &collation_name) {
-  key->update(FIELD_NAME, collation_name);
+  key->update(FIELD_NAME, collation_name, name_collation());
   return false;
 }
 

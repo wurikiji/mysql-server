@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -32,9 +32,10 @@
 
 #include "my_io.h"
 #include "plugin/x/generated/mysqlx_version.h"
-#include "plugin/x/ngs/include/ngs_common/operations_factory.h"
-#include "plugin/x/ngs/include/ngs_common/string_formatter.h"
+#include "plugin/x/src/helper/string_formatter.h"
+#include "plugin/x/src/operations_factory.h"
 #include "plugin/x/src/xpl_log.h"
+#include "plugin/x/src/xpl_performance_schema.h"
 
 #ifdef HAVE_SYS_UN_H
 #include <signal.h>
@@ -76,7 +77,7 @@ class Unixsocket_creator {
     log_debug("UNIX Socket is %s", unix_socket_file.c_str());
 
     if (unix_socket_file.empty()) {
-      log_info(ER_XPLUGIN_UNIX_SOCKET_NOT_CONFIGURED);
+      log_debug("UNIX socket not configured");
       error_message = "the socket file path is empty";
 
       return listener_socket;
@@ -84,7 +85,7 @@ class Unixsocket_creator {
 
     // Check path length, probably move to set unix port?
     if (unix_socket_file.length() > (sizeof(addr.sun_path) - 1)) {
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("the socket file path is too long (> ")
                           .append(sizeof(addr.sun_path) - 1)
                           .append(")")
@@ -102,7 +103,7 @@ class Unixsocket_creator {
 
     if (INVALID_SOCKET == listener_socket->get_socket_fd()) {
       m_system_interface->get_socket_error_and_message(err, errstr);
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("can't create UNIX Socket: ")
                           .append(errstr)
                           .append(" (")
@@ -124,7 +125,7 @@ class Unixsocket_creator {
                               sizeof(addr)) < 0) {
       umask(old_mask);
       m_system_interface->get_socket_error_and_message(err, errstr);
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("`bind()` on UNIX socket failed with error: ")
                           .append(errstr)
                           .append(" (")
@@ -146,7 +147,7 @@ class Unixsocket_creator {
       m_system_interface->get_socket_error_and_message(err, errstr);
 
       error_message =
-          ngs::String_formatter()
+          String_formatter()
               .append("`listen()` on UNIX socket failed with error: ")
               .append(errstr)
               .append("(")
@@ -185,7 +186,7 @@ class Unixsocket_creator {
     int retries = 3;
     while (true) {
       if (!retries--) {
-        error_message = ngs::String_formatter()
+        error_message = String_formatter()
                             .append("unable to create UNIX socket lock file ")
                             .append(lock_filename)
                             .append(" after ")
@@ -260,7 +261,7 @@ class Unixsocket_creator {
 
       if (read_pid != cur_pid && read_pid != parent_pid) {
         if (m_system_interface->kill(read_pid, 0) == 0) {
-          error_message = ngs::String_formatter()
+          error_message = String_formatter()
                               .append("another process with PID ")
                               .append(read_pid)
                               .append(" is using UNIX socket file")
@@ -286,7 +287,7 @@ class Unixsocket_creator {
              static_cast<int>(cur_pid));
     if (lockfile_fd->write(buffer, strlen(buffer)) !=
         static_cast<signed>(strlen(buffer))) {
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("can't write UNIX socket lock file ")
                           .append(lock_filename)
                           .append(", errno: ")
@@ -297,7 +298,7 @@ class Unixsocket_creator {
     }
 
     if (lockfile_fd->fsync() != 0) {
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("can't sync UNIX socket lock file ")
                           .append(lock_filename)
                           .append(", errno: ")
@@ -308,7 +309,7 @@ class Unixsocket_creator {
     }
 
     if (lockfile_fd->close() != 0) {
-      error_message = ngs::String_formatter()
+      error_message = String_formatter()
                           .append("can't close UNIX socket lock file ")
                           .append(lock_filename)
                           .append(", errno: ")
@@ -333,7 +334,9 @@ Listener_unix_socket::Listener_unix_socket(
     : m_operations_factory(operations_factory),
       m_unix_socket_path(unix_socket_path),
       m_backlog(backlog),
-      m_state(ngs::State_listener_initializing),
+      m_state(ngs::State_listener_initializing,
+              KEY_mutex_x_listener_unix_socket_sync,
+              KEY_cond_x_listener_unix_socket_sync),
       m_event(event) {}
 
 Listener_unix_socket::~Listener_unix_socket() {
@@ -345,13 +348,11 @@ Listener_unix_socket::Sync_variable_state &Listener_unix_socket::get_state() {
   return m_state;
 }
 
-bool Listener_unix_socket::is_handled_by_socket_event() { return true; }
-
 std::string Listener_unix_socket::get_name_and_configuration() const {
-  std::string result = "UNIX socket (";
+  std::string result = "socket: '";
 
   result += m_unix_socket_path;
-  result += ")";
+  result += "'";
 
   return result;
 }
@@ -370,21 +371,33 @@ std::string Listener_unix_socket::get_last_error() { return m_last_error; }
 bool Listener_unix_socket::setup_listener(On_connection on_connection) {
   Unixsocket_creator unixsocket_creator(*m_operations_factory);
 
-  if (!m_state.is(ngs::State_listener_initializing)) return false;
+  if (!m_state.is(ngs::State_listener_initializing)) {
+    close_listener();
+    return false;
+  }
 
   m_unix_socket = unixsocket_creator.create_and_bind_unixsocket(
       m_unix_socket_path, m_last_error, m_backlog);
 
-  if (INVALID_SOCKET == m_unix_socket->get_socket_fd()) return false;
+  if (INVALID_SOCKET == m_unix_socket->get_socket_fd()) {
+    close_listener();
+    return false;
+  }
 
-  if (!m_event.listen(m_unix_socket, on_connection)) return false;
+  if (!m_event.listen(m_unix_socket, on_connection)) {
+    close_listener();
+    return false;
+  }
 
   m_state.set(ngs::State_listener_prepared);
+
   return true;
 }
 
 void Listener_unix_socket::close_listener() {
-  m_state.set(ngs::State_listener_stopped);
+  if (ngs::State_listener_stopped ==
+      m_state.set_and_return_old(ngs::State_listener_stopped))
+    return;
 
   if (NULL == m_unix_socket) return;
 
@@ -399,5 +412,23 @@ void Listener_unix_socket::close_listener() {
 }
 
 void Listener_unix_socket::loop() {}
+
+void Listener_unix_socket::report_properties(On_report_properties on_prop) {
+  switch (m_state.get()) {
+    case ngs::State_listener_initializing:
+      on_prop(ngs::Server_property_ids::k_unix_socket, "");
+      break;
+
+    case ngs::State_listener_prepared:
+    case ngs::State_listener_running:  // fall-through
+      on_prop(ngs::Server_property_ids::k_unix_socket, m_unix_socket_path);
+      break;
+
+    case ngs::State_listener_stopped:
+      on_prop(ngs::Server_property_ids::k_unix_socket,
+              ngs::PROPERTY_NOT_CONFIGURED);
+      break;
+  }
+}
 
 }  // namespace xpl

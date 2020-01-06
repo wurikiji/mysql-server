@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -25,6 +25,7 @@
 #ifndef atrt_config_hpp
 #define atrt_config_hpp
 
+#include <NDBT_ReturnCodes.h>
 #include <mgmapi.h>
 #include <my_default.h>
 #include <my_dir.h>
@@ -38,14 +39,41 @@
 #include <NdbAutoPtr.hpp>
 #include <Properties.hpp>
 #include <Vector.hpp>
+#include <string>
+#include "test_execution_resources.hpp"
+
 
 enum ErrorCodes {
   ERR_OK = 0,
+  ERR_CRITICAL = 10,
   ERR_NDB_FAILED = 101,
   ERR_SERVERS_FAILED = 102,
   ERR_MAX_TIME_ELAPSED = 103,
   ERR_COMMAND_FAILED = 104,
-  ERR_FAILED_TO_START = 105
+  ERR_FAILED_TO_START = 105,
+  ERR_NDB_AND_SERVERS_FAILED = 106,
+  ERR_CORRUPT_TESTCASE = 107,
+  ERR_TEST_FAILED = NDBT_FAILED << 8,
+  ERR_TEST_SKIPPED = NDBT_SKIPPED << 8
+};
+
+enum AtrtExitCodes {
+  TESTSUITE_SUCCESS = 0,
+  TESTSUITE_FAILURES = 1,
+  ATRT_FAILURE = 2
+};
+
+struct TestResult {
+  int testruns;
+  time_t elapsed;
+  int result;
+};
+
+enum FailureMode : long {
+  Restart,
+  Abort,
+  Skip,
+  Continue
 };
 
 struct atrt_host {
@@ -85,6 +113,7 @@ struct atrt_process {
   } m_type;
 
   SimpleCpcClient::Process m_proc;
+  bool m_atrt_stopped;
 
   NdbMgmHandle m_ndb_mgm_handle;    // if type == ndb_mgm
   atrt_process* m_mysqld;           // if type == client
@@ -110,6 +139,7 @@ struct atrt_cluster {
 
 struct atrt_config {
   bool m_generated;
+  enum { CNF, INI } m_config_type;
   BaseString m_key;
   BaseString m_replication;
   BaseString m_site;
@@ -119,11 +149,15 @@ struct atrt_config {
 };
 
 struct atrt_testcase {
+  int test_no;
   bool m_report;
   bool m_run_all;
   time_t m_max_time;
   BaseString m_name;
   BaseString m_mysqld_options;
+  int m_max_retries;
+  bool m_force_cluster_restart;
+  FailureMode m_behaviour_on_failure;
 
   struct Command {
     atrt_process::Type m_cmd_type;
@@ -134,7 +168,7 @@ struct atrt_testcase {
 
 extern Logger g_logger;
 
-bool parse_args(int argc, char** argv);
+bool parse_args(int argc, char** argv, MEM_ROOT* alloc);
 bool setup_config(atrt_config&, const char* mysqld);
 bool load_deployment_options(atrt_config&);
 bool configure(atrt_config&, int setup);
@@ -146,6 +180,7 @@ bool sshx(atrt_config&, unsigned procmask);
 bool start(atrt_config&, unsigned procmask);
 
 bool remove_dir(const char*, bool incl = true);
+bool exists_file(const char* path);
 bool connect_hosts(atrt_config&);
 bool connect_ndb_mgm(atrt_config&);
 bool wait_ndb(atrt_config&, int ndb_mgm_node_status);
@@ -158,18 +193,30 @@ bool wait_for_processes_to_stop(atrt_config& config,
                                 int wait_between_retries_s = 5);
 bool wait_for_process_to_stop(atrt_config& config, atrt_process& proc,
                               int retries = 5, int wait_between_retries_s = 5);
+bool shutdown_processes(atrt_config &config, int types);
+const char* get_test_status(int result);
+bool check_cluster_status(atrt_config &config, int types);
+bool start_clusters(atrt_config &config);
+bool setup_hosts_filesystem(atrt_config &config);
+int atrt_exit(int return_code);
+const char* get_process_type_name(int types);
+TestResult run_test_case(const atrt_testcase& testcase);
+void update_atrt_result_code(const TestResult& test_result,
+                             AtrtExitCodes* return_code);
 
-int is_running(atrt_config&, int);
+int check_ndb_or_servers_failures(atrt_config& config);
+bool is_client_running(atrt_config&);
 bool gather_result(atrt_config&, int* result);
 
-int read_test_case(FILE*, atrt_testcase&, int& line);
+int read_test_case(FILE*, int& line, atrt_testcase&);
+bool read_test_cases(FILE*, std::vector<atrt_testcase>*);
 bool setup_test_case(atrt_config&, const atrt_testcase&);
 
 bool setup_hosts(atrt_config&);
 
 bool do_command(atrt_config& config);
 
-bool start_process(atrt_process& proc);
+bool start_process(atrt_process& proc, bool run_setup = true);
 bool stop_process(atrt_process& proc);
 
 bool connect_mysqld(atrt_process& proc);
@@ -190,6 +237,8 @@ NdbOut& operator<<(NdbOut& out, const atrt_process& proc);
  * SQL
  */
 bool setup_db(atrt_config&);
+
+std::string getAtrtVersion();
 
 /**
  * Global variables...
@@ -218,14 +267,8 @@ extern const char* g_clusters;
  */
 char* find_bin_path(const char* basename);
 char* find_bin_path(const char* prefix, const char* basename);
-extern const char* g_ndb_mgmd_bin_path;
-extern const char* g_ndbd_bin_path;
-extern const char* g_ndbmtd_bin_path;
-extern const char* g_mysqld_bin_path;
-extern const char* g_mysql_install_db_bin_path;
-extern const char* g_libmysqlclient_so_path;
-
 extern const char* g_search_path[];
+extern TestExecutionResources g_resources;
 
 #ifdef _WIN32
 #include <direct.h>

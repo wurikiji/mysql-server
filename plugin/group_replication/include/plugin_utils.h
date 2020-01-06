@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -45,8 +45,9 @@ struct thread_state {
    * @brief Maintains thread status
    */
   enum thread_state_enum {
-    THREAD_INIT = 0, /**< THREAD_NOT_CREATED */
+    THREAD_NONE = 0, /**< THREAD_NOT_CREATED */
     THREAD_CREATED,  /**< THREAD_CREATED */
+    THREAD_INIT,     /**< THREAD_INIT */
 
     THREAD_RUNNING, /**< THREAD_RUNNING */
 
@@ -58,7 +59,7 @@ struct thread_state {
   thread_state_enum thread_state_var;
 
  public:
-  thread_state() { thread_state_var = thread_state_enum::THREAD_INIT; }
+  thread_state() : thread_state_var(thread_state_enum::THREAD_NONE) {}
 
   void set_running() { thread_state_var = thread_state_enum::THREAD_RUNNING; }
 
@@ -66,22 +67,29 @@ struct thread_state {
     thread_state_var = thread_state_enum::THREAD_TERMINATED;
   }
 
+  void set_initialized() { thread_state_var = thread_state_enum::THREAD_INIT; }
+
   void set_created() { thread_state_var = thread_state_enum::THREAD_CREATED; }
 
-  bool is_running() {
+  bool is_initialized() const {
+    return ((thread_state_var >= thread_state_enum::THREAD_INIT) &&
+            (thread_state_var < thread_state_enum::THREAD_TERMINATED));
+  }
+
+  bool is_running() const {
     return thread_state_var == thread_state_enum::THREAD_RUNNING;
   }
 
-  bool is_alive_not_running() {
+  bool is_alive_not_running() const {
     return thread_state_var < thread_state_enum::THREAD_RUNNING;
   }
 
-  bool is_thread_alive() {
+  bool is_thread_alive() const {
     return ((thread_state_var >= thread_state_enum::THREAD_CREATED) &&
             (thread_state_var < thread_state_enum::THREAD_TERMINATED));
   }
 
-  bool is_thread_dead() { return !is_thread_alive(); }
+  bool is_thread_dead() const { return !is_thread_alive(); }
 };
 
 class Blocked_transaction_handler {
@@ -100,15 +108,17 @@ class Blocked_transaction_handler {
   mysql_mutex_t unblocking_process_lock;
 };
 
-template <typename T>
-class Synchronized_queue {
- public:
-  Synchronized_queue() {
-    mysql_mutex_init(key_GR_LOCK_synchronized_queue, &lock, MY_MUTEX_INIT_FAST);
-    mysql_cond_init(key_GR_COND_synchronized_queue, &cond);
-  }
+/**
+ @class Synchronized_queue_interface
 
-  ~Synchronized_queue() { mysql_mutex_destroy(&lock); }
+ Interface that defines a queue protected against multi thread access.
+
+ */
+
+template <typename T>
+class Synchronized_queue_interface {
+ public:
+  virtual ~Synchronized_queue_interface() {}
 
   /**
     Checks if the queue is empty
@@ -116,6 +126,62 @@ class Synchronized_queue {
       @retval true  empty
       @retval false not empty
   */
+  virtual bool empty() = 0;
+
+  /**
+    Inserts an element in the queue.
+    Alerts any other thread lock on pop() or front()
+    @param value The value to insert
+
+    @return  false, operation always succeeded
+   */
+  virtual bool push(const T &value) = 0;
+
+  /**
+    Fetches the front of the queue and removes it.
+    @note The method will block if the queue is empty until a element is pushed
+
+    @param out  The fetched reference.
+
+    @return  false, operation always succeeded
+  */
+  virtual bool pop(T *out) = 0;
+
+  /**
+    Pops the front of the queue removing it.
+    @note The method will block if the queue is empty until a element is pushed
+
+    @return  true if method was aborted, false otherwise
+  */
+  virtual bool pop() = 0;
+
+  /**
+    Fetches the front of the queue but does not remove it.
+    @note The method will block if the queue is empty until a element is pushed
+
+    @param out  The fetched reference.
+
+    @return  false, operation always succeeded
+  */
+  virtual bool front(T *out) = 0;
+
+  /**
+    Checks the queue size
+    @return the size of the queue
+  */
+  virtual size_t size() = 0;
+};
+
+template <typename T>
+class Synchronized_queue : public Synchronized_queue_interface<T> {
+ public:
+  Synchronized_queue() {
+    mysql_mutex_init(key_GR_LOCK_synchronized_queue, &lock, MY_MUTEX_INIT_FAST);
+    mysql_cond_init(key_GR_COND_synchronized_queue, &cond);
+  }
+
+  virtual ~Synchronized_queue() { mysql_mutex_destroy(&lock); }
+
   bool empty() {
     bool res = true;
     mysql_mutex_lock(&lock);
@@ -125,25 +191,16 @@ class Synchronized_queue {
     return res;
   }
 
-  /**
-    Inserts an element in the queue.
-    Alerts any other thread lock on pop() or front()
-    @param value The value to insert
-   */
-  void push(const T &value) {
+  virtual bool push(const T &value) {
     mysql_mutex_lock(&lock);
     queue.push(value);
-    mysql_mutex_unlock(&lock);
     mysql_cond_broadcast(&cond);
+    mysql_mutex_unlock(&lock);
+
+    return false;
   }
 
-  /**
-    Fetches the front of the queue and removes it.
-    @note The method will block if the queue is empty until a element is pushed
-
-    @param out  The fetched reference.
-  */
-  void pop(T *out) {
+  virtual bool pop(T *out) {
     *out = NULL;
     mysql_mutex_lock(&lock);
     while (queue.empty())
@@ -151,38 +208,30 @@ class Synchronized_queue {
     *out = queue.front();
     queue.pop();
     mysql_mutex_unlock(&lock);
+
+    return false;
   }
 
-  /**
-    Pops the front of the queue removing it.
-    @note The method will block if the queue is empty until a element is pushed
-  */
-  void pop() {
+  virtual bool pop() {
     mysql_mutex_lock(&lock);
     while (queue.empty())
       mysql_cond_wait(&cond, &lock); /* purecov: inspected */
     queue.pop();
     mysql_mutex_unlock(&lock);
+
+    return false;
   }
 
-  /**
-    Fetches the front of the queue but does not remove it.
-    @note The method will block if the queue is empty until a element is pushed
-
-    @param out  The fetched reference.
-  */
-  void front(T *out) {
+  virtual bool front(T *out) {
     *out = NULL;
     mysql_mutex_lock(&lock);
     while (queue.empty()) mysql_cond_wait(&cond, &lock);
     *out = queue.front();
     mysql_mutex_unlock(&lock);
+
+    return false;
   }
 
-  /**
-    Checks the queue size
-    @return the size of the queue
-  */
   size_t size() {
     size_t qsize = 0;
     mysql_mutex_lock(&lock);
@@ -192,10 +241,137 @@ class Synchronized_queue {
     return qsize;
   }
 
- private:
+ protected:
   mysql_mutex_t lock;
   mysql_cond_t cond;
   std::queue<T> queue;
+};
+
+/**
+ Abortable synchronized queue extends synchronized queue allowing to
+ abort methods waiting for elements on queue.
+*/
+
+template <typename T>
+class Abortable_synchronized_queue : public Synchronized_queue<T> {
+ public:
+  Abortable_synchronized_queue() : Synchronized_queue<T>(), m_abort(false) {}
+
+  ~Abortable_synchronized_queue() {}
+
+  /**
+    Inserts an element in the queue.
+    Alerts any other thread lock on pop() or front()
+    @note The method will not push if abort was executed.
+
+    @param value The value to insert
+
+    @return  false, operation always succeeded
+   */
+
+  bool push(const T &value) {
+    bool res = false;
+    mysql_mutex_lock(&this->lock);
+    if (m_abort) {
+      res = true;
+    } else {
+      this->queue.push(value);
+      mysql_cond_broadcast(&this->cond);
+    }
+
+    mysql_mutex_unlock(&this->lock);
+    return res;
+  }
+
+  /**
+    Fetches the front of the queue and removes it.
+    @note The method will block if the queue is empty until a element is pushed
+    or abort is executed
+
+    @param out  The fetched reference.
+
+    @return  true if method was aborted, false otherwise
+  */
+  bool pop(T *out) {
+    *out = nullptr;
+    mysql_mutex_lock(&this->lock);
+    while (this->queue.empty() && !m_abort)
+      mysql_cond_wait(&this->cond, &this->lock); /* purecov: inspected */
+
+    if (!m_abort) {
+      *out = this->queue.front();
+      this->queue.pop();
+    }
+
+    const bool result = m_abort;
+    mysql_mutex_unlock(&this->lock);
+    return result;
+  }
+
+  /**
+    Pops the front of the queue removing it.
+    @note The method will block if the queue is empty until a element is pushed
+    or abort is executed
+
+    @return  false, operation always succeeded
+  */
+  bool pop() {
+    mysql_mutex_lock(&this->lock);
+    while (this->queue.empty() && !m_abort)
+      mysql_cond_wait(&this->cond, &this->lock);
+
+    if (!m_abort) {
+      this->queue.pop();
+    }
+
+    const bool result = m_abort;
+    mysql_mutex_unlock(&this->lock);
+    return result;
+  }
+
+  /**
+    Fetches the front of the queue but does not remove it.
+    @note The method will block if the queue is empty until a element is pushed
+    or abort is executed
+
+    @param out  The fetched reference.
+
+    @return  true if method was aborted, false otherwise
+  */
+  bool front(T *out) {
+    *out = nullptr;
+    mysql_mutex_lock(&this->lock);
+    while (this->queue.empty() && !m_abort)
+      mysql_cond_wait(&this->cond, &this->lock);
+
+    if (!m_abort) {
+      *out = this->queue.front();
+    }
+
+    const bool result = m_abort;
+    mysql_mutex_unlock(&this->lock);
+    return result;
+  }
+
+  /**
+   Remove all elements, abort current and future waits on retrieving elements
+   from queue.
+  */
+  void abort() {
+    mysql_mutex_lock(&this->lock);
+    while (this->queue.size()) {
+      T elem;
+      elem = this->queue.front();
+      this->queue.pop();
+      delete elem;
+    }
+    m_abort = true;
+    mysql_cond_broadcast(&this->cond);
+    mysql_mutex_unlock(&this->lock);
+  }
+
+ private:
+  bool m_abort;
 };
 
 /**
@@ -217,7 +393,7 @@ class CountDownLatch {
 
     @param       count     The number of requirements to wait
   */
-  CountDownLatch(uint count) : count(count) {
+  CountDownLatch(uint count) : count(count), error(false) {
     mysql_mutex_init(key_GR_LOCK_count_down_latch, &lock, MY_MUTEX_INIT_FAST);
     mysql_cond_init(key_GR_COND_count_down_latch, &cond);
   }
@@ -230,9 +406,26 @@ class CountDownLatch {
   /**
     Block until the number of requirements reaches zero.
   */
-  void wait() {
+  void wait(ulong timeout = 0) {
     mysql_mutex_lock(&lock);
-    while (count > 0) mysql_cond_wait(&cond, &lock);
+
+    if (timeout > 0) {
+      ulong time_lapsed = 0;
+      struct timespec abstime;
+
+      while (count > 0 && timeout > time_lapsed) {
+        set_timespec(&abstime, 1);
+        mysql_cond_timedwait(&cond, &lock, &abstime);
+        time_lapsed++;
+      }
+
+      if (count > 0 && timeout == time_lapsed) {
+        error = true;
+      }
+    } else {
+      while (count > 0) mysql_cond_wait(&cond, &lock);
+    }
+
     mysql_mutex_unlock(&lock);
   }
 
@@ -259,10 +452,25 @@ class CountDownLatch {
     return res;
   }
 
+  /**
+    Set error flag, once this latch is release the waiter can check
+    if it was due to a error or due to correct termination.
+  */
+  void set_error() { error = true; }
+
+  /**
+    Get latch release reason.
+
+    @return  true   the latch was released due to a error
+             false  the latch was released on correct termination
+  */
+  bool get_error() { return error; }
+
  private:
   mysql_mutex_t lock;
   mysql_cond_t cond;
   int count;
+  bool error;
 };
 
 /**
@@ -284,13 +492,37 @@ class Wait_ticket {
   }
 
   virtual ~Wait_ticket() {
+    clear();
+    mysql_cond_destroy(&cond);
+    mysql_mutex_destroy(&lock);
+  }
+
+  void clear() {
+    mysql_mutex_lock(&lock);
+    DBUG_ASSERT(false == blocked);
+    DBUG_ASSERT(false == waiting);
+
     for (typename std::map<K, CountDownLatch *>::iterator it = map.begin();
          it != map.end(); ++it)
       delete it->second; /* purecov: inspected */
     map.clear();
+    mysql_mutex_unlock(&lock);
+  }
 
-    mysql_cond_destroy(&cond);
-    mysql_mutex_destroy(&lock);
+  /**
+    Check if there are waiting tickets.
+    @return
+         @retval true    empty
+         @retval false   otherwise
+  */
+  bool empty() {
+    bool result = false;
+
+    mysql_mutex_lock(&lock);
+    result = map.empty();
+    mysql_mutex_unlock(&lock);
+
+    return result;
   }
 
   /**
@@ -334,11 +566,13 @@ class Wait_ticket {
    @note The ticket is removed after the wait.
 
     @param       key       The key that identifies the ticket
+    @param       timeout   maximum time in seconds to wait
+                           by default is 0, which means no timeout
     @return
          @retval 0         success
          @retval !=0       key doesn't exist, or the Ticket is blocked
   */
-  int waitTicket(const K &key) {
+  int waitTicket(const K &key, ulong timeout = 0) {
     int error = 0;
     CountDownLatch *cdl = NULL;
 
@@ -357,7 +591,8 @@ class Wait_ticket {
     mysql_mutex_unlock(&lock);
 
     if (cdl != NULL) {
-      cdl->wait();
+      cdl->wait(timeout);
+      error = cdl->get_error() ? 1 : 0;
 
       mysql_mutex_lock(&lock);
       delete cdl;
@@ -377,20 +612,26 @@ class Wait_ticket {
   /**
    Set ticket status to done.
 
-    @param       key       The key that identifies the ticket
+    @param       key                   The key that identifies the ticket
+    @param       release_due_to_error  Inform the thread waiting that the
+                                        release is due to a error
     @return
          @retval 0         success
          @retval !=0       (key doesn't exist)
   */
-  int releaseTicket(const K &key) {
+  int releaseTicket(const K &key, bool release_due_to_error = false) {
     int error = 0;
 
     mysql_mutex_lock(&lock);
     typename std::map<K, CountDownLatch *>::iterator it = map.find(key);
     if (it == map.end())
       error = 1;
-    else
+    else {
+      if (release_due_to_error) {
+        it->second->set_error();
+      }
       it->second->countDown();
+    }
     mysql_mutex_unlock(&lock);
 
     return error;
@@ -455,29 +696,11 @@ class Wait_ticket {
   bool waiting;
 };
 
-class Mutex_autolock {
- public:
-  Mutex_autolock(mysql_mutex_t *arg) : ptr_mutex(arg) {
-    DBUG_ENTER("Mutex_autolock::Mutex_autolock");
-
-    DBUG_ASSERT(arg != NULL);
-
-    mysql_mutex_lock(ptr_mutex);
-    DBUG_VOID_RETURN;
-  }
-  ~Mutex_autolock() { mysql_mutex_unlock(ptr_mutex); }
-
- private:
-  mysql_mutex_t *ptr_mutex;
-  Mutex_autolock(Mutex_autolock const &);  // no copies permitted
-  void operator=(Mutex_autolock const &);
-};
-
 class Shared_writelock {
  public:
   Shared_writelock(Checkable_rwlock *arg)
       : shared_write_lock(arg), write_lock_in_use(false) {
-    DBUG_ENTER("Shared_writelock::Shared_writelock");
+    DBUG_TRACE;
 
     DBUG_ASSERT(arg != NULL);
 
@@ -485,7 +708,7 @@ class Shared_writelock {
                      MY_MUTEX_INIT_FAST);
     mysql_cond_init(key_GR_COND_write_lock_protection, &write_lock_protection);
 
-    DBUG_VOID_RETURN;
+    return;
   }
 
   virtual ~Shared_writelock() {
@@ -580,12 +803,12 @@ class Plugin_waitlock {
         key_lock(lock_key),
         key_cond(cond_key),
         wait_status(false) {
-    DBUG_ENTER("Plugin_waitlock::Plugin_waitlock");
+    DBUG_TRACE;
 
     mysql_mutex_init(key_lock, wait_lock, MY_MUTEX_INIT_FAST);
     mysql_cond_init(key_cond, wait_cond);
 
-    DBUG_VOID_RETURN;
+    return;
   }
 
   /**
@@ -612,14 +835,14 @@ class Plugin_waitlock {
     Blocks the calling thread
   */
   void start_waitlock() {
-    DBUG_ENTER("Plugin_waitlock::start_waitlock");
+    DBUG_TRACE;
     mysql_mutex_lock(wait_lock);
     while (wait_status) {
       DBUG_PRINT("sleep", ("Waiting in Plugin_waitlock::start_waitlock()"));
       mysql_cond_wait(wait_cond, wait_lock);
     }
     mysql_mutex_unlock(wait_lock);
-    DBUG_VOID_RETURN;
+    return;
   }
 
   /**
@@ -658,5 +881,15 @@ class Plugin_waitlock {
   /** determine whether calling thread should be blocked or not */
   bool wait_status;
 };
+
+/**
+  Simple method to escape character on a string
+
+  @note based on escape_string_for_mysql
+  @note the result is stored in the parameter string
+
+  @param[in,out] string_to_escape the string to escape
+*/
+void plugin_escape_string(std::string &string_to_escape);
 
 #endif /* PLUGIN_UTILS_INCLUDED */

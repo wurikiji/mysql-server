@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -116,6 +116,13 @@ class Window {
   bool m_needs_peerset;
 
   /**
+    (At least) one window function (currently JSON_OBJECTAGG) needs the
+    last peer for the current row to evaluate the wf for the current row.
+    (This is used only during inversion/optimization)
+  */
+  bool m_needs_last_peer_in_frame;
+
+  /**
     (At least) one window function needs the cardinality of the partition of
     the current row to evaluate the wf for the current row
   */
@@ -158,7 +165,7 @@ class Window {
 
   /**
     Can be true if first window after a join: we may need to restore the input
-    record after buffered window processing if join_read_key's caching logic
+    record after buffered window processing if EQRefIterator's caching logic
     presumes the record hasn't been modified (when last qep_tab uses JT_EQ_REF).
   */
   bool m_needs_restore_input_row;
@@ -173,7 +180,7 @@ class Window {
     int64 m_rowno;
     bool m_from_last;
     st_offset() : m_rowno(0), m_from_last(false) {}
-    /*
+    /**
       Used for sorting offsets in ascending order for faster traversal of
       frame buffer tmp file
     */
@@ -183,7 +190,7 @@ class Window {
   struct st_ll_offset {
     int64 m_rowno;  ///< negative values is LEAD
     st_ll_offset() : m_rowno(INT_MIN64 /* uninitialized marker*/) {}
-    /*
+    /**
       Used for sorting offsets in ascending order for faster traversal of
       frame buffer tmp file
     */
@@ -191,7 +198,8 @@ class Window {
   };
 
   struct st_nth {
-    Mem_root_array_YY<st_offset> m_offsets;  // sorted set of NTH_VALUE offsets
+    Mem_root_array_YY<st_offset>
+        m_offsets;  ///< sorted set of NTH_VALUE offsets
   };
 
   struct st_lead_lag {
@@ -255,7 +263,7 @@ class Window {
   };
 
   /**
-    Execution state: used iff m_needs_frame_buffering. Holds four pointers to
+    Execution state: used iff m_needs_frame_buffering. Holds pointers to
     positions in the file in m_frame_buffer. We use these saved positions to
     avoid having to position to the first row in the partition and then
     making many read calls to find the desired row. By repositioning to a
@@ -421,6 +429,12 @@ class Window {
   int64 m_last_rowno_in_peerset;
 
   /**
+    Execution state: used iff m_needs_last_peer_in_frame. True if a row
+    leaving the frame is the last row in the peer set withing the frame.
+  */
+  int64 m_is_last_row_in_peerset_within_frame;
+
+  /**
     Execution state: the current row number in the current partition.
     Set in check_partition_boundary. Used while reading input rows, in contrast
     to m_rowno_in_partition, which is used when processing buffered rows.
@@ -482,6 +496,12 @@ class Window {
     the end bound. Each item is Item_func_lt/gt.
   */
   Item_func *m_comparators[WBT_VALUE_FOLLOWING + 1][2];
+  /**
+    Each item has inverse operation of the corresponding
+    comparator in m_comparators. Determines if comparison
+    should continue with next field in order by list.
+  */
+  Item_func *m_inverse_comparators[WBT_VALUE_FOLLOWING + 1][2];
 
  protected:
   /**
@@ -581,6 +601,7 @@ class Window {
         m_is_reference(is_reference),
         m_needs_frame_buffering(false),
         m_needs_peerset(false),
+        m_needs_last_peer_in_frame(false),
         m_needs_card(false),
         m_row_optimizable(true),
         m_range_optimizable(true),
@@ -600,6 +621,7 @@ class Window {
         m_special_rows_cache_max_length(0),
         m_last_rowno_in_cache(0),
         m_last_rowno_in_peerset(0),
+        m_is_last_row_in_peerset_within_frame(false),
         m_part_row_number(0),
         m_partition_border(true),
         m_last_row_output(0),
@@ -795,9 +817,17 @@ class Window {
     The current row is in the same peer set if all ORDER BY columns
     have the same value as in the previous row.
 
+    For JSON_OBJECTAGG only the first order by column needs to be
+    compared to check if a row is in peer set.
+
+    @param compare_all_order_by_items If true, compare all the order by items
+                                      to determine if a row is in peer set.
+                                      Else, compare only the first order by
+                                      item to determine peer set.
+
     @return true if current row is in a new peer set
   */
-  bool in_new_order_by_peer_set();
+  bool in_new_order_by_peer_set(bool compare_all_order_by_items = true);
 
   /**
     While processing buffered rows in RANGE frame mode we, determine
@@ -944,6 +974,12 @@ class Window {
   */
   bool needs_peerset() const { return m_needs_peerset; }
 
+  /**
+    If we cannot compute one of window functions without looking at all
+    rows in the peerset of the current row in this frame, return true, else
+    false. E.g. JSON_OBJECTAGG.
+  */
+  bool needs_last_peer_in_frame() const { return m_needs_last_peer_in_frame; }
   /**
     If we need to read the entire partition before we can evaluate
     some window function(s) on this window,
@@ -1103,6 +1139,20 @@ class Window {
   void set_last_rowno_in_peerset(uint64 rno) { m_last_rowno_in_peerset = rno; }
 
   /**
+    See #m_is_last_row_in_peerset_within_frame
+  */
+  int64 is_last_row_in_peerset_within_frame() const {
+    return m_is_last_row_in_peerset_within_frame;
+  }
+
+  /**
+    See #m_is_last_row_in_peerset_within_frame
+  */
+  void set_is_last_row_in_peerset_within_frame(bool value) {
+    m_is_last_row_in_peerset_within_frame = value;
+  }
+
+  /**
     See #m_do_copy_null
   */
   bool do_copy_null() const { return m_do_copy_null; }
@@ -1231,19 +1281,6 @@ class Window {
   }
 
   /**
-    Set the current row number for diagnostics. This should be the
-    absolute row number across all partitions in the windowing step, i.e.
-    after ordering the row if applicable.
-
-    @param da                   Diagnostics_area to store row number
-    @param rowno_in_partition   The logical row number within the partition
-  */
-  void set_diagnostics_rowno(Diagnostics_area *da, int64 rowno_in_partition) {
-    da->set_current_row_for_condition(rowno_in_partition +
-                                      m_frame_buffer_partition_offset - 1);
-  }
-
-  /**
     Free up any resource used to process the window functions of this window,
     e.g. temporary files and in-memory data structures. Called when done
     with all window processing steps from SELECT_LEX::cleanup.
@@ -1259,7 +1296,8 @@ class Window {
   void reset_partition_state() { reset_execution_state(RL_PARTITION); }
 
   /**
-    Reset execution state for next call to JOIN::exec, cf. JOIN::reset.
+    Reset execution state for next call to JOIN::exec, cf. JOIN::reset,
+    or using [Buffering]WindowingIterator::Init.
   */
   void reset_round() { reset_execution_state(RL_ROUND); }
 
@@ -1300,6 +1338,11 @@ class Window {
     */
     bool needs_peerset;
     /**
+      Set to true if we need last peer for evaluation within a frame
+      (e.g. JSON_OBJECTAGG)
+    */
+    bool needs_last_peer_in_frame;
+    /**
       Set to true if we need FIRST_VALUE or optimized MIN/MAX
     */
     bool opt_first_row;
@@ -1325,6 +1368,7 @@ class Window {
     Evaluation_requirements()
         : needs_buffer(false),
           needs_peerset(false),
+          needs_last_peer_in_frame(false),
           opt_first_row(false),
           opt_last_row(false),
           row_optimizable(true),
@@ -1332,10 +1376,13 @@ class Window {
   };
 
   const char *printable_name() const {
-    return (m_name != nullptr ? m_name->str_value.ptr() : "<unnamed window>");
+    if (m_name == nullptr) return "<unnamed window>";
+    // Since Item_string::val_str() ignores the argument, it is safe
+    // to use nullptr as argument.
+    return m_name->val_str(nullptr)->ptr();
   }
 
-  void print(THD *thd, String *str, enum_query_type qt,
+  void print(const THD *thd, String *str, enum_query_type qt,
              bool expand_definition) const;
 
   bool has_windowing_steps() const;
@@ -1356,8 +1403,9 @@ class Window {
     @param  before  True if 'before' is wanted; false if 'after' is.
   */
   bool before_or_after_frame(bool before);
-  void print_frame(String *str, enum_query_type qt) const;
-  void print_border(String *str, PT_border *b, enum_query_type qt) const;
+  void print_frame(const THD *thd, String *str, enum_query_type qt) const;
+  void print_border(const THD *thd, String *str, PT_border *b,
+                    enum_query_type qt) const;
 
   /**
     Reorder windows and eliminate redundant ordering. If a window has the

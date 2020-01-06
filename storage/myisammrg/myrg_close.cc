@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -25,12 +25,13 @@
 #include <stddef.h>
 
 #include "my_dbug.h"
+#include "storage/myisam/myisamdef.h"
 #include "storage/myisammrg/myrg_def.h"
 
 int myrg_close(MYRG_INFO *info) {
   int error = 0, new_error;
   MYRG_TABLE *file;
-  DBUG_ENTER("myrg_close");
+  DBUG_TRACE;
 
   /*
     Assume that info->children_attached means that this is called from
@@ -68,7 +69,7 @@ int myrg_close(MYRG_INFO *info) {
   my_free(info);
   if (error) {
     set_my_errno(error);
-    DBUG_RETURN(error);
+    return error;
   }
-  DBUG_RETURN(0);
+  return 0;
 }

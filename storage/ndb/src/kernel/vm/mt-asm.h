@@ -1,4 +1,4 @@
-/* Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -103,9 +103,9 @@ xcng(volatile unsigned * addr, int val)
 #define NDB_HAVE_XCNG
 #define NDB_HAVE_CPU_PAUSE
 #else
+#define cpu_pause()
 /* link error if used incorrectly (i.e wo/ having NDB_HAVE_XCNG) */
 extern  int xcng(volatile unsigned * addr, int val);
-extern void cpu_pause();
 #endif
 
 #elif defined(__powerpc__)
@@ -138,6 +138,21 @@ xcng(volatile unsigned * addr, int val)
 
   return prev;
 }
+
+#elif defined(__aarch64__)
+#include <atomic>
+#define NDB_HAVE_MB
+#define NDB_HAVE_RMB
+#define NDB_HAVE_WMB
+#define NDB_HAVE_READ_BARRIER_DEPENDS
+//#define NDB_HAVE_XCNG
+
+#define mb() std::atomic_thread_fence(std::memory_order_seq_cst)
+#define rmb() std::atomic_thread_fence(std::memory_order_seq_cst)
+#define wmb() std::atomic_thread_fence(std::memory_order_seq_cst)
+#define read_barrier_depends() do {} while(0)
+
+#define cpu_pause()  __asm__ __volatile__ ("yield")
 
 #else
 #define NDB_NO_ASM "Unsupported architecture (gcc)"
@@ -224,9 +239,9 @@ cpu_pause()
 }
 #endif
 #else
+#define cpu_pause()
 /* link error if used incorrectly (i.e wo/ having NDB_HAVE_XCNG) */
 extern  int xcng(volatile unsigned * addr, int val);
-extern void cpu_pause();
 #endif
 #endif
 #elif defined (_MSC_VER)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0,
@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include "my_inttypes.h"
+
 #include "plugin/x/ngs/include/ngs/interface/authentication_interface.h"
 #include "plugin/x/ngs/include/ngs/interface/protocol_encoder_interface.h"
 #include "plugin/x/ngs/include/ngs/interface/session_interface.h"
@@ -40,7 +41,7 @@ class Session : public Session_interface {
  public:
   typedef int32_t Session_id;
 
-  Session(Client_interface &client, Protocol_encoder_interface *proto,
+  Session(Client_interface *client, Protocol_encoder_interface *proto,
           const Session_id session_id);
   ~Session() override;
 
@@ -56,10 +57,11 @@ class Session : public Session_interface {
   // handle a single message, returns true if message was handled false if not
   bool handle_message(ngs::Message_request &command) override;
 
-  Client_interface &client() override { return m_client; }
-  const Client_interface &client() const override { return m_client; }
+  Client_interface &client() override { return *m_client; }
+  const Client_interface &client() const override { return *m_client; }
 
   Protocol_encoder_interface &proto() override { return *m_encoder; }
+  void set_proto(Protocol_encoder_interface *encode) override;
 
  protected:
   virtual bool handle_auth_message(ngs::Message_request &command);
@@ -77,7 +79,7 @@ class Session : public Session_interface {
   bool can_authenticate_again() const;
 
  protected:
-  Client_interface &m_client;
+  Client_interface *m_client;
   Protocol_encoder_interface *m_encoder;
   Authentication_interface_ptr m_auth_handler;
   State m_state;

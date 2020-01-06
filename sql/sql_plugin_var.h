@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,8 +26,10 @@
 #include <string.h>
 #include <sys/types.h>
 #include <new>
+#include <string>
 
 #include "lex_string.h"
+#include "map_helpers.h"
 #include "memory_debugging.h"
 #include "my_compiler.h"
 #include "my_getopt.h"
@@ -71,6 +73,7 @@ struct st_plugin_int;
 #undef MYSQL_SYSVAR_NAME
 #define MYSQL_SYSVAR_NAME(name) name
 #define PLUGIN_VAR_TYPEMASK 0x007f
+#define PLUGIN_VAR_WITH_SIGN_TYPEMASK 0x00ff
 
 #define EXTRA_OPTIONS 3 /* options for: 'foo', 'plugin-foo' and NULL */
 
@@ -205,10 +208,10 @@ class sys_var_pluginvar : public sys_var {
   */
   const char *orig_pluginvar_name;
 
-  static void *operator new(
-      size_t size, MEM_ROOT *mem_root,
-      const std::nothrow_t &arg MY_ATTRIBUTE((unused)) = std::nothrow) throw() {
-    return alloc_root(mem_root, size);
+  static void *operator new(size_t size, MEM_ROOT *mem_root,
+                            const std::nothrow_t &arg MY_ATTRIBUTE((unused)) =
+                                std::nothrow) noexcept {
+    return mem_root->Alloc(size);
   }
 
   static void *operator new(size_t size) {
@@ -221,7 +224,7 @@ class sys_var_pluginvar : public sys_var {
   }
 
   static void operator delete(
-      void *, MEM_ROOT *, const std::nothrow_t &)throw() { /* never called */
+      void *, MEM_ROOT *, const std::nothrow_t &)noexcept { /* never called */
   }
 
   static void operator delete(void *ptr) { my_free(ptr); }
@@ -232,11 +235,19 @@ class sys_var_pluginvar : public sys_var {
             chain, name_arg, plugin_var_arg->comment,
             (plugin_var_arg->flags & PLUGIN_VAR_THDLOCAL ? SESSION : GLOBAL) |
                 (plugin_var_arg->flags & PLUGIN_VAR_READONLY ? READONLY : 0) |
+                (plugin_var_arg->flags & PLUGIN_VAR_INVISIBLE ? INVISIBLE : 0) |
                 (plugin_var_arg->flags & PLUGIN_VAR_PERSIST_AS_READ_ONLY
                      ? PERSIST_AS_READ_ONLY
                      : 0),
-            0, -1, NO_ARG, pluginvar_show_type(plugin_var_arg), 0, 0,
-            VARIABLE_NOT_IN_BINLOG,
+            0, (plugin_var_arg->flags & PLUGIN_VAR_NOCMDOPT) ? -1 : 0,
+            (plugin_var_arg->flags & PLUGIN_VAR_NOCMDARG
+                 ? NO_ARG
+                 : (plugin_var_arg->flags & PLUGIN_VAR_OPCMDARG
+                        ? OPT_ARG
+                        : (plugin_var_arg->flags & PLUGIN_VAR_RQCMDARG
+                               ? REQUIRED_ARG
+                               : REQUIRED_ARG))),
+            pluginvar_show_type(plugin_var_arg), 0, 0, VARIABLE_NOT_IN_BINLOG,
             (plugin_var_arg->flags & PLUGIN_VAR_NODEFAULT) ? on_check_pluginvar
                                                            : NULL,
             NULL, NULL, PARSE_NORMAL),
@@ -255,11 +266,11 @@ class sys_var_pluginvar : public sys_var {
   uchar *do_value_ptr(THD *thd, enum_var_type type, LEX_STRING *base) {
     return do_value_ptr(thd, thd, type, base);
   }
-  uchar *session_value_ptr(THD *running_thd, THD *target_thd,
-                           LEX_STRING *base) {
+  const uchar *session_value_ptr(THD *running_thd, THD *target_thd,
+                                 LEX_STRING *base) {
     return do_value_ptr(running_thd, target_thd, OPT_SESSION, base);
   }
-  uchar *global_value_ptr(THD *thd, LEX_STRING *base) {
+  const uchar *global_value_ptr(THD *thd, LEX_STRING *base) {
     return do_value_ptr(thd, OPT_GLOBAL, base);
   }
   bool do_check(THD *thd, set_var *var);
@@ -288,5 +299,9 @@ class sys_var_pluginvar : public sys_var {
 struct st_item_value_holder : public st_mysql_value {
   Item *item;
 };
+
+// Defined in sql_plugin.cc, but declared here since sql_plugin.h has so
+// many users and would like not to include "map_helpers.h".
+malloc_unordered_map<std::string, st_bookmark *> *get_bookmark_hash();
 
 #endif

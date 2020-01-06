@@ -1,7 +1,7 @@
 #ifndef SQL_STRING_INCLUDED
 #define SQL_STRING_INCLUDED
 
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -23,10 +23,10 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-/* This file is originally from the mysql distribution. Coded by monty */
-
 /**
   @file include/sql_string.h
+  Our own string classes, used pervasively throughout the executor.
+  See in particular the comment on String before you use anything from here.
 */
 
 #include <string.h>
@@ -39,7 +39,6 @@
 #include "m_string.h"  // LEX_CSTRING
 #include "memory_debugging.h"
 #include "my_alloc.h"
-#include "my_byteorder.h"
 #include "my_compiler.h"
 #include "my_dbug.h"
 #include "my_inttypes.h"
@@ -90,6 +89,7 @@ class Simple_cstring {
     set(str_arg, length_arg);
   }
   Simple_cstring(const LEX_STRING arg) { set(arg.str, arg.length); }
+  Simple_cstring(const LEX_CSTRING arg) { set(arg.str, arg.length); }
   void reset() { set(NULL, 0); }
   /**
     Set to a null-terminated string.
@@ -147,7 +147,8 @@ size_t convert_to_printable(char *to, size_t to_len, const char *from,
                             size_t from_len, const CHARSET_INFO *from_cs,
                             size_t nbytes = 0);
 
-size_t bin_to_hex_str(char *to, size_t to_len, char *from, size_t from_len);
+size_t bin_to_hex_str(char *to, size_t to_len, const char *from,
+                      size_t from_len);
 
 /**
   Using this class is fraught with peril, and you need to be very careful
@@ -172,7 +173,7 @@ class String {
         m_charset(&my_charset_bin),
         m_alloced_length(0),
         m_is_alloced(false) {}
-  String(size_t length_arg)
+  explicit String(size_t length_arg)
       : m_ptr(NULL),
         m_length(0),
         m_charset(&my_charset_bin),
@@ -212,10 +213,10 @@ class String {
         m_is_alloced(str.m_is_alloced) {
     str.m_is_alloced = false;
   }
-  static void *operator new(
-      size_t size, MEM_ROOT *mem_root,
-      const std::nothrow_t &arg MY_ATTRIBUTE((unused)) = std::nothrow) throw() {
-    return alloc_root(mem_root, size);
+  static void *operator new(size_t size, MEM_ROOT *mem_root,
+                            const std::nothrow_t &arg MY_ATTRIBUTE((unused)) =
+                                std::nothrow) noexcept {
+    return mem_root->Alloc(size);
   }
   static void operator delete(void *ptr_arg, size_t size) {
     (void)ptr_arg;
@@ -224,7 +225,7 @@ class String {
   }
 
   static void operator delete(
-      void *, MEM_ROOT *, const std::nothrow_t &)throw() { /* never called */
+      void *, MEM_ROOT *, const std::nothrow_t &)noexcept { /* never called */
   }
 
   ~String() { mem_free(); }
@@ -233,12 +234,14 @@ class String {
   const CHARSET_INFO *charset() const { return m_charset; }
   size_t length() const { return m_length; }
   size_t alloced_length() const { return m_alloced_length; }
-  char &operator[](size_t i) const { return m_ptr[i]; }
+  const char &operator[](size_t i) const { return m_ptr[i]; }
+  char &operator[](size_t i) { return m_ptr[i]; }
   void length(size_t len) { m_length = len; }
   bool is_empty() const { return (m_length == 0); }
   void mark_as_const() { m_alloced_length = 0; }
   /* Returns a pointer to data, may not include NULL terminating character. */
   const char *ptr() const { return m_ptr; }
+  char *ptr() { return m_ptr; }
   char *c_ptr() {
     DBUG_ASSERT(!m_is_alloced || !m_ptr || !m_alloced_length ||
                 (m_alloced_length >= (m_length + 1)));
@@ -261,10 +264,7 @@ class String {
       (void)mem_realloc(m_length);
     return m_ptr;
   }
-  LEX_STRING lex_string() const {
-    LEX_STRING lex_string = {(char *)ptr(), length()};
-    return lex_string;
-  }
+  LEX_STRING lex_string() { return {m_ptr, length()}; }
 
   LEX_CSTRING lex_cstring() const {
     LEX_CSTRING lex_cstring = {ptr(), length()};
@@ -274,7 +274,7 @@ class String {
   void set(String &str, size_t offset, size_t arg_length) {
     DBUG_ASSERT(&str != this);
     mem_free();
-    m_ptr = const_cast<char *>(str.ptr()) + offset;
+    m_ptr = str.ptr() + offset;
     m_length = arg_length;
     m_is_alloced = false;
     if (str.m_alloced_length)
@@ -323,6 +323,16 @@ class String {
   bool set(ulonglong num, const CHARSET_INFO *cs) {
     return set_int((longlong)num, true, cs);
   }
+
+  /**
+    Sets the contents of this string to the string representation of the given
+    double value.
+
+    @param num the double value
+    @param decimals the number of decimals
+    @param cs the character set of the string
+    @return false on success, true on error
+  */
   bool set_real(double num, uint decimals, const CHARSET_INFO *cs);
 
   /*
@@ -529,45 +539,10 @@ class String {
   size_t numchars() const;
   size_t charpos(size_t i, size_t offset = 0) const;
 
-  int reserve(size_t space_needed) {
+  bool reserve(size_t space_needed) {
     return mem_realloc(m_length + space_needed);
   }
-  int reserve(size_t space_needed, size_t grow_by);
-  /*
-    The following append operations do NOT check alloced memory
-    q_*** methods writes values of parameters itself
-    qs_*** methods writes string representation of value
-  */
-  void q_append(const char c) { m_ptr[m_length++] = c; }
-  void q_append(const uint32 n) {
-    int4store(m_ptr + m_length, n);
-    m_length += 4;
-  }
-  void q_append(double d) {
-    float8store(m_ptr + m_length, d);
-    m_length += 8;
-  }
-  void q_append(double *d) {
-    float8store(m_ptr + m_length, *d);
-    m_length += 8;
-  }
-  void q_append(const char *data, size_t data_len) {
-    memcpy(m_ptr + m_length, data, data_len);
-    m_length += data_len;
-  }
-
-  void write_at_position(int position, uint32 value) {
-    int4store(m_ptr + position, value);
-  }
-
-  void qs_append(const char *str, size_t len);
-  void qs_append(double d, size_t len);
-  void qs_append(const char c) {
-    m_ptr[m_length] = c;
-    m_length++;
-  }
-  void qs_append(int i);
-  void qs_append(uint i);
+  bool reserve(size_t space_needed, size_t grow_by);
 
   /* Inline (general) functions used by the protocol functions */
 
@@ -590,7 +565,7 @@ class String {
     m_length += arg_length;
     return false;
   }
-  void print(String *print);
+  void print(String *print) const;
 
   /* Swap two string objects. Efficient way to exchange data without memcpy. */
   void swap(String &s) noexcept;
@@ -669,7 +644,7 @@ inline LEX_CSTRING to_lex_cstring(const char *s) {
   return cstr;
 }
 
-bool validate_string(const CHARSET_INFO *cs, const char *str, uint32 length,
+bool validate_string(const CHARSET_INFO *cs, const char *str, size_t length,
                      size_t *valid_length, bool *length_error);
 
 bool append_escaped(String *to_str, const String *from_str);

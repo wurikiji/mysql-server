@@ -1,4 +1,4 @@
-/* Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2.0,
@@ -192,7 +192,9 @@ static void test_bootstrap() {
   psi = thread_boot->get_interface(0);
   ok(psi == NULL, "no thread version 0");
   psi = thread_boot->get_interface(PSI_THREAD_VERSION_1);
-  ok(psi != NULL, "thread version 1");
+  ok(psi == NULL, "no thread version 1");
+  psi = thread_boot->get_interface(PSI_THREAD_VERSION_2);
+  ok(psi == NULL, "no thread version 2");
 
   psi = mutex_boot->get_interface(0);
   ok(psi == NULL, "no mutex version 0");
@@ -202,7 +204,9 @@ static void test_bootstrap() {
   psi = rwlock_boot->get_interface(0);
   ok(psi == NULL, "no rwlock version 0");
   psi = rwlock_boot->get_interface(PSI_RWLOCK_VERSION_1);
-  ok(psi != NULL, "rwlock version 1");
+  ok(psi == NULL, "no rwlock version 1");
+  psi = rwlock_boot->get_interface(PSI_RWLOCK_VERSION_2);
+  ok(psi != NULL, "rwlock version 2");
 
   psi = cond_boot->get_interface(0);
   ok(psi == NULL, "no cond version 0");
@@ -242,7 +246,9 @@ static void test_bootstrap() {
   psi = statement_boot->get_interface(0);
   ok(psi == NULL, "no statement version 0");
   psi = statement_boot->get_interface(PSI_STATEMENT_VERSION_1);
-  ok(psi != NULL, "statement version 1");
+  ok(psi == NULL, "no statement version 1");
+  psi = statement_boot->get_interface(PSI_STATEMENT_VERSION_2);
+  ok(psi != NULL, "statement version 2");
 
   psi = transaction_boot->get_interface(0);
   ok(psi == NULL, "no transaction version 0");
@@ -356,12 +362,12 @@ static void load_perfschema(
       &socket_boot, &table_boot, &mdl_boot, &idle_boot, &stage_boot,
       &statement_boot, &transaction_boot, &memory_boot, &error_boot,
       &data_lock_boot, &system_boot);
-  *thread_service =
-      (PSI_thread_service_t *)thread_boot->get_interface(PSI_THREAD_VERSION_1);
+  *thread_service = (PSI_thread_service_t *)thread_boot->get_interface(
+      PSI_CURRENT_THREAD_VERSION);
   *mutex_service =
       (PSI_mutex_service_t *)mutex_boot->get_interface(PSI_MUTEX_VERSION_1);
   *rwlock_service =
-      (PSI_rwlock_service_t *)rwlock_boot->get_interface(PSI_RWLOCK_VERSION_1);
+      (PSI_rwlock_service_t *)rwlock_boot->get_interface(PSI_RWLOCK_VERSION_2);
   *cond_service =
       (PSI_cond_service_t *)cond_boot->get_interface(PSI_COND_VERSION_1);
   *file_service =
@@ -377,7 +383,7 @@ static void load_perfschema(
   *stage_service =
       (PSI_stage_service_t *)stage_boot->get_interface(PSI_SOCKET_VERSION_1);
   *statement_service = (PSI_statement_service_t *)statement_boot->get_interface(
-      PSI_STATEMENT_VERSION_1);
+      PSI_STATEMENT_VERSION_2);
   *system_service =
       (PSI_system_service_t *)system_boot->get_interface(PSI_SYSTEM_VERSION_1);
   *transaction_service =
@@ -1868,14 +1874,14 @@ static void test_event_name_index() {
   ok(error_boot != NULL, "error_bootstrap");
   ok(data_lock_boot != NULL, "data_lock_bootstrap");
 
-  thread_service =
-      (PSI_thread_service_t *)thread_boot->get_interface(PSI_THREAD_VERSION_1);
+  thread_service = (PSI_thread_service_t *)thread_boot->get_interface(
+      PSI_CURRENT_THREAD_VERSION);
   ok(thread_service != NULL, "thread_service");
   mutex_service =
       (PSI_mutex_service_t *)mutex_boot->get_interface(PSI_MUTEX_VERSION_1);
   ok(mutex_service != NULL, "mutex_service");
   rwlock_service =
-      (PSI_rwlock_service_t *)rwlock_boot->get_interface(PSI_RWLOCK_VERSION_1);
+      (PSI_rwlock_service_t *)rwlock_boot->get_interface(PSI_RWLOCK_VERSION_2);
   ok(rwlock_service != NULL, "rwlock_service");
   cond_service =
       (PSI_cond_service_t *)cond_boot->get_interface(PSI_COND_VERSION_1);
@@ -1898,7 +1904,7 @@ static void test_event_name_index() {
       (PSI_stage_service_t *)stage_boot->get_interface(PSI_STAGE_VERSION_1);
   ok(stage_service != NULL, "stage_service");
   statement_service = (PSI_statement_service_t *)statement_boot->get_interface(
-      PSI_STATEMENT_VERSION_1);
+      PSI_STATEMENT_VERSION_2);
   ok(statement_service != NULL, "statement_service");
   transaction_service =
       (PSI_transaction_service_t *)transaction_boot->get_interface(
@@ -2197,7 +2203,7 @@ static void do_all_tests() {
 }
 
 int main(int, char **) {
-  plan(329);
+  plan(332);
 
   MY_INIT("pfs-t");
   do_all_tests();

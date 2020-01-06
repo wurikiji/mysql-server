@@ -123,6 +123,8 @@ aa	b
 select char_length(left(@a:='тест',5)), length(@a), @a;
 char_length(left(@a:='тест',5))	length(@a)	@a
 4	8	тест
+Warnings:
+Warning	1287	Setting user variables within expressions is deprecated and will be removed in a future release. Consider alternatives: 'SET variable=expression, ...', or 'SELECT expression(s) INTO variables(s)'.
 create table t1 ENGINE heap select date_format("2004-01-19 10:10:10", "%Y-%m-%d");
 show create table t1;
 Table	Create Table
@@ -777,6 +779,8 @@ str
 str
 drop table t1;
 CREATE TABLE t1 (a varchar(32) BINARY) CHARACTER SET utf8mb4 ENGINE heap;
+Warnings:
+Warning	1287	'BINARY as attribute of a type' is deprecated and will be removed in a future release. Please use a CHARACTER SET clause with _bin collation instead
 INSERT INTO t1 VALUES ('test');
 SELECT a FROM t1 WHERE a LIKE '%te';
 a
@@ -1111,6 +1115,9 @@ KEY `IX_mobile_originated_message_keyword` (`keyword`),
 KEY `IX_mobile_originated_message_created` (`created`),
 KEY `IX_mobile_originated_message_support` (`msisdn`,`momid`,`keyword`,`gateway_id`,`created`)
 ) ENGINE=heap DEFAULT CHARSET=utf8mb4;
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 INSERT INTO t1 VALUES 
 (1,'blah','464','aaa','fkc1c9ilc20x0hgae7lx6j09','ERR','ERR Имри.Афимим.Аеимимримдмримрмрирор имримримримр имридм ирбднримрфмририримрфмфмим.Ад.Д имдимримрад.Адимримримрмдиримримримр м.Дадимфшьмримд им.Адимимрн имадми','ИМРИ.АФИМИМ.АЕИМИМРИМДМРИМРМРИРОР',3,'2005-06-01 17:30:43','1234567890'),
 (2,'blah','464','aaa','haxpl2ilc20x00bj4tt2m5ti','11','11 g','G',3,'2005-06-02 22:43:10','1234567890');
@@ -2103,6 +2110,8 @@ CREATE TABLE t2 (
 u_decimal int NOT NULL,
 utf8mb3_encoding VARCHAR(10) NOT NULL
 ) CHARACTER SET utf8mb3 ENGINE heap;
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
 INSERT INTO t2 VALUES (42856, x'ea9da8');
 INSERT INTO t2 VALUES (65131, x'efb9ab');
 INSERT IGNORE INTO t2 VALUES (1114111, x'f48fbfbf');
@@ -2210,6 +2219,8 @@ u_decimal	hex(utf8mb3_encoding)
 42856	EA9DA8
 65131	EFB9AB
 ALTER TABLE t2 CONVERT TO CHARACTER SET utf8mb3;
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -2308,6 +2319,8 @@ CONCAT(utf8mb4, _utf8 x'ea9da8')
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
 CREATE TABLE t2 (utf8mb3 VARCHAR(10) CHARACTER SET utf8mb3 NOT NULL) ENGINE heap;
+Warnings:
+Warning	1287	'utf8mb3' is deprecated and will be removed in a future release. Please use utf8mb4 instead
 INSERT INTO t2 VALUES (x'ea9da8');
 SELECT HEX(CONCAT(utf8mb4, utf8mb3)) FROM t1,t2 ORDER BY 1;
 HEX(CONCAT(utf8mb4, utf8mb3))

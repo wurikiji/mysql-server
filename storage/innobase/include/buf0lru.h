@@ -26,8 +26,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <sys/types.h>
 
-#include "my_compiler.h"
-
 /** @file include/buf0lru.h
  The database buffer pool LRU replacement algorithm
 
@@ -66,8 +64,10 @@ These are low-level functions
 void buf_LRU_flush_or_remove_pages(
     space_id_t id,           /*!< in: space id */
     buf_remove_t buf_remove, /*!< in: remove or flush strategy */
-    const trx_t *trx);       /*!< to check if the operation must
+    const trx_t *trx,        /*!< to check if the operation must
                              be interrupted */
+    bool strict = true);     /*!< in: true, if no page from tablespace
+                             can be in buffer pool just after flush */
 
 #ifndef UNIV_HOTBACKUP
 #if defined UNIV_DEBUG || defined UNIV_BUF_DEBUG
@@ -144,12 +144,11 @@ void buf_LRU_block_free_non_file_page(buf_block_t *block);
 /** Adds a block to the LRU list. Please make sure that the page_size is
  already set when invoking the function, so that we can get correct
  page_size from the buffer page when adding a block into LRU */
-void buf_LRU_add_block(
-    buf_page_t *bpage, /*!< in: control block */
-    ibool old);        /*!< in: TRUE if should be put to the old
-                       blocks in the LRU list, else put to the
-                       start; if the LRU list is very short, added to
-                       the start regardless of this parameter */
+void buf_LRU_add_block(buf_page_t *bpage, /*!< in: control block */
+                       ibool old); /*!< in: TRUE if should be put to the old
+                                   blocks in the LRU list, else put to the
+                                   start; if the LRU list is very short, added
+                                   to the start regardless of this parameter */
 
 /** Adds a block to the LRU list of decompressed zip pages.
 @param[in]	block	control block

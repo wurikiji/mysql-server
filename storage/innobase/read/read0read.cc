@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1996, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1996, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -31,6 +31,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
  *******************************************************/
 
 #include "read0read.h"
+#include "clone0clone.h"
 
 #include "srv0srv.h"
 #include "trx0sys.h"
@@ -318,6 +319,7 @@ ReadView::ReadView()
       m_ids(),
       m_low_limit_no() {
   ut_d(::memset(&m_view_list, 0x0, sizeof(m_view_list)));
+  ut_d(m_view_low_limit_no = 0);
 }
 
 /**
@@ -405,6 +407,8 @@ void ReadView::copy_trx_ids(const trx_ids_t &trx_ids) {
     ::memmove(p, &trx_ids[0], n);
   }
 
+  m_up_limit_id = m_ids.front();
+
 #ifdef UNIV_DEBUG
   /* Assert that all transaction ids in list are active. */
   for (trx_ids_t::const_iterator it = trx_ids.begin(); it != trx_ids.end();
@@ -426,13 +430,15 @@ void ReadView::prepare(trx_id_t id) {
 
   m_creator_trx_id = id;
 
-  m_low_limit_no = m_low_limit_id = trx_sys->max_trx_id;
+  m_low_limit_no = m_low_limit_id = m_up_limit_id = trx_sys->max_trx_id;
 
   if (!trx_sys->rw_trx_ids.empty()) {
     copy_trx_ids(trx_sys->rw_trx_ids);
   } else {
     m_ids.clear();
   }
+
+  ut_ad(m_up_limit_id <= m_low_limit_id);
 
   if (UT_LIST_GET_LEN(trx_sys->serialisation_list) > 0) {
     const trx_t *trx;
@@ -443,17 +449,8 @@ void ReadView::prepare(trx_id_t id) {
       m_low_limit_no = trx->no;
     }
   }
-}
 
-/**
-Complete the read view creation */
-
-void ReadView::complete() {
-  /* The first active transaction has the smallest id. */
-  m_up_limit_id = !m_ids.empty() ? m_ids.front() : m_low_limit_id;
-
-  ut_ad(m_up_limit_id <= m_low_limit_id);
-
+  ut_d(m_view_low_limit_no = m_low_limit_no);
   m_closed = false;
 }
 
@@ -557,8 +554,6 @@ void MVCC::view_open(ReadView *&view, trx_t *trx) {
   if (view != NULL) {
     view->prepare(trx->id);
 
-    view->complete();
-
     UT_LIST_ADD_FIRST(m_views, view);
 
     ut_ad(!view->is_closed());
@@ -626,6 +621,8 @@ void ReadView::copy_prepare(const ReadView &other) {
 
   m_low_limit_no = other.m_low_limit_no;
 
+  ut_d(m_view_low_limit_no = other.m_view_low_limit_no);
+
   m_low_limit_id = other.m_low_limit_id;
 
   m_creator_trx_id = other.m_creator_trx_id;
@@ -669,8 +666,6 @@ void MVCC::clone_oldest_view(ReadView *view) {
 
     trx_sys_mutex_exit();
 
-    view->complete();
-
   } else {
     view->copy_prepare(*oldest_view);
 
@@ -678,6 +673,10 @@ void MVCC::clone_oldest_view(ReadView *view) {
 
     view->copy_complete();
   }
+  /* Update view to block purging transaction till GTID is persisted. */
+  auto &gtid_persistor = clone_sys->get_gtid_persistor();
+  auto gtid_oldest_trxno = gtid_persistor.get_oldest_trx_no();
+  view->reduce_low_limit(gtid_oldest_trxno);
 }
 
 /**

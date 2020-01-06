@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -728,13 +728,12 @@ public class SessionFactoryImpl implements SessionFactory, Constants {
                 logger.warn(local.message("WARN_Reconnect_already"));
                 return;
             }
+            // set the reconnect timeout to the current value
             CLUSTER_RECONNECT_TIMEOUT = timeout;
             if (timeout == 0) {
                 logger.warn(local.message("WARN_Reconnect_timeout0"));
                 return;
             }
-            // set the reconnect timeout to the current value
-            CLUSTER_RECONNECT_TIMEOUT = timeout;
             // set the state of this session factory to reconnecting
             state = State.Reconnecting;
             // create a thread to manage the reconnect operation
@@ -792,6 +791,10 @@ public class SessionFactoryImpl implements SessionFactory, Constants {
                 clusterConnection.close();
             }
             factory.pooledConnections.clear();
+            // remove all DomainTypeHandlers, as they embed references to
+            // Ndb dictionary objects which have been removed
+            typeToHandlerMap.clear();
+
             logger.warn(local.message("WARN_Reconnect_creating"));
             factory.createClusterConnectionPool();
             factory.verifyConnectionPool();

@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 1994, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 1994, 2019, Oracle and/or its affiliates. All Rights Reserved.
 Copyright (c) 2012, Facebook Inc.
 
 This program is free software; you can redistribute it and/or modify it under
@@ -47,7 +47,6 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "ibuf0ibuf.h"
 #include "lock0lock.h"
 #include "my_dbug.h"
-#include "my_inttypes.h"
 #include "page0page.h"
 #include "page0zip.h"
 #include "rem0cmp.h"
@@ -77,60 +76,60 @@ void btr_corruption_report(const buf_block_t *block, /*!< in: corrupted block */
 }
 
 #ifndef UNIV_HOTBACKUP
-  /*
-  Latching strategy of the InnoDB B-tree
-  --------------------------------------
-  A tree latch protects all non-leaf nodes of the tree. Each node of a tree
-  also has a latch of its own.
+/*
+Latching strategy of the InnoDB B-tree
+--------------------------------------
+A tree latch protects all non-leaf nodes of the tree. Each node of a tree
+also has a latch of its own.
 
-  A B-tree operation normally first acquires an S-latch on the tree. It
-  searches down the tree and releases the tree latch when it has the
-  leaf node latch. To save CPU time we do not acquire any latch on
-  non-leaf nodes of the tree during a search, those pages are only bufferfixed.
+A B-tree operation normally first acquires an S-latch on the tree. It
+searches down the tree and releases the tree latch when it has the
+leaf node latch. To save CPU time we do not acquire any latch on
+non-leaf nodes of the tree during a search, those pages are only bufferfixed.
 
-  If an operation needs to restructure the tree, it acquires an X-latch on
-  the tree before searching to a leaf node. If it needs, for example, to
-  split a leaf,
-  (1) InnoDB decides the split point in the leaf,
-  (2) allocates a new page,
-  (3) inserts the appropriate node pointer to the first non-leaf level,
-  (4) releases the tree X-latch,
-  (5) and then moves records from the leaf to the new allocated page.
+If an operation needs to restructure the tree, it acquires an X-latch on
+the tree before searching to a leaf node. If it needs, for example, to
+split a leaf,
+(1) InnoDB decides the split point in the leaf,
+(2) allocates a new page,
+(3) inserts the appropriate node pointer to the first non-leaf level,
+(4) releases the tree X-latch,
+(5) and then moves records from the leaf to the new allocated page.
 
-  Node pointers
-  -------------
-  Leaf pages of a B-tree contain the index records stored in the
-  tree. On levels n > 0 we store 'node pointers' to pages on level
-  n - 1. For each page there is exactly one node pointer stored:
-  thus the our tree is an ordinary B-tree, not a B-link tree.
+Node pointers
+-------------
+Leaf pages of a B-tree contain the index records stored in the
+tree. On levels n > 0 we store 'node pointers' to pages on level
+n - 1. For each page there is exactly one node pointer stored:
+thus the our tree is an ordinary B-tree, not a B-link tree.
 
-  A node pointer contains a prefix P of an index record. The prefix
-  is long enough so that it determines an index record uniquely.
-  The file page number of the child page is added as the last
-  field. To the child page we can store node pointers or index records
-  which are >= P in the alphabetical order, but < P1 if there is
-  a next node pointer on the level, and P1 is its prefix.
+A node pointer contains a prefix P of an index record. The prefix
+is long enough so that it determines an index record uniquely.
+The file page number of the child page is added as the last
+field. To the child page we can store node pointers or index records
+which are >= P in the alphabetical order, but < P1 if there is
+a next node pointer on the level, and P1 is its prefix.
 
-  If a node pointer with a prefix P points to a non-leaf child,
-  then the leftmost record in the child must have the same
-  prefix P. If it points to a leaf node, the child is not required
-  to contain any record with a prefix equal to P. The leaf case
-  is decided this way to allow arbitrary deletions in a leaf node
-  without touching upper levels of the tree.
+If a node pointer with a prefix P points to a non-leaf child,
+then the leftmost record in the child must have the same
+prefix P. If it points to a leaf node, the child is not required
+to contain any record with a prefix equal to P. The leaf case
+is decided this way to allow arbitrary deletions in a leaf node
+without touching upper levels of the tree.
 
-  We have predefined a special minimum record which we
-  define as the smallest record in any alphabetical order.
-  A minimum record is denoted by setting a bit in the record
-  header. A minimum record acts as the prefix of a node pointer
-  which points to a leftmost node on any level of the tree.
+We have predefined a special minimum record which we
+define as the smallest record in any alphabetical order.
+A minimum record is denoted by setting a bit in the record
+header. A minimum record acts as the prefix of a node pointer
+which points to a leftmost node on any level of the tree.
 
-  File page allocation
-  --------------------
-  In the root node of a B-tree there are two file segment headers.
-  The leaf pages of a tree are allocated from one file segment, to
-  make them consecutive on disk if possible. From the other file segment
-  we allocate pages for the non-leaf levels of the tree.
-  */
+File page allocation
+--------------------
+In the root node of a B-tree there are two file segment headers.
+The leaf pages of a tree are allocated from one file segment, to
+make them consecutive on disk if possible. From the other file segment
+we allocate pages for the non-leaf levels of the tree.
+*/
 
 #ifdef UNIV_BTR_DEBUG
 /** Checks a file segment header within a B-tree root page.
@@ -277,23 +276,23 @@ dberr_t btr_root_adjust_on_import(
     page_is_compact_format = page_is_comp(page) > 0;
 
     /* Check if the page format and table format agree. */
-    if (page_is_compact_format != dict_table_is_comp(table)) {
+    if (page_is_compact_format != !!dict_table_is_comp(table)) {
       err = DB_CORRUPTION;
     } else {
       /* Check that the table flags and the tablespace
       flags match. */
-      ulint flags =
-          dict_tf_to_fsp_flags(table->flags, dict_table_is_encrypted(table));
-      ulint fsp_flags = fil_space_get_flags(table->space);
+      uint32_t flags = dict_tf_to_fsp_flags(table->flags);
+      uint32_t fsp_flags = fil_space_get_flags(table->space);
 
       /* We remove SDI flag from space flags temporarily for
       comparison because the space flags derived from table
       flags will not have SDI flag */
-      fsp_flags &= ~FSP_FLAGS_MASK_SDI;
+      fsp_flags_unset_sdi(fsp_flags);
 
-      if (dict_table_is_sdi(index->table->id)) {
-        fsp_flags &= ~FSP_FLAGS_MASK_ENCRYPTION;
-      }
+      /* As encryption is not a table property, we don't keep
+      any encryption property related flag in table. Thus
+      exclude encryption flag as well. */
+      fsp_flags_unset_encryption(fsp_flags);
 
       err = fsp_flags_are_equal(flags, fsp_flags) ? DB_SUCCESS : DB_CORRUPTION;
     }
@@ -1257,7 +1256,7 @@ bool btr_page_reorganize_low(
   }
 
   if (page_zip && !page_zip_compress(page_zip, page, index, z_level, mtr)) {
-  /* Restore the old page and exit. */
+    /* Restore the old page and exit. */
 #if defined UNIV_DEBUG || defined UNIV_ZIP_DEBUG
     /* Check that the bytes that we skip are identical. */
     ut_a(!memcmp(page, temp_page, PAGE_HEADER));
@@ -2015,8 +2014,8 @@ void btr_insert_on_non_leaf_level_func(
 /** Attaches the halves of an index page on the appropriate level in an
  index tree. */
 static void btr_attach_half_pages(
-    ulint flags,            /*!< in: undo logging and
-                            locking flags */
+    uint32_t flags,         /*!< in: undo logging and
+                         locking flags */
     dict_index_t *index,    /*!< in: the index tree */
     buf_block_t *block,     /*!< in/out: page to be split */
     const rec_t *split_rec, /*!< in: first record on upper
@@ -2189,7 +2188,7 @@ of a page.
 @return	inserted record (first record on the right sibling page);
         the cursor will be positioned on the page infimum
 @retval	NULL if the operation was not performed */
-static rec_t *btr_insert_into_right_sibling(ulint flags, btr_cur_t *cursor,
+static rec_t *btr_insert_into_right_sibling(uint32_t flags, btr_cur_t *cursor,
                                             ulint **offsets, mem_heap_t *heap,
                                             const dtuple_t *tuple, ulint n_ext,
                                             mtr_t *mtr) {
@@ -3031,7 +3030,7 @@ ibool btr_compress(
 #ifdef UNIV_DEBUG
   bool leftmost_child;
 #endif
-  DBUG_ENTER("btr_compress");
+  DBUG_TRACE;
 
   block = btr_cur_get_block(cursor);
   page = btr_cur_get_page(cursor);
@@ -3274,10 +3273,10 @@ retry:
     }
 
     if (merge_page_zip && left_page_no == FIL_NULL) {
-    /* The function page_zip_compress(), which will be
-    invoked by page_copy_rec_list_end() below,
-    requires that FIL_PAGE_PREV be FIL_NULL.
-    Clear the field, but prepare to restore it. */
+      /* The function page_zip_compress(), which will be
+      invoked by page_copy_rec_list_end() below,
+      requires that FIL_PAGE_PREV be FIL_NULL.
+      Clear the field, but prepare to restore it. */
 #ifdef UNIV_BTR_DEBUG
       memcpy(fil_page_prev, merge_page + FIL_PAGE_PREV, 4);
 #endif /* UNIV_BTR_DEBUG */
@@ -3456,7 +3455,7 @@ func_exit:
 
   MONITOR_INC(MONITOR_INDEX_MERGE_SUCCESSFUL);
 
-  DBUG_RETURN(TRUE);
+  return TRUE;
 
 err_exit:
   /* We play it safe and reset the free bits. */
@@ -3466,7 +3465,7 @@ err_exit:
   }
 
   mem_heap_free(heap);
-  DBUG_RETURN(FALSE);
+  return FALSE;
 }
 
 /** Discards a page that is the only page on its level.  This will empty
@@ -3517,8 +3516,8 @@ static void btr_discard_only_page_on_level(
     page_level++;
   }
 
-    /* block is the root page, which must be empty, except
-    for the node pointer to the (now discarded) block(s). */
+  /* block is the root page, which must be empty, except
+  for the node pointer to the (now discarded) block(s). */
 
 #ifdef UNIV_BTR_DEBUG
   if (!dict_index_is_ibuf(index)) {
@@ -3546,10 +3545,9 @@ static void btr_discard_only_page_on_level(
 /** Discards a page from a B-tree. This is used to remove the last record from
  a B-tree page: the whole page must be removed at the same time. This cannot
  be used for the root page, which is allowed to be empty. */
-void btr_discard_page(
-    btr_cur_t *cursor, /*!< in: cursor on the page to discard: not on
-                       the root page */
-    mtr_t *mtr)        /*!< in: mtr */
+void btr_discard_page(btr_cur_t *cursor, /*!< in: cursor on the page to discard:
+                                         not on the root page */
+                      mtr_t *mtr)        /*!< in: mtr */
 {
   dict_index_t *index;
   page_no_t left_page_no;
@@ -3872,12 +3870,11 @@ static void btr_index_rec_validate_report(
 /** Checks the size and number of fields in a record based on the definition of
  the index.
  @return true if ok */
-ibool btr_index_rec_validate(
-    const rec_t *rec,          /*!< in: index record */
-    const dict_index_t *index, /*!< in: index */
-    ibool dump_on_error)       /*!< in: TRUE if the function
-                               should print hex dump of record
-                               and page on error */
+ibool btr_index_rec_validate(const rec_t *rec,          /*!< in: index record */
+                             const dict_index_t *index, /*!< in: index */
+                             ibool dump_on_error) /*!< in: TRUE if the function
+                                                  should print hex dump of
+                                                  record and page on error */
 {
   ulint len;
   ulint n;
@@ -4605,11 +4602,11 @@ static bool btr_can_merge_with_page(
   ulint max_ins_size;
   buf_block_t *mblock;
   page_t *mpage;
-  DBUG_ENTER("btr_can_merge_with_page");
+  DBUG_TRACE;
 
   if (page_no == FIL_NULL) {
     *merge_block = NULL;
-    DBUG_RETURN(false);
+    return false;
   }
 
   index = btr_cur_get_index(cursor);
@@ -4662,11 +4659,11 @@ static bool btr_can_merge_with_page(
   }
 
   *merge_block = mblock;
-  DBUG_RETURN(true);
+  return true;
 
 error:
   *merge_block = NULL;
-  DBUG_RETURN(false);
+  return false;
 }
 
 /** Create an SDI Index
@@ -4738,12 +4735,12 @@ dberr_t btr_sdi_create_index(space_id_t space_id, bool dict_locked) {
   fsp_sdi_write_root_to_page(page, page_size, sdi_root_page_num, &mtr);
 
   /* Space flags from memory */
-  ulint fsp_flags = space->flags;
+  uint32_t fsp_flags = space->flags;
 
   ut_ad(mach_read_from_4(page + FSP_HEADER_OFFSET + FSP_SPACE_FLAGS) ==
         fsp_flags);
 
-  fsp_flags = FSP_FLAGS_SET_SDI(fsp_flags);
+  fsp_flags_set_sdi(fsp_flags);
   mlog_write_ulint(FSP_HEADER_OFFSET + FSP_SPACE_FLAGS + page, fsp_flags,
                    MLOG_4BYTES, &mtr);
 

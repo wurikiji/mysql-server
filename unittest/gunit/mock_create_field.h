@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -24,10 +24,11 @@
 #define MOCK_CREATE_FIELD_H
 
 #include "my_dbug.h"
-#include "sql/field.h"
+#include "sql/create_field.h"
+#include "sql/dd/types/column.h"
 
 class Mock_create_field : public Create_field {
-  LEX_STRING m_lex_string;
+  LEX_CSTRING m_lex_string;
 
  public:
   Mock_create_field(enum_field_types field_type, Item *insert_default,
@@ -51,15 +52,16 @@ class Mock_create_field : public Create_field {
             core dump. This is undocumented, of
             course. </sarcasm>
          */
-         &m_lex_string,  // LEX_STRING *fld_comment,
+         &m_lex_string,  // LEX_CSTRING *fld_comment,
          NULL,           // char *fld_change,
          NULL,           // List<String> *fld_interval_list,
          NULL,           // const CHARSET_INFO *fld_charset,
          false,          // bool has_explicit_collation,
          0,              // uint fld_geom_type
          nullptr,        // gcol info
-         {}              // Nullable<gis::srid_t> srid
-    );
+         nullptr,        // gen default val
+         {},             // Nullable<gis::srid_t> srid
+         dd::Column::enum_hidden_type::HT_VISIBLE);  // Visible
   }
 };
 

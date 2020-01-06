@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -29,6 +29,8 @@
 
 #include "my_sys.h"
 #include "my_thread.h"
+#include "sql/binlog_ostream.h"
+#include "sql/binlog_reader.h"
 #include "sql/debug_sync.h"
 #include "sql/log_event.h"
 #include "sql/replication.h"
@@ -57,12 +59,16 @@ my_thread_attr_t *get_connection_attrib();
   @param[out] port
   @param[out] uuid
   @param[out] server_version
-  @param[out] server_ssl_variables
-
 */
 void get_server_parameters(char **hostname, uint *port, char **uuid,
-                           unsigned int *server_version,
-                           st_server_ssl_variables *server_ssl_variables);
+                           unsigned int *server_version);
+
+/**
+  Returns the server ssl configuration values.
+
+  @param[out] server_ssl_variables
+*/
+void get_server_ssl_parameters(st_server_ssl_variables *server_ssl_variables);
 
 /**
   Returns the server_id.
@@ -176,5 +182,32 @@ void global_thd_manager_remove_thd(THD *thd);
   @return the algorithm name
 */
 const char *get_write_set_algorithm_string(unsigned int algorithm);
+
+/**
+  Returns true if the given transaction is committed.
+
+  @param[in] gtid  The transaction identifier
+
+  @return true   the transaction is committed
+          false  otherwise
+*/
+bool is_gtid_committed(const Gtid &gtid);
+
+/**
+  Returns the value of slave_max_allowed_packet.
+
+  @return slave_max_allowed_packet
+*/
+unsigned long get_slave_max_allowed_packet();
+
+/**
+  @returns the maximum value of slave_max_allowed_packet.
+ */
+unsigned long get_max_slave_max_allowed_packet();
+
+/**
+  @returns if the server is restarting after a clone
+*/
+bool is_server_restarting_after_clone();
 
 #endif /* GROUP_REPLICATION_PRIV_INCLUDE */

@@ -1,5 +1,5 @@
 /* Copyright (C) 2007 Google Inc.
-   Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <time.h>
 
+#include "my_byteorder.h"
 #include "my_compiler.h"
 #include "my_systime.h"
 #include "sql/mysqld.h"  // max_connections
@@ -831,7 +832,7 @@ int ReplSemiSyncMaster::commitTrx(const char *trx_wait_binlog_name,
 }
 void ReplSemiSyncMaster::set_wait_no_slave(const void *val) {
   lock();
-  char set_switch = *(char *)val;
+  char set_switch = *static_cast<const char *>(val);
   if (set_switch == 0) {
     if ((rpl_semi_sync_master_clients == 0) && (is_on())) switch_off();
   } else {

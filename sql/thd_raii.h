@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -127,6 +127,22 @@ class Disable_binlog_guard {
   const bool m_binlog_disabled;
 };
 
+class Disable_sql_log_bin_guard {
+ public:
+  Disable_sql_log_bin_guard(THD *thd)
+      : m_thd(thd), m_saved_sql_log_bin(thd->variables.sql_log_bin) {
+    thd->variables.sql_log_bin = false;
+  }
+
+  ~Disable_sql_log_bin_guard() {
+    m_thd->variables.sql_log_bin = m_saved_sql_log_bin;
+  }
+
+ private:
+  THD *const m_thd;
+  const bool m_saved_sql_log_bin;
+};
+
 /**
   RAII class which allows to save, clear and store binlog format state
   There are two variables in THD class that will decide the binlog
@@ -208,6 +224,23 @@ class Sql_mode_parse_guard {
  private:
   THD *m_thd;
   const sql_mode_t m_old_sql_mode;
+};
+
+/**
+  RAII class to temporarily swap thd->mem_root to a different mem_root.
+*/
+class Swap_mem_root_guard {
+ public:
+  Swap_mem_root_guard(THD *thd, MEM_ROOT *mem_root)
+      : m_thd(thd), m_old_mem_root(thd->mem_root) {
+    thd->mem_root = mem_root;
+  }
+
+  ~Swap_mem_root_guard() { m_thd->mem_root = m_old_mem_root; }
+
+ private:
+  THD *m_thd;
+  MEM_ROOT *m_old_mem_root;
 };
 
 #endif  // THD_RAII_INCLUDED

@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -52,9 +52,9 @@ public:
 #endif
   virtual void tuple(const TupleS &, Uint32 fragId);
   virtual void logEntry(const LogEntry &);
-  virtual void endOfTuples() {};
+  virtual void endOfTuples() {}
   virtual void endOfLogEntrys();
-  virtual bool update_apply_status(const RestoreMetaData &metaData);
+  virtual bool update_apply_status(const RestoreMetaData &metaData, bool snapshotstart);
   bool m_print;
   bool m_print_log;
   bool m_print_sql_log;

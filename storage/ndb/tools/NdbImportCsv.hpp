@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -147,7 +147,7 @@ public:
       m_pack_pos = 0;
       m_pack_end = 0;
       m_null = false;
-    };
+    }
     Field* next() {
       return static_cast<Field*>(m_next);
     }
@@ -184,7 +184,7 @@ public:
       m_pos = 0;
       m_end = 0;
       m_reject = false;
-    };
+    }
     Line* next() {
       return static_cast<Line*>(m_next);
     }
@@ -389,7 +389,6 @@ public:
            const Spec& spec,
            const Table& table,
            Buf& buf);
-    ~Output();
     void do_init();
     void add_header();
     void add_line(const Row* row);

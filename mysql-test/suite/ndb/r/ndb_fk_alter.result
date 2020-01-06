@@ -116,10 +116,10 @@ insert into t1(col1,col2,col3) values (2, 3, 'abcdefghijkl');
 insert into t2(col1,col2,col3) values (1, 2, 'abcdefghijkl');
 # Attempt to drop col1, should give error
 ALTER TABLE t1 DROP COLUMN col1;
-ERROR HY000: Cannot drop column 'col1': needed in a foreign key constraint 'fk1' of table 't1'
+ERROR HY000: Cannot drop column 'col1': needed in a foreign key constraint 'fk1' of table 't2'
 # Attempt to modify col1, should give error
 ALTER TABLE t1 MODIFY COLUMN col1 bigint;
-ERROR HY000: Cannot change column 'col1': used in a foreign key constraint 'fk1' of table 'test.t2'
+ERROR HY000: Referencing column 'col2' and referenced column 'col1' in foreign key constraint 'fk1' are incompatible.
 # Drop the column t1.col3
 ALTER TABLE t1 DROP COLUMN col3;
 # Drop t2.col2
@@ -142,10 +142,10 @@ insert into t1(col1,col2,col3) values (2, 3, 'abcdefghijkl');
 insert into t2(col1,col2,col3) values (1, 2, 'abcdefghijkl');
 # Attempt to drop col1, should give error
 ALTER TABLE t1 DROP COLUMN col1;
-ERROR HY000: Cannot drop column 'col1': needed in a foreign key constraint 'fk1' of table 't1'
+ERROR HY000: Cannot drop column 'col1': needed in a foreign key constraint 'fk1' of table 't2'
 # Attempt to modify col1, should give error
 ALTER TABLE t1 MODIFY COLUMN col1 bigint;
-ERROR HY000: Cannot change column 'col1': used in a foreign key constraint 'fk1' of table 'test.t2'
+ERROR HY000: Referencing column 'col2' and referenced column 'col1' in foreign key constraint 'fk1' are incompatible.
 # Drop the column t1.col3
 ALTER TABLE t1 DROP COLUMN col3;
 # Drop t2.col2
@@ -250,6 +250,34 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=ndbcluster DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 /*!50100 PARTITION BY KEY (col1) */
 ALTER TABLE t2 REMOVE PARTITIONING;
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `col1` int(11) NOT NULL,
+  `col2` int(11) NOT NULL,
+  `col3` varchar(35) DEFAULT NULL,
+  UNIQUE KEY `col1` (`col1`),
+  KEY `fk1` (`col3`),
+  CONSTRAINT `fk1` FOREIGN KEY (`col3`) REFERENCES `t1` (`col3`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=ndbcluster DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+ALTER TABLE t1 RENAME COLUMN col3 TO col3_new;
+ERROR 0A000: ALTER TABLE is not supported. Reason: Altering name of a field being referenced from a foreign key is not supported. Try dropping foreign key first.
+ALTER TABLE t1 ALGORITHM=inplace, RENAME COLUMN col3 TO col3_new;
+ERROR 0A000: ALTER TABLE is not supported. Reason: Altering name of a field being referenced from a foreign key is not supported. Try dropping foreign key first.
+ALTER TABLE t2 RENAME COLUMN col3 TO col3_new;
+ERROR 0A000: ALTER TABLE is not supported. Reason: Altering name of a field being referenced from a foreign key is not supported. Try dropping foreign key first.
+ALTER TABLE t2 ALGORITHM=inplace, RENAME COLUMN col3 TO col3_new;
+ERROR 0A000: ALTER TABLE is not supported. Reason: Altering name of a field being referenced from a foreign key is not supported. Try dropping foreign key first.
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `col1` int(11) NOT NULL,
+  `col2` int(11) NOT NULL,
+  `col3` varchar(35) NOT NULL,
+  PRIMARY KEY (`col1`),
+  UNIQUE KEY `name0` (`col2`),
+  UNIQUE KEY `name1` (`col3`)
+) ENGINE=ndbcluster DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (

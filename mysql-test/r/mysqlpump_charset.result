@@ -144,7 +144,9 @@ USE db1_utf8_csets;
 CREATE TABLE t_utf8 (a CHAR(4) CHARACTER SET utf8 COLLATE utf8_bin) CHARACTER SET utf8 COLLATE utf8_bin;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_bin' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 LOAD DATA INFILE 'MYSQLTEST_VARDIR/std_data/charset_utf8.txt' INTO TABLE t_utf8;
 SELECT COUNT(*) FROM t_utf8;
 COUNT(*)
@@ -161,7 +163,9 @@ USE db1_utf8_csets;
 CREATE TABLE t_utf8 (a CHAR(4) CHARACTER SET utf8 COLLATE utf8_unicode_ci) CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.
+Warning	3778	'utf8_unicode_ci' is a collation of the deprecated character set UTF8MB3. Please consider using UTF8MB4 with an appropriate collation instead.
 LOAD DATA INFILE 'MYSQLTEST_VARDIR/std_data/charset_utf8.txt' INTO TABLE t_utf8;
 SELECT COUNT(*) FROM t_utf8;
 COUNT(*)
@@ -300,7 +304,7 @@ CREATE TABLE ÔÁÂÌÉÃÁ (ÐÏÌÑ VARCHAR(30) CHARACTER SET ujis COLLATE uji
 CREATE VIEW `±í¸ñ` AS SELECT _ujis'×Ö¶ÎÒ»';
 Warnings:
 Warning	1300	Invalid ujis character string: 'C397C3'
-Warning	1300	Invalid ujis character string: '\xC3\x97\xC3\x96\xC2\xB6...'
+Warning	1300	Cannot convert string '\xC3\x97\xC3\x96\xC2\xB6...' from ujis to utf8
 INSERT INTO ÔÁÂÌÉÃÁ VALUES (_ujis'MYSQLPUMP'), (_ujis'한글입력기');
 Warnings:
 Warning	1300	Invalid ujis character string: 'ED959C'
@@ -405,8 +409,8 @@ CHARACTER_SET_CONNECTION=cp1251,
 CHARACTER_SET_RESULTS=koi8r;
 INSERT INTO t_koi8r (c1, c2) VALUES ('îÕ, ÚÁ ÒÙÂÁÌËÕ','îÕ, ÚÁ ÒÙÂÁÌËÕ');
 Warnings:
-Warning	1300	Invalid koi8r character string: '\xC3\xAE\xC3\x95, ...'
-Warning	1300	Invalid koi8r character string: '\xC3\xAE\xC3\x95, ...'
+Warning	1300	Cannot convert string '\xC3\xAE\xC3\x95, ...' from koi8r to cp1251
+Warning	1300	Cannot convert string '\xC3\xAE\xC3\x95, ...' from koi8r to cp1251
 SET NAMES UTF8;
 Warnings:
 Warning	3719	'utf8' is currently an alias for the character set UTF8MB3, but will be an alias for UTF8MB4 in a future release. Please consider using UTF8MB4 in order to be unambiguous.

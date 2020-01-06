@@ -69,6 +69,7 @@ let $MYSQLD_DATADIR= `select @@datadir`;
 --exec echo "restart" > $MYSQLTEST_VARDIR/tmp/mysqld.1.expect
 --enable_reconnect
 --source include/wait_until_connected_again.inc
+--source include/xplugin_wait_for_interfaces.inc
 
 --echo # Test RESET PERSIST for plugin variables.
 --replace_regex /\.dll/.so/
@@ -134,6 +135,26 @@ SELECT @@GLOBAL.validate_password_length;
 --replace_regex /\.dll/.so/
 eval INSTALL PLUGIN validate_password SONAME '$VALIDATE_PASSWORD';
 # should return default value 8
+SELECT @@GLOBAL.validate_password_length;
+
+# Cleanup
+RESET PERSIST;
+UNINSTALL plugin validate_password;
+--remove_file $MYSQLD_DATADIR/mysqld-auto.cnf
+
+--echo #
+--echo # Bug #28823972: PERSISTED PLUGIN VARIABLE VALUE LOST AFTER
+--echo #                PLUGIN IS REINSTALLED
+--echo #
+
+--replace_regex /\.dll/.so/
+eval INSTALL PLUGIN validate_password SONAME '$VALIDATE_PASSWORD';
+SELECT @@GLOBAL.validate_password_length;
+SET @@persist.validate_password_length= 15;
+UNINSTALL PLUGIN validate_password;
+--replace_regex /\.dll/.so/
+eval INSTALL PLUGIN validate_password SONAME '$VALIDATE_PASSWORD';
+# should report 15 not the default value
 SELECT @@GLOBAL.validate_password_length;
 
 # Cleanup

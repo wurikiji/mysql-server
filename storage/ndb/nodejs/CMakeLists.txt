@@ -1,4 +1,4 @@
-# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -108,7 +108,19 @@ set(ADAPTER_SOURCE_FILES
 ###### COMPILER AND LINKER OPTIONS
 
 # Enable asserts:
-remove_definitions(-DNDEBUG)
+REMOVE_DEFINITIONS(-DNDEBUG)
+FOREACH(flag
+    CMAKE_C_FLAGS_DEBUG
+    CMAKE_C_FLAGS_RELWITHDEBINFO
+    CMAKE_C_FLAGS_RELEASE
+    CMAKE_C_FLAGS_MINSIZEREL
+    CMAKE_CXX_FLAGS_DEBUG
+    CMAKE_CXX_FLAGS_RELWITHDEBINFO
+    CMAKE_CXX_FLAGS_RELEASE
+    CMAKE_CXX_FLAGS_MINSIZEREL
+    )
+  STRING(REPLACE "-DNDEBUG"  "" "${flag}" "${${flag}}")
+ENDFOREACH()
 
 if(WIN32) 
   set(ADAPTER_REQUIRED_LIBS ndbclient_static node)
@@ -122,10 +134,9 @@ if(WIN32)
 else()
   if(NODE_VERSION VERSION_GREATER "4.0.0")
     # Remove any -std=xxx compiler flag present, and add -std=c++11
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" BTYPE)
-    set(CXX_FLAGS_VAL ${CMAKE_CXX_FLAGS_${BTYPE}})
+    SET(CXX_FLAGS_VAL ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}})
     STRING(REGEX REPLACE "-std=[cgnu]+..[0-9]+" "" CXX_FLAGS_VAL "${CXX_FLAGS_VAL}")
-    set(CMAKE_CXX_FLAGS_${BTYPE} "${CXX_FLAGS_VAL} -std=c++11")
+    SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER} "${CXX_FLAGS_VAL} -std=c++11")
   endif()
   set(ADAPTER_REQUIRED_LIBS ndbclient_static)
  
@@ -137,12 +148,19 @@ else()
 #  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif()
 
-# Suppress a few compiler warnings
-IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  ADD_COMPILE_FLAGS(${ADAPTER_SOURCE_FILES}
-                    COMPILE_FLAGS
-                    "-Wno-unused-parameter")
-ENDIF()
+
+# Disable certain compiler warnings
+FOREACH(warning
+    "unused-parameter"
+    "cast-function-type"
+    "undefined-reinterpret-cast"
+    "cast-qual"
+    )
+  MY_CHECK_CXX_COMPILER_WARNING("${warning}" HAS_WARN_FLAG)
+  IF(HAS_WARN_FLAG)
+    STRING_APPEND(CMAKE_CXX_FLAGS " ${HAS_WARN_FLAG}")
+  ENDIF()
+ENDFOREACH()
 
 add_library(ndb_adapter MODULE ${ADAPTER_SOURCE_FILES})
 

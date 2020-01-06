@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-Copyright (c) 2006, 2018, Oracle and/or its affiliates. All Rights Reserved.
+Copyright (c) 2006, 2019, Oracle and/or its affiliates. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License, version 2.0, as published by the
@@ -36,7 +36,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "buf0flu.h"
 #include "buf0lru.h"
 #include "dict0dict.h"
-#include "my_inttypes.h"
+
 #include "page0zip.h"
 
 /** When freeing a buf we attempt to coalesce by looking at its buddy
@@ -309,8 +309,9 @@ static buf_buddy_free_t *buf_buddy_alloc_zip(buf_pool_t *buf_pool, ulint i) {
     buf = buf_buddy_alloc_zip(buf_pool, i + 1);
 
     if (buf) {
+      byte *allocated_block = buf->stamp.bytes;
       buf_buddy_free_t *buddy = reinterpret_cast<buf_buddy_free_t *>(
-          buf->stamp.bytes + (BUF_BUDDY_LOW << i));
+          allocated_block + (BUF_BUDDY_LOW << i));
 
       mutex_enter(&buf_pool->zip_free_mutex);
       ut_ad(!buf_pool_contains_zip(buf_pool, buddy));
@@ -579,7 +580,7 @@ static bool buf_buddy_relocate(buf_pool_t *buf_pool, void *src, void *dst,
 
   if (buf_page_can_relocate(bpage)) {
     /* Relocate the compressed page. */
-    uintmax_t usec = ut_time_us(NULL);
+    const auto usec = ut_time_monotonic_us();
 
     ut_a(bpage->zip.data == src);
 
@@ -594,7 +595,7 @@ static bool buf_buddy_relocate(buf_pool_t *buf_pool, void *src, void *dst,
 
     buf_buddy_stat_t *buddy_stat = &buf_pool->buddy_stat[i];
     buddy_stat->relocated++;
-    buddy_stat->relocated_usec += ut_time_us(NULL) - usec;
+    buddy_stat->relocated_usec += ut_time_monotonic_us() - usec;
     return (true);
   }
 

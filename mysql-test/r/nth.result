@@ -637,6 +637,8 @@ CREATE TABLE `test`(
 `dt` DATETIME DEFAULT NULL,
 `ge` GEOMETRY DEFAULT NULL
 );
+Warnings:
+Warning	1681	Integer display width is deprecated and will be removed in a future release.
 INSERT INTO `test` VALUES
 (1, '2007-05-08 12:10:55', ST_GeomFromText('POINT(1 1)')),
 (2, NULL, NULL), (3, NULL, NULL),
@@ -746,6 +748,7 @@ SELECT ((MAKETIME(((QUARTER('| !*c>*{/'))<=>
 ,1)OVER())),'9236-05-27',0xe2a7d4))^(0x1109))
 NULL
 Warnings:
+Warning	1292	Incorrect datetime value: '| !*c>*{/'
 Warning	1292	Incorrect datetime value: '| !*c>*{/'
 Warning	1292	Truncated incorrect INTEGER value: '9236-05-27'
 SELECT ((NTH_VALUE(JSON_MERGE_PATCH(1.755913e+308,'{ }'),246)OVER())<=(1));

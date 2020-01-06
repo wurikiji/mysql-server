@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -80,7 +80,8 @@ bool service_get_read_locks_init(UDF_INIT *initid, UDF_ARGS *args,
   return init_acquire(initid, args, message);
 }
 
-long long service_get_read_locks(UDF_INIT *, UDF_ARGS *args, char *, char *) {
+long long service_get_read_locks(UDF_INIT *, UDF_ARGS *args, unsigned char *,
+                                 unsigned char *) {
   const char *lock_namespace = args->args[0];
   long long timeout = *((long long *)args->args[args->arg_count - 1]);
   // For the UDF 1 == success, 0 == failure.
@@ -94,13 +95,15 @@ bool service_get_write_locks_init(UDF_INIT *initid, UDF_ARGS *args,
   return init_acquire(initid, args, message);
 }
 
-long long service_get_write_locks(UDF_INIT *, UDF_ARGS *args, char *, char *) {
+long long service_get_write_locks(UDF_INIT *, UDF_ARGS *args, unsigned char *,
+                                  unsigned char *) {
   const char *lock_namespace = args->args[0];
   long long timeout = *((long long *)args->args[args->arg_count - 1]);
   // For the UDF 1 == success, 0 == failure.
   return !acquire_locking_service_locks(
       NULL, lock_namespace, const_cast<const char **>(&args->args[1]),
-      args->arg_count - 2, LOCKING_SERVICE_WRITE, static_cast<ulong>(timeout));
+      args->arg_count - 2, LOCKING_SERVICE_WRITE,
+      (timeout == -1 ? TIMEOUT_INF : static_cast<Timeout_type>(timeout)));
 }
 
 bool service_release_locks_init(UDF_INIT *initid, UDF_ARGS *args,
@@ -125,7 +128,8 @@ bool service_release_locks_init(UDF_INIT *initid, UDF_ARGS *args,
   return false;
 }
 
-long long service_release_locks(UDF_INIT *, UDF_ARGS *args, char *, char *) {
+long long service_release_locks(UDF_INIT *, UDF_ARGS *args, unsigned char *,
+                                unsigned char *) {
   const char *lock_namespace = args->args[0];
   // For the UDF 1 == success, 0 == failure.
   return !release_locking_service_locks(NULL, lock_namespace);
